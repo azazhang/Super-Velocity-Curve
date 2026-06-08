@@ -1,4 +1,10 @@
 #include "MidiRoutingPanel.h"
+#include "../Engine/EngineSettings.h"
+
+namespace
+{
+constexpr const char* groupLabels[] = { "Other", "Kick", "Snare", "Hat", "Tom", "Cymbal", "Percussion" };
+}
 
 MidiRoutingPanel::MidiRoutingPanel()
 {
@@ -7,6 +13,19 @@ MidiRoutingPanel::MidiRoutingPanel()
     addAndMakeVisible (inputChannelBox);
     addAndMakeVisible (outputChannelBox);
     addAndMakeVisible (remapToggle);
+    addAndMakeVisible (humanizeLabel);
+    addAndMakeVisible (humanizeSlider);
+    addAndMakeVisible (libraryLabel);
+    addAndMakeVisible (libraryPresetBox);
+    addAndMakeVisible (libraryBlendSlider);
+    addAndMakeVisible (zoneRoutingToggle);
+
+    zoneRoutingToggle.setButtonText ("Zone routing (per pad group channel)");
+
+    humanizeLabel.setText ("Humanize amount", juce::dontSendNotification);
+    libraryLabel.setText ("Library compensation", juce::dontSendNotification);
+    humanizeSlider.setRange (0.0, 0.25, 0.001);
+    libraryBlendSlider.setRange (0.0, 1.0, 0.01);
 
     for (int ch = 0; ch <= 16; ++ch)
     {
@@ -14,18 +33,42 @@ MidiRoutingPanel::MidiRoutingPanel()
         outputChannelBox.addItem (ch == 0 ? "Keep original" : "Ch " + juce::String (ch), ch + 1);
     }
 
+    libraryPresetBox.addItem ("None", 1);
+    libraryPresetBox.addItem ("Acoustic library", 2);
+    libraryPresetBox.addItem ("Electronic library", 3);
+    libraryPresetBox.addItem ("Compressed library", 4);
+
     inputChannelBox.onChange = [this] { notifyChanged(); };
     outputChannelBox.onChange = [this] { notifyChanged(); };
     remapToggle.onClick = [this] { notifyChanged(); };
+    humanizeSlider.onValueChange = [this] { notifyChanged(); };
+    libraryPresetBox.onChange = [this] { notifyChanged(); };
+    libraryBlendSlider.onValueChange = [this] { notifyChanged(); };
+    zoneRoutingToggle.onClick = [this] { notifyChanged(); };
 }
 
 void MidiRoutingPanel::setProfile (svc::ControllerProfile& p)
 {
     profile = &p;
     const auto& routing = profile->getMidiRouting();
+    const auto& processing = profile->getProcessingSettings();
+
     inputChannelBox.setSelectedId (routing.inputChannelFilter + 1, juce::dontSendNotification);
     outputChannelBox.setSelectedId (routing.outputChannel + 1, juce::dontSendNotification);
     remapToggle.setToggleState (routing.remapEnabled, juce::dontSendNotification);
+    humanizeSlider.setValue (processing.humanizeAmount, juce::dontSendNotification);
+    libraryBlendSlider.setValue (processing.libraryBlend, juce::dontSendNotification);
+    zoneRoutingToggle.setToggleState (processing.zoneRouting.enabled, juce::dontSendNotification);
+
+    int presetId = 1;
+    switch (processing.libraryPreset)
+    {
+        case svc::LibraryCompensationPreset::acoustic:    presetId = 2; break;
+        case svc::LibraryCompensationPreset::electronic:  presetId = 3; break;
+        case svc::LibraryCompensationPreset::compressed:  presetId = 4; break;
+        case svc::LibraryCompensationPreset::none:      presetId = 1; break;
+    }
+    libraryPresetBox.setSelectedId (presetId, juce::dontSendNotification);
 }
 
 void MidiRoutingPanel::notifyChanged()
@@ -38,6 +81,19 @@ void MidiRoutingPanel::notifyChanged()
     routing.outputChannel = outputChannelBox.getSelectedId() - 1;
     routing.remapEnabled = remapToggle.getToggleState();
 
+    auto& processing = profile->getProcessingSettings();
+    processing.humanizeAmount = static_cast<float> (humanizeSlider.getValue());
+    processing.libraryBlend = static_cast<float> (libraryBlendSlider.getValue());
+    processing.zoneRouting.enabled = zoneRoutingToggle.getToggleState();
+
+    switch (libraryPresetBox.getSelectedId())
+    {
+        case 2:  processing.libraryPreset = svc::LibraryCompensationPreset::acoustic; break;
+        case 3:  processing.libraryPreset = svc::LibraryCompensationPreset::electronic; break;
+        case 4:  processing.libraryPreset = svc::LibraryCompensationPreset::compressed; break;
+        default: processing.libraryPreset = svc::LibraryCompensationPreset::none; break;
+    }
+
     if (onRoutingChanged)
         onRoutingChanged();
 }
@@ -47,7 +103,7 @@ void MidiRoutingPanel::paint (juce::Graphics& g)
     svc::ui::Theme::fillPanel (g, getLocalBounds().toFloat(), 8.0f);
     g.setColour (juce::Colour (svc::ui::Theme::textPrimary));
     g.setFont (svc::ui::Theme::sectionFont());
-    g.drawText ("MIDI Routing", getLocalBounds().removeFromTop (22).reduced (10, 0), juce::Justification::centredLeft);
+    g.drawText ("MIDI Routing & Processing", getLocalBounds().removeFromTop (22).reduced (10, 0), juce::Justification::centredLeft);
 }
 
 void MidiRoutingPanel::resized()
@@ -60,4 +116,14 @@ void MidiRoutingPanel::resized()
     outputChannelBox.setBounds (area.removeFromTop (22));
     area.removeFromTop (4);
     remapToggle.setBounds (area.removeFromTop (22));
+    area.removeFromTop (6);
+    humanizeLabel.setBounds (area.removeFromTop (14));
+    humanizeSlider.setBounds (area.removeFromTop (22));
+    area.removeFromTop (4);
+    libraryLabel.setBounds (area.removeFromTop (14));
+    libraryPresetBox.setBounds (area.removeFromTop (22));
+    area.removeFromTop (2);
+    libraryBlendSlider.setBounds (area.removeFromTop (22));
+    area.removeFromTop (4);
+    zoneRoutingToggle.setBounds (area.removeFromTop (22));
 }

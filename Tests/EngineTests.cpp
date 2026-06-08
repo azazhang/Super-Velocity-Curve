@@ -1,4 +1,5 @@
 #include "../Source/Engine/MidiUtilities.h"
+#include "../Source/Engine/EngineSettings.h"
 #include "../Source/Engine/VelocityCurve.h"
 #include "../Source/Engine/VelocityEngine.h"
 #include "../Source/Profiles/ControllerProfile.h"
@@ -169,6 +170,46 @@ static int testLaunchpadProfileSize()
     return 0;
 }
 
+static int testMidi2LutMonotonic()
+{
+    svc::VelocityCurve curve;
+    curve.applyPreset (svc::CurvePreset::hard);
+    const auto& lut = curve.getMidi2Lut();
+
+    for (int i = 1; i < svc::VelocityCurve::midi2LutSize; ++i)
+        EXPECT_TRUE (lut[static_cast<size_t> (i)] >= lut[static_cast<size_t> (i - 1)]);
+
+    const auto mapped = curve.mapMidi2 (8192);
+    EXPECT_TRUE (mapped >= 0 && mapped <= svc::midi2Max);
+    return 0;
+}
+
+static int testHumanizeWithinBounds()
+{
+    svc::VelocityEngine engine;
+    engine.setSampleRate (48000.0);
+
+    svc::EngineProcessingSettings settings;
+    settings.humanizeAmount = 0.2f;
+    engine.setProcessingSettings (settings);
+
+    svc::PadSettings pad;
+    pad.enabled = true;
+    engine.setPadSettings (36, 10, pad);
+
+    juce::MidiBuffer buffer;
+    buffer.addEvent (juce::MidiMessage::noteOn (10, 36, 0.5f), 0);
+    engine.processMidiBuffer (buffer, 128);
+    EXPECT_TRUE (buffer.getNumEvents() == 1);
+
+    for (const auto metadata : buffer)
+    {
+        const auto velocity = metadata.getMessage().getFloatVelocity();
+        EXPECT_TRUE (velocity >= 0.0f && velocity <= 1.0f);
+    }
+    return 0;
+}
+
 int main()
 {
     if (testVelocityCurveMonotonic() != 0) return 1;
@@ -179,6 +220,8 @@ int main()
     if (testGateClampMode() != 0) return 1;
     if (testPerPadHistogram() != 0) return 1;
     if (testLaunchpadProfileSize() != 0) return 1;
+    if (testMidi2LutMonotonic() != 0) return 1;
+    if (testHumanizeWithinBounds() != 0) return 1;
     std::cout << "All engine tests passed.\n";
     return 0;
 }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Engine/EngineSettings.h"
 #include "../Engine/MidiUtilities.h"
 #include "../Engine/VelocityCurve.h"
 #include "PadTypes.h"
@@ -54,6 +55,8 @@ public:
 
     MidiRoutingSettings& getMidiRouting() noexcept { return midiRouting; }
     const MidiRoutingSettings& getMidiRouting() const noexcept { return midiRouting; }
+    EngineProcessingSettings& getProcessingSettings() noexcept { return processingSettings; }
+    const EngineProcessingSettings& getProcessingSettings() const noexcept { return processingSettings; }
     ControllerProfile copy() const;
 
     juce::ValueTree toValueTree() const;
@@ -71,6 +74,7 @@ private:
     ProfileLayout layout = ProfileLayout::gmStandard;
     std::vector<ProfilePad> pads;
     MidiRoutingSettings midiRouting;
+    EngineProcessingSettings processingSettings;
 };
 
 } // namespace svc

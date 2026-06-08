@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<ControllerProfile name="Maschine Group" layout="2" inputChannel="0" outputChannel="0"
+                   remapEnabled="0" humanizeAmount="0.0" libraryPreset="None" libraryBlend="0.0"
+                   zoneRoutingEnabled="0">
+  <ZoneRouting>
+    <Group name="Other" channel="0"/>
+    <Group name="Kick" channel="0"/>
+    <Group name="Snare" channel="0"/>
+    <Group name="Hat" channel="0"/>
+    <Group name="Tom" channel="0"/>
+    <Group name="Cymbal" channel="0"/>
+    <Group name="Percussion" channel="0"/>
+  </ZoneRouting>
+  <Remaps/>
+  <Pad midiNote="36" midiChannel="1" label="Slot 1" gridRow="3" gridCol="0"
+       enabled="1" velocityGate="0.0" gateMode="Drop notes" padGroup="Other"
+       retriggerGuardMs="0.0" aftertouchEnabled="0">
+    <Curve floor="0.0" ceiling="1.0">
+      <Point input="0.0" output="0.0"/>
+      <Point input="1.0" output="1.0"/>
+    </Curve>
+  </Pad>
+  <Pad midiNote="37" midiChannel="1" label="Slot 2" gridRow="3" gridCol="1"
+       enabled="1" velocityGate="0.0" gateMode="Drop notes" padGroup="Other"
+       retriggerGuardMs="0.0" aftertouchEnabled="0">
+    <Curve floor="0.0" ceiling="1.0">
+      <Point input="0.0" output="0.0"/>
+      <Point input="1.0" output="1.0"/>
+    </Curve>
+  </Pad>
+  <Pad midiNote="38" midiChannel="1" label="Slot 3" gridRow="3" gridCol="2"
+       enabled="1" velocityGate="0.0" gateMode="Drop notes" padGroup="Other"
+       retriggerGuardMs="0.0" aftertouchEnabled="0">
+    <Curve floor="0.0" ceiling="1.0">
+      <Point input="0.0" output="0.0"/>
+      <Point input="1.0" output="1.0"/>
+    </Curve>
+  </Pad>
+  <Pad midiNote="39" midiChannel="1" label="Slot 4" gridRow="3" gridCol="3"
+       enabled="1" velocityGate="0.0" gateMode="Drop notes" padGroup="Other"
+       retriggerGuardMs="0.0" aftertouchEnabled="0">
+    <Curve floor="0.0" ceiling="1.0">
+      <Point input="0.0" output="0.0"/>
+      <Point input="1.0" output="1.0"/>
+    </Curve>
+  </Pad>
+  <Pad midiNote="40" midiChannel="1" label="Slot 5" gridRow="2" gridCol="0"
+       enabled="1" velocityGate="0.0" gateMode="Drop notes" padGroup="Other"
+       retriggerGuardMs="0.0" aftertouchEnabled="0">
+    <Curve floor="0.0" ceiling="1.0">
+      <Point input="0.0" output="0.0"/>
+      <Point input="1.0" output="1.0"/>
+    </Curve>
+  </Pad>
+  <Pad midiNote="41" midiChannel="1" label="Slot 6" gridRow="2" gridCol="1"
+       enabled="1" velocityGate="0.0" gateMode="Drop notes" padGroup="Other"
+       retriggerGuardMs="0.0" aftertouchEnabled="0">
+    <Curve floor="0.0" ceiling="1.0">
+      <Point input="0.0" output="0.0"/>
+      <Point input="1.0" output="1.0"/>
+    </Curve>
+  </Pad>
+  <Pad midiNote="42" midiChannel="1" label="Slot 7" gridRow="2" gridCol="2"
+       enabled="1" velocityGate="0.0" gateMode="Drop notes" padGroup="Other"
+       retriggerGuardMs="0.0" aftertouchEnabled="0">
+    <Curve floor="0.0" ceiling="1.0">
+      <Point input="0.0" output="0.0"/>
+      <Point input="1.0" output="1.0"/>
+    </Curve>
+  </Pad>
+  <Pad midiNote="43" midiChannel="1" label="Slot 8" gridRow="2" gridCol="3"
+       enabled="1" velocityGate="0.0" gateMode="Drop notes" padGroup="Other"
+       retriggerGuardMs="0.0" aftertouchEnabled="0">
+    <Curve floor="0.0" ceiling="1.0">
+      <Point input="0.0" output="0.0"/>
+      <Point input="1.0" output="1.0"/>
+    </Curve>
+  </Pad>
+  <Pad midiNote="44" midiChannel="1" label="Slot 9" gridRow="1" gridCol="0"
+       enabled="1" velocityGate="0.0" gateMode="Drop notes" padGroup="Other"
+       retriggerGuardMs="0.0" aftertouchEnabled="0">
+    <Curve floor="0.0" ceiling="1.0">
+      <Point input="0.0" output="0.0"/>
+      <Point input="1.0" output="1.0"/>
+    </Curve>
+  </Pad>
+  <Pad midiNote="45" midiChannel="1" label="Slot 10" gridRow="1" gridCol="1"
+       enabled="1" velocityGate="0.0" gateMode="Drop notes" padGroup="Other"
+       retriggerGuardMs="0.0" aftertouchEnabled="0">
+    <Curve floor="0.0" ceiling="1.0">
+      <Point input="0.0" output="0.0"/>
+      <Point input="1.0" output="1.0"/>
+    </Curve>
+  </Pad>
+  <Pad midiNote="46" midiChannel="1" label="Slot 11" gridRow="1" gridCol="2"
+       enabled="1" velocityGate="0.0" gateMode="Drop notes" padGroup="Other"
+       retriggerGuardMs="0.0" aftertouchEnabled="0">
+    <Curve floor="0.0" ceiling="1.0">
+      <Point input="0.0" output="0.0"/>
+      <Point input="1.0" output="1.0"/>
+    </Curve>
+  </Pad>
+  <Pad midiNote="47" midiChannel="1" label="Slot 12" gridRow="1" gridCol="3"
+       enabled="1" velocityGate="0.0" gateMode="Drop notes" padGroup="Other"
+       retriggerGuardMs="0.0" aftertouchEnabled="0">
+    <Curve floor="0.0" ceiling="1.0">
+      <Point input="0.0" output="0.0"/>
+      <Point input="1.0" output="1.0"/>
+    </Curve>
+  </Pad>
+  <Pad midiNote="48" midiChannel="1" label="Slot 13" gridRow="0" gridCol="0"
+       enabled="1" velocityGate="0.0" gateMode="Drop notes" padGroup="Other"
+       retriggerGuardMs="0.0" aftertouchEnabled="0">
+    <Curve floor="0.0" ceiling="1.0">
+      <Point input="0.0" output="0.0"/>
+      <Point input="1.0" output="1.0"/>
+    </Curve>
+  </Pad>
+  <Pad midiNote="49" midiChannel="1" label="Slot 14" gridRow="0" gridCol="1"
+       enabled="1" velocityGate="0.0" gateMode="Drop notes" padGroup="Other"
+       retriggerGuardMs="0.0" aftertouchEnabled="0">
+    <Curve floor="0.0" ceiling="1.0">
+      <Point input="0.0" output="0.0"/>
+      <Point input="1.0" output="1.0"/>
+    </Curve>
+  </Pad>
+  <Pad midiNote="50" midiChannel="1" label="Slot 15" gridRow="0" gridCol="2"
+       enabled="1" velocityGate="0.0" gateMode="Drop notes" padGroup="Other"
+       retriggerGuardMs="0.0" aftertouchEnabled="0">
+    <Curve floor="0.0" ceiling="1.0">
+      <Point input="0.0" output="0.0"/>
+      <Point input="1.0" output="1.0"/>
+    </Curve>
+  </Pad>
+  <Pad midiNote="51" midiChannel="1" label="Slot 16" gridRow="0" gridCol="3"
+       enabled="1" velocityGate="0.0" gateMode="Drop notes" padGroup="Other"
+       retriggerGuardMs="0.0" aftertouchEnabled="0">
+    <Curve floor="0.0" ceiling="1.0">
+      <Point input="0.0" output="0.0"/>
+      <Point input="1.0" output="1.0"/>
+    </Curve>
+  </Pad>
+</ControllerProfile>

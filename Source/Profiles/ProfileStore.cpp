@@ -152,14 +152,15 @@ void ProfileStore::syncActiveUserProfileFromEdits()
     }
 }
 
-void ProfileStore::fromValueTree (const juce::ValueTree& tree)
+void ProfileStore::fromValueTree (const juce::ValueTree& tree, bool notifyUpdates)
 {
     if (tree.hasType ("SuperVelocityCurveProfile"))
     {
         activeProfile = ControllerProfile::fromValueTree (tree);
         activeEntryType = ProfileEntryType::factoryTemplate;
         activeEntryIndex = static_cast<int> (tree.getProperty ("activeProfileIndex", 0));
-        notifyChanged();
+        if (notifyUpdates)
+            notifyChanged();
         return;
     }
 
@@ -189,7 +190,8 @@ void ProfileStore::fromValueTree (const juce::ValueTree& tree)
     activeEntryType = static_cast<ProfileEntryType> (static_cast<int> (tree.getProperty ("activeEntryType", 0)));
     activeEntryIndex = tree.getProperty ("activeEntryIndex", 0);
 
-    notifyChanged();
+    if (notifyUpdates)
+        notifyChanged();
 }
 
 bool ProfileStore::exportActiveProfileToFile (const juce::File& file) const

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<ControllerProfile name="Blank Custom" layout="5" inputChannel="0" outputChannel="0"
+                   remapEnabled="0" humanizeAmount="0.0" libraryPreset="None" libraryBlend="0.0"
+                   zoneRoutingEnabled="0">
+  <ZoneRouting>
+    <Group name="Other" channel="0"/>
+    <Group name="Kick" channel="0"/>
+    <Group name="Snare" channel="0"/>
+    <Group name="Hat" channel="0"/>
+    <Group name="Tom" channel="0"/>
+    <Group name="Cymbal" channel="0"/>
+    <Group name="Percussion" channel="0"/>
+  </ZoneRouting>
+  <Remaps/>
+  <Pad midiNote="36" midiChannel="10" label="Pad 1" gridRow="0" gridCol="0"
+       enabled="1" velocityGate="0.0" gateMode="Drop notes" padGroup="Other"
+       retriggerGuardMs="0.0" aftertouchEnabled="0">
+    <Curve floor="0.0" ceiling="1.0">
+      <Point input="0.0" output="0.0"/>
+      <Point input="1.0" output="1.0"/>
+    </Curve>
+  </Pad>
+</ControllerProfile>

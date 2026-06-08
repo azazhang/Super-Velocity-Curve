@@ -44,7 +44,7 @@ public:
     void applyActiveToEngine (class VelocityEngine& engine) const;
 
     juce::ValueTree toValueTree() const;
-    void fromValueTree (const juce::ValueTree& tree);
+    void fromValueTree (const juce::ValueTree& tree, bool notifyUpdates = true);
 
     bool exportActiveProfileToFile (const juce::File& file) const;
     bool importProfileFromFile (const juce::File& file);

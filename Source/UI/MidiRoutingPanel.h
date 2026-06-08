@@ -24,6 +24,12 @@ private:
     juce::ToggleButton remapToggle { "Enable note remap" };
     juce::Label inputLabel { {}, "Input channel (0=any)" };
     juce::Label outputLabel { {}, "Output channel (0=keep)" };
+    juce::Label humanizeLabel;
+    juce::Slider humanizeSlider { juce::Slider::LinearHorizontal, juce::Slider::TextBoxLeft };
+    juce::Label libraryLabel;
+    juce::ComboBox libraryPresetBox;
+    juce::Slider libraryBlendSlider { juce::Slider::LinearHorizontal, juce::Slider::TextBoxLeft };
+    juce::ToggleButton zoneRoutingToggle { "Zone routing" };
 
     void notifyChanged();
 };

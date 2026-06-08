@@ -2,7 +2,11 @@
 #include "PluginEditor.h"
 
 SuperVelocityCurveAudioProcessor::SuperVelocityCurveAudioProcessor()
+#if JucePlugin_IsMidiEffect
+    : AudioProcessor (BusesProperties()),
+#else
     : AudioProcessor (BusesProperties().withOutput ("Output", juce::AudioChannelSet::stereo(), true)),
+#endif
       apvts (*this, nullptr, "Parameters", createParameterLayout())
 {
     profileStore.applyActiveToEngine (engine);
@@ -46,12 +50,17 @@ void SuperVelocityCurveAudioProcessor::releaseResources()
 
 bool SuperVelocityCurveAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
 {
+#if JucePlugin_IsMidiEffect
+    juce::ignoreUnused (layouts);
+    return layouts.getMainOutputChannelSet() == juce::AudioChannelSet::disabled();
+#else
     if (layouts.getMainOutputChannelSet() != juce::AudioChannelSet::disabled()
         && layouts.getMainOutputChannelSet() != juce::AudioChannelSet::mono()
         && layouts.getMainOutputChannelSet() != juce::AudioChannelSet::stereo())
         return false;
 
     return true;
+#endif
 }
 
 void SuperVelocityCurveAudioProcessor::syncOutputModeToEngine()
@@ -79,7 +88,9 @@ void SuperVelocityCurveAudioProcessor::setStandaloneMidiOutput (juce::MidiOutput
 void SuperVelocityCurveAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
     juce::ScopedNoDenormals noDenormals;
+#if ! JucePlugin_IsMidiEffect
     buffer.clear();
+#endif
 
     {
         const juce::ScopedLock lock (standaloneMidiLock);
@@ -120,16 +131,19 @@ void SuperVelocityCurveAudioProcessor::setStateInformation (const void* data, in
         const auto state = juce::ValueTree::fromXml (*xml);
         if (state.hasType ("SuperVelocityCurveState"))
         {
+            apvts.removeParameterListener ("outputMode", this);
+
             for (int i = 0; i < state.getNumChildren(); ++i)
             {
                 const auto child = state.getChild (i);
                 if (child.hasType ("SuperVelocityCurveProfileStore")
                     || child.hasType ("SuperVelocityCurveProfile"))
-                    profileStore.fromValueTree (child);
+                    profileStore.fromValueTree (child, false);
                 else if (child.hasType ("Parameters"))
                     apvts.replaceState (child);
             }
 
+            apvts.addParameterListener ("outputMode", this);
             syncOutputModeToEngine();
             applyProfileToEngine();
         }

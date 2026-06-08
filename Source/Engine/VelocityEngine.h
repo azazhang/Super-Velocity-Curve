@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Profiles/PadTypes.h"
+#include "EngineSettings.h"
 #include "HitEventFifo.h"
 #include "MidiUtilities.h"
 #include "MidiVelocity.h"
@@ -17,6 +18,7 @@ struct PadSettings
     int midiNote = 36;
     int midiChannel = 10;
     juce::String name;
+    PadGroup group = PadGroup::other;
     VelocityCurve curve;
     bool enabled = true;
     float velocityGate = 0.0f;
@@ -40,6 +42,9 @@ public:
 
     void setMidiRouting (const MidiRoutingSettings& settings);
     const MidiRoutingSettings& getMidiRouting() const noexcept;
+
+    void setProcessingSettings (const EngineProcessingSettings& settings);
+    const EngineProcessingSettings& getProcessingSettings() const noexcept { return processingSettings; }
 
     void processMidiBuffer (juce::MidiBuffer& buffer, int numSamples);
     HitEventFifo& getHitFifo() noexcept { return hitFifo; }
@@ -74,7 +79,9 @@ private:
     PadMap pads;
     RetriggerMap retriggerStates;
     MidiRoutingProcessor midiRouting;
+    EngineProcessingSettings processingSettings;
     mutable std::shared_mutex padMutex;
+    mutable juce::Random humanizeRandom;
     VelocityOutputMode outputMode = VelocityOutputMode::autoDetect;
     HitEventFifo hitFifo;
     HistogramBank histogramBank;
@@ -83,6 +90,8 @@ private:
 
     const PadSettings* findPad (int note, int channel) const;
     float processNoteVelocity (const PadSettings& pad, float inputNormalized) const;
+    float applyHumanize (float normalized) const;
+    int resolveOutputChannel (PadGroup group, int incomingChannel) const;
     void applyOutputVelocity (juce::MidiMessage& message, float outputNormalized, bool inputIsMidi2) const;
     bool shouldDropRetrigger (const PadSettings& pad, int note, int channel, double eventTimeSeconds) noexcept;
 };

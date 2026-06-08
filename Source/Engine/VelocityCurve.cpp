@@ -130,13 +130,24 @@ float VelocityCurve::interpolateControlPoints (const std::vector<CurveControlPoi
 void VelocityCurve::rebuildLut()
 {
     float previous = 0.0f;
-    for (int i = 0; i < lutSize; ++i)
+    for (int i = 0; i < midi1LutSize; ++i)
     {
-        const auto input = static_cast<float> (i) / static_cast<float> (lutSize - 1);
+        const auto input = static_cast<float> (i) / static_cast<float> (midi1LutSize - 1);
         auto output = interpolateControlPoints (controlPoints, input);
         output = floor + output * (ceiling - floor);
         output = std::max (previous, std::clamp (output, 0.0f, 1.0f));
-        lut[static_cast<size_t> (i)] = output;
+        midi1Lut[static_cast<size_t> (i)] = output;
+        previous = output;
+    }
+
+    previous = 0.0f;
+    for (int i = 0; i < midi2LutSize; ++i)
+    {
+        const auto input = static_cast<float> (i) / static_cast<float> (midi2LutSize - 1);
+        auto output = interpolateControlPoints (controlPoints, input);
+        output = floor + output * (ceiling - floor);
+        output = std::max (previous, std::clamp (output, 0.0f, 1.0f));
+        midi2Lut[static_cast<size_t> (i)] = output;
         previous = output;
     }
 }
@@ -144,12 +155,12 @@ void VelocityCurve::rebuildLut()
 float VelocityCurve::mapNormalized (float input) const noexcept
 {
     const auto clamped = std::clamp (input, 0.0f, 1.0f);
-    const auto index = clamped * static_cast<float> (lutSize - 1);
+    const auto index = clamped * static_cast<float> (midi1LutSize - 1);
     const auto i0 = static_cast<int> (index);
-    const auto i1 = std::min (i0 + 1, lutSize - 1);
+    const auto i1 = std::min (i0 + 1, midi1LutSize - 1);
     const auto frac = index - static_cast<float> (i0);
-    const auto v0 = lut[static_cast<size_t> (i0)];
-    const auto v1 = lut[static_cast<size_t> (i1)];
+    const auto v0 = midi1Lut[static_cast<size_t> (i0)];
+    const auto v1 = midi1Lut[static_cast<size_t> (i1)];
     return v0 + frac * (v1 - v0);
 }
 
@@ -160,7 +171,15 @@ int VelocityCurve::mapMidi1 (int input) const noexcept
 
 int VelocityCurve::mapMidi2 (int input) const noexcept
 {
-    return normalizedToMidi2 (mapNormalized (midi2ToNormalized (input)));
+    const auto clamped = std::clamp (input, 0, midi2Max);
+    const auto index = static_cast<float> (clamped);
+    const auto i0 = static_cast<int> (index);
+    const auto i1 = std::min (i0 + 1, midi2LutSize - 1);
+    const auto frac = index - static_cast<float> (i0);
+    const auto v0 = midi2Lut[static_cast<size_t> (i0)];
+    const auto v1 = midi2Lut[static_cast<size_t> (i1)];
+    const auto normalized = v0 + frac * (v1 - v0);
+    return normalizedToMidi2 (normalized);
 }
 
 } // namespace svc

@@ -7,6 +7,9 @@ on:
     branches: [main, master]
   workflow_dispatch:
 
+env:
+  PLUGINVAL_VERSION: v1.0.4
+
 jobs:
   build-macos:
     runs-on: macos-14
@@ -24,34 +27,60 @@ jobs:
       - name: Run engine tests
         run: ctest --test-dir build --output-on-failure
 
-      - name: Validate VST3 (pluginval)
-        continue-on-error: true
+      - name: Export factory profiles
+        run: cmake --build build --config Release --target export-factory-profiles
+
+      - name: Install pluginval
         run: |
-          set +e
-          curl -fsSL -o pluginval.zip "https://github.com/Tracktion/pluginval/releases/download/v1.0.4/pluginval_macOS.zip" || {
-            echo "pluginval download skipped"; exit 0
-          }
+          curl -fsSL -o pluginval.zip "https://github.com/Tracktion/pluginval/releases/download/${PLUGINVAL_VERSION}/pluginval_macOS.zip"
           unzip -q pluginval.zip
           chmod +x pluginval
-          ./pluginval --validate-in-process --strictness-level 5 \
-            --timeout-ms 120000 \
-            "build/SuperVelocityCurve_artefacts/Release/VST3/Super VelocityCurve.vst3" || echo "pluginval skipped (unsigned build)"
+
+      - name: Validate plugins (pluginval strictness 5)
+        run: |
+          mkdir -p pluginval-logs
+          PV="./pluginval"
+          if [ -d pluginval.app ]; then PV="./pluginval.app/Contents/MacOS/pluginval"; fi
+          validate() {
+            echo "=== pluginval: $1 ==="
+            "$PV" --strictness-level 5 --timeout-ms 120000 --output-dir pluginval-logs "$1"
+          }
+          validate "build/SuperVelocityCurve_artefacts/Release/VST3/Super VelocityCurve.vst3"
+          validate "build/SuperVelocityCurveMidiFx_artefacts/Release/VST3/Super VelocityCurve MIDI FX.vst3"
+          validate "build/SuperVelocityCurve_artefacts/Release/AU/Super VelocityCurve.component"
+          validate "build/SuperVelocityCurveMidiFx_artefacts/Release/AU/Super VelocityCurve MIDI FX.component"
+          if [ -d "build/SuperVelocityCurveMidiFx_artefacts/Release/CLAP" ]; then
+            validate "$(find build/SuperVelocityCurveMidiFx_artefacts/Release/CLAP -name '*.clap' | head -1)"
+          fi
 
       - name: Validate AU (auval)
-        run: auval -v aumf Svvc Svcv || echo "auval skipped (unsigned build)"
+        continue-on-error: true
+        run: |
+          auval -v aumf Svvc Svcv || echo "auval aumf skipped (unsigned)"
+          auval -v aumi Svvc Svc2 || echo "auval aumi skipped (unsigned)"
 
       - name: Package macOS artifacts
         run: |
           mkdir -p dist
           cp -R "build/SuperVelocityCurve_artefacts/Release/AU/Super VelocityCurve.component" dist/
+          cp -R "build/SuperVelocityCurveMidiFx_artefacts/Release/AU/Super VelocityCurve MIDI FX.component" dist/
           cp -R "build/SuperVelocityCurve_artefacts/Release/VST3/Super VelocityCurve.vst3" dist/
+          cp -R "build/SuperVelocityCurveMidiFx_artefacts/Release/VST3/Super VelocityCurve MIDI FX.vst3" dist/
           cp -R "build/SuperVelocityCurve_artefacts/Release/Standalone/Super VelocityCurve.app" dist/
+          if [ -d "build/SuperVelocityCurveMidiFx_artefacts/Release/CLAP" ]; then
+            cp -R build/SuperVelocityCurveMidiFx_artefacts/Release/CLAP/*.clap dist/ 2>/dev/null || true
+          fi
           cd dist && zip -r ../SuperVelocityCurve-macOS-unsigned.zip .
 
       - uses: actions/upload-artifact@v4
         with:
           name: SuperVelocityCurve-macOS
           path: SuperVelocityCurve-macOS-unsigned.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pluginval-logs-macos
+          path: pluginval-logs/
 
   build-windows:
     runs-on: windows-latest
@@ -69,20 +98,28 @@ jobs:
       - name: Run engine tests
         run: ctest --test-dir build -C Release --output-on-failure
 
-      - name: Validate VST3 (pluginval)
-        continue-on-error: true
+      - name: Export factory profiles
+        run: cmake --build build --config Release --target export-factory-profiles
+
+      - name: Validate plugins (pluginval strictness 5)
         shell: pwsh
         run: |
-          $release = "https://github.com/Tracktion/pluginval/releases/download/v1.0.4"
-          try {
-            Invoke-WebRequest -Uri "$release/pluginval_Windows.zip" -OutFile pluginval.zip
-            Expand-Archive -Path pluginval.zip -DestinationPath pluginval_dir -Force
-            $pv = Get-ChildItem -Path pluginval_dir -Recurse -Filter pluginval.exe | Select-Object -First 1
-            if ($pv) {
-              & $pv.FullName --validate-in-process --strictness-level 5 --timeout-ms 120000 "build/SuperVelocityCurve_artefacts/Release/VST3/Super VelocityCurve.vst3"
-            } else { Write-Host "pluginval.exe not found; skipping validation" }
-          } catch {
-            Write-Host "pluginval install/validate skipped: $_"
+          $release = "https://github.com/Tracktion/pluginval/releases/download/$env:PLUGINVAL_VERSION"
+          Invoke-WebRequest -Uri "$release/pluginval_Windows.zip" -OutFile pluginval.zip
+          Expand-Archive -Path pluginval.zip -DestinationPath pluginval_dir -Force
+          $pv = Get-ChildItem -Path pluginval_dir -Recurse -Filter pluginval.exe | Select-Object -First 1
+          if (-not $pv) { throw "pluginval.exe not found" }
+          New-Item -ItemType Directory -Force -Path pluginval-logs | Out-Null
+          function Validate-Plugin($path) {
+            Write-Host "=== pluginval: $path ==="
+            & $pv.FullName --strictness-level 5 --timeout-ms 120000 --output-dir pluginval-logs $path
+            if ($LASTEXITCODE -ne 0) { throw "pluginval failed for $path" }
+          }
+          Validate-Plugin "build/SuperVelocityCurve_artefacts/Release/VST3/Super VelocityCurve.vst3"
+          Validate-Plugin "build/SuperVelocityCurveMidiFx_artefacts/Release/VST3/Super VelocityCurve MIDI FX.vst3"
+          if (Test-Path "build/SuperVelocityCurveMidiFx_artefacts/Release/CLAP") {
+            $clap = Get-ChildItem "build/SuperVelocityCurveMidiFx_artefacts/Release/CLAP" -Filter *.clap | Select-Object -First 1
+            if ($clap) { Validate-Plugin $clap.FullName }
           }
 
       - name: Package Windows artifacts
@@ -90,10 +127,19 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force -Path dist
           Copy-Item -Recurse "build/SuperVelocityCurve_artefacts/Release/VST3/Super VelocityCurve.vst3" dist/
+          Copy-Item -Recurse "build/SuperVelocityCurveMidiFx_artefacts/Release/VST3/Super VelocityCurve MIDI FX.vst3" dist/
           Copy-Item -Recurse "build/SuperVelocityCurve_artefacts/Release/Standalone/Super VelocityCurve.exe" dist/
-          Compress-Archive -Path dist/* -DestinationPath SuperVelocityCurve-Windows-unsigned.zip
+          if (Test-Path "build/SuperVelocityCurveMidiFx_artefacts/Release/CLAP") {
+            Copy-Item -Recurse "build/SuperVelocityCurveMidiFx_artefacts/Release/CLAP/*.clap" dist/ -ErrorAction SilentlyContinue
+          }
+          Compress-Archive -Path dist/* -DestinationPath SuperVelocityCurve-Windows-unsigned.zip -Force
 
       - uses: actions/upload-artifact@v4
         with:
           name: SuperVelocityCurve-Windows
           path: SuperVelocityCurve-Windows-unsigned.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pluginval-logs-windows
+          path: pluginval-logs/

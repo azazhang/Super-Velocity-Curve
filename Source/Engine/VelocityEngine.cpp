@@ -1,4 +1,5 @@
 #include "VelocityEngine.h"
+#include "LibraryCompensation.h"
 
 namespace svc
 {
@@ -57,6 +58,12 @@ const MidiRoutingSettings& VelocityEngine::getMidiRouting() const noexcept
     return midiRouting.getSettings();
 }
 
+void VelocityEngine::setProcessingSettings (const EngineProcessingSettings& settings)
+{
+    const std::unique_lock lock (padMutex);
+    processingSettings = settings;
+}
+
 HistogramSnapshot VelocityEngine::getGlobalHistogramSnapshot() const
 {
     return histogramBank.getGlobalSnapshot();
@@ -102,7 +109,35 @@ float VelocityEngine::processNoteVelocity (const PadSettings& pad, float inputNo
         return -1.0f;
     }
 
-    return pad.curve.mapNormalized (inputNormalized);
+    auto output = pad.curve.mapNormalized (inputNormalized);
+    output = applyLibraryCompensation (output,
+                                       processingSettings.libraryPreset,
+                                       processingSettings.libraryBlend);
+    return applyHumanize (output);
+}
+
+float VelocityEngine::applyHumanize (float normalized) const
+{
+    const auto amount = std::clamp (processingSettings.humanizeAmount, 0.0f, 0.25f);
+    if (amount <= 0.0f)
+        return normalized;
+
+    const auto spread = amount * 0.5f;
+    const auto delta = humanizeRandom.nextFloat() * spread * 2.0f - spread;
+    return std::clamp (normalized + delta, 0.0f, 1.0f);
+}
+
+int VelocityEngine::resolveOutputChannel (PadGroup group, int incomingChannel) const
+{
+    if (! processingSettings.zoneRouting.enabled)
+        return incomingChannel;
+
+    const auto groupIndex = static_cast<size_t> (group);
+    if (groupIndex >= processingSettings.zoneRouting.groupOutputChannel.size())
+        return incomingChannel;
+
+    const auto overrideChannel = processingSettings.zoneRouting.groupOutputChannel[groupIndex];
+    return overrideChannel > 0 ? overrideChannel : incomingChannel;
 }
 
 void VelocityEngine::applyOutputVelocity (juce::MidiMessage& message,
@@ -166,6 +201,13 @@ void VelocityEngine::processMidiBuffer (juce::MidiBuffer& buffer, int numSamples
                 continue;
 
             applyOutputVelocity (message, outputNormalized, inputIsMidi2);
+
+            if (processingSettings.zoneRouting.enabled)
+            {
+                const auto outChannel = resolveOutputChannel (settings.group, message.getChannel());
+                message.setChannel (outChannel);
+            }
+
             histogramBank.record (note, channel, inputNormalized, outputNormalized);
 
             HitEvent hit;

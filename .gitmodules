@@ -2,3 +2,7 @@
 	path = JUCE
 	url = https://github.com/juce-framework/JUCE.git
 	branch = master
+[submodule "third_party/clap-juce-extensions"]
+	path = third_party/clap-juce-extensions
+	url = https://github.com/free-audio/clap-juce-extensions.git
+	branch = main

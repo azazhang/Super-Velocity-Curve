@@ -27,7 +27,9 @@ struct CurveControlPoint
 class VelocityCurve
 {
 public:
-    static constexpr int lutSize = 128;
+    static constexpr int midi1LutSize = 128;
+    static constexpr int midi2LutSize = 16384;
+    static constexpr int lutSize = midi1LutSize;
 
     VelocityCurve();
 
@@ -46,14 +48,16 @@ public:
     int mapMidi1 (int input) const noexcept;
     int mapMidi2 (int input) const noexcept;
 
-    const std::array<float, lutSize>& getLut() const noexcept { return lut; }
+    const std::array<float, midi1LutSize>& getLut() const noexcept { return midi1Lut; }
+    const std::array<float, midi2LutSize>& getMidi2Lut() const noexcept { return midi2Lut; }
 
     static std::vector<CurveControlPoint> makePresetPoints (CurvePreset preset);
     static void enforceMonotonicOutputs (std::vector<CurveControlPoint>& points);
 
 private:
     std::vector<CurveControlPoint> controlPoints;
-    std::array<float, lutSize> lut {};
+    std::array<float, midi1LutSize> midi1Lut {};
+    std::array<float, midi2LutSize> midi2Lut {};
     float floor = 0.0f;
     float ceiling = 1.0f;
 

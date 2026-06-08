@@ -16,3 +16,8 @@ ipch/
 x64/
 x86/
 DerivedData/
+pluginval-logs/
+pluginval.zip
+pluginval_dir/
+pluginval.app/
+pluginval

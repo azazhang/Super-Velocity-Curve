@@ -74,6 +74,7 @@ ControllerProfile ControllerProfile::copy() const
     copy.layout = layout;
     copy.pads = pads;
     copy.midiRouting = midiRouting;
+    copy.processingSettings = processingSettings;
     return copy;
 }
 
@@ -81,6 +82,7 @@ void ControllerProfile::applyToEngine (VelocityEngine& engine) const
 {
     engine.clearAllPads();
     engine.setMidiRouting (midiRouting);
+    engine.setProcessingSettings (processingSettings);
 
     for (const auto& pad : pads)
     {
@@ -88,6 +90,7 @@ void ControllerProfile::applyToEngine (VelocityEngine& engine) const
         settings.midiNote = pad.midiNote;
         settings.midiChannel = pad.midiChannel;
         settings.name = pad.label;
+        settings.group = pad.group;
         settings.curve = pad.curve;
         settings.enabled = pad.enabled;
         settings.velocityGate = pad.velocityGate;
@@ -106,6 +109,21 @@ juce::ValueTree ControllerProfile::toValueTree() const
     tree.setProperty ("inputChannel", midiRouting.inputChannelFilter, nullptr);
     tree.setProperty ("outputChannel", midiRouting.outputChannel, nullptr);
     tree.setProperty ("remapEnabled", midiRouting.remapEnabled, nullptr);
+    tree.setProperty ("humanizeAmount", processingSettings.humanizeAmount, nullptr);
+    tree.setProperty ("libraryPreset", libraryCompensationPresetName (processingSettings.libraryPreset), nullptr);
+    tree.setProperty ("libraryBlend", processingSettings.libraryBlend, nullptr);
+    tree.setProperty ("zoneRoutingEnabled", processingSettings.zoneRouting.enabled, nullptr);
+
+    juce::ValueTree zoneTree ("ZoneRouting");
+    const char* groupNames[] = { "Other", "Kick", "Snare", "Hat", "Tom", "Cymbal", "Percussion" };
+    for (size_t i = 0; i < processingSettings.zoneRouting.groupOutputChannel.size(); ++i)
+    {
+        juce::ValueTree zone ("Group");
+        zone.setProperty ("name", groupNames[i], nullptr);
+        zone.setProperty ("channel", processingSettings.zoneRouting.groupOutputChannel[i], nullptr);
+        zoneTree.appendChild (zone, nullptr);
+    }
+    tree.appendChild (zoneTree, nullptr);
 
     juce::ValueTree remaps ("Remaps");
     for (int i = 0; i < 128; ++i)
@@ -158,10 +176,33 @@ ControllerProfile ControllerProfile::fromValueTree (const juce::ValueTree& tree)
     profile.midiRouting.inputChannelFilter = tree.getProperty ("inputChannel", 0);
     profile.midiRouting.outputChannel = tree.getProperty ("outputChannel", 0);
     profile.midiRouting.remapEnabled = tree.getProperty ("remapEnabled", false);
+    profile.processingSettings.humanizeAmount = tree.getProperty ("humanizeAmount", 0.0f);
+    profile.processingSettings.libraryPreset = libraryCompensationPresetFromName (
+        tree.getProperty ("libraryPreset", "None").toString().toStdString());
+    profile.processingSettings.libraryBlend = tree.getProperty ("libraryBlend", 0.0f);
+    profile.processingSettings.zoneRouting.enabled = tree.getProperty ("zoneRoutingEnabled", false);
 
     for (int i = 0; i < tree.getNumChildren(); ++i)
     {
         const auto child = tree.getChild (i);
+
+        if (child.hasType ("ZoneRouting"))
+        {
+            for (int z = 0; z < child.getNumChildren(); ++z)
+            {
+                const auto zone = child.getChild (z);
+                const auto name = zone.getProperty ("name", juce::String()).toString();
+                const auto channel = static_cast<int> (zone.getProperty ("channel", 0));
+                if (name == "Other")       profile.processingSettings.zoneRouting.groupOutputChannel[0] = channel;
+                else if (name == "Kick")   profile.processingSettings.zoneRouting.groupOutputChannel[1] = channel;
+                else if (name == "Snare")  profile.processingSettings.zoneRouting.groupOutputChannel[2] = channel;
+                else if (name == "Hat")    profile.processingSettings.zoneRouting.groupOutputChannel[3] = channel;
+                else if (name == "Tom")    profile.processingSettings.zoneRouting.groupOutputChannel[4] = channel;
+                else if (name == "Cymbal") profile.processingSettings.zoneRouting.groupOutputChannel[5] = channel;
+                else if (name == "Percussion") profile.processingSettings.zoneRouting.groupOutputChannel[6] = channel;
+            }
+            continue;
+        }
 
         if (child.hasType ("Remaps"))
         {

@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<ControllerProfile name="GM Standard" layout="0" inputChannel="0" outputChannel="0"
+                   remapEnabled="0" humanizeAmount="0.0" libraryPreset="None" libraryBlend="0.0"
+                   zoneRoutingEnabled="0">
+  <ZoneRouting>
+    <Group name="Other" channel="0"/>
+    <Group name="Kick" channel="0"/>
+    <Group name="Snare" channel="0"/>
+    <Group name="Hat" channel="0"/>
+    <Group name="Tom" channel="0"/>
+    <Group name="Cymbal" channel="0"/>
+    <Group name="Percussion" channel="0"/>
+  </ZoneRouting>
+  <Remaps/>
+  <Pad midiNote="46" midiChannel="10" label="Open HH" gridRow="0" gridCol="0"
+       enabled="1" velocityGate="0.0" gateMode="Drop notes" padGroup="Hat"
+       retriggerGuardMs="0.0" aftertouchEnabled="0">
+    <Curve floor="0.0" ceiling="1.0">
+      <Point input="0.0" output="0.0"/>
+      <Point input="1.0" output="1.0"/>
+    </Curve>
+  </Pad>
+  <Pad midiNote="42" midiChannel="10" label="Closed HH" gridRow="0"
+       gridCol="1" enabled="1" velocityGate="0.0" gateMode="Drop notes"
+       padGroup="Hat" retriggerGuardMs="0.0" aftertouchEnabled="0">
+    <Curve floor="0.0" ceiling="1.0">
+      <Point input="0.0" output="0.0"/>
+      <Point input="1.0" output="1.0"/>
+    </Curve>
+  </Pad>
+  <Pad midiNote="44" midiChannel="10" label="Pedal HH" gridRow="0" gridCol="2"
+       enabled="1" velocityGate="0.0" gateMode="Drop notes" padGroup="Hat"
+       retriggerGuardMs="0.0" aftertouchEnabled="0">
+    <Curve floor="0.0" ceiling="1.0">
+      <Point input="0.0" output="0.0"/>
+      <Point input="1.0" output="1.0"/>
+    </Curve>
+  </Pad>
+  <Pad midiNote="51" midiChannel="10" label="Ride" gridRow="0" gridCol="3"
+       enabled="1" velocityGate="0.0" gateMode="Drop notes" padGroup="Cymbal"
+       retriggerGuardMs="0.0" aftertouchEnabled="0">
+    <Curve floor="0.0" ceiling="1.0">
+      <Point input="0.0" output="0.0"/>
+      <Point input="1.0" output="1.0"/>
+    </Curve>
+  </Pad>
+  <Pad midiNote="50" midiChannel="10" label="High Tom" gridRow="1" gridCol="0"
+       enabled="1" velocityGate="0.0" gateMode="Drop notes" padGroup="Tom"
+       retriggerGuardMs="0.0" aftertouchEnabled="0">
+    <Curve floor="0.0" ceiling="1.0">
+      <Point input="0.0" output="0.0"/>
+      <Point input="1.0" output="1.0"/>
+    </Curve>
+  </Pad>
+  <Pad midiNote="48" midiChannel="10" label="Hi-Mid Tom" gridRow="1"
+       gridCol="1" enabled="1" velocityGate="0.0" gateMode="Drop notes"
+       padGroup="Tom" retriggerGuardMs="0.0" aftertouchEnabled="0">
+    <Curve floor="0.0" ceiling="1.0">
+      <Point input="0.0" output="0.0"/>
+      <Point input="1.0" output="1.0"/>
+    </Curve>
+  </Pad>
+  <Pad midiNote="45" midiChannel="10" label="Low Tom" gridRow="1" gridCol="2"
+       enabled="1" velocityGate="0.0" gateMode="Drop notes" padGroup="Tom"
+       retriggerGuardMs="0.0" aftertouchEnabled="0">
+    <Curve floor="0.0" ceiling="1.0">
+      <Point input="0.0" output="0.0"/>
+      <Point input="1.0" output="1.0"/>
+    </Curve>
+  </Pad>
+  <Pad midiNote="49" midiChannel="10" label="Crash" gridRow="1" gridCol="3"
+       enabled="1" velocityGate="0.0" gateMode="Drop notes" padGroup="Cymbal"
+       retriggerGuardMs="0.0" aftertouchEnabled="0">
+    <Curve floor="0.0" ceiling="1.0">
+      <Point input="0.0" output="0.0"/>
+      <Point input="1.0" output="1.0"/>
+    </Curve>
+  </Pad>
+  <Pad midiNote="37" midiChannel="10" label="Side Stick" gridRow="2"
+       gridCol="0" enabled="1" velocityGate="0.0" gateMode="Drop notes"
+       padGroup="Other" retriggerGuardMs="0.0" aftertouchEnabled="0">
+    <Curve floor="0.0" ceiling="1.0">
+      <Point input="0.0" output="0.0"/>
+      <Point input="1.0" output="1.0"/>
+    </Curve>
+  </Pad>
+  <Pad midiNote="38" midiChannel="10" label="Snare" gridRow="2" gridCol="1"
+       enabled="1" velocityGate="0.0" gateMode="Drop notes" padGroup="Snare"
+       retriggerGuardMs="0.0" aftertouchEnabled="0">
+    <Curve floor="0.0" ceiling="1.0">
+      <Point input="0.0" output="0.0"/>
+      <Point input="1.0" output="1.0"/>
+    </Curve>
+  </Pad>
+  <Pad midiNote="39" midiChannel="10" label="Hand Clap" gridRow="2"
+       gridCol="2" enabled="1" velocityGate="0.0" gateMode="Drop notes"
+       padGroup="Percussion" retriggerGuardMs="0.0" aftertouchEnabled="0">
+    <Curve floor="0.0" ceiling="1.0">
+      <Point input="0.0" output="0.0"/>
+      <Point input="1.0" output="1.0"/>
+    </Curve>
+  </Pad>
+  <Pad midiNote="40" midiChannel="10" label="E-Snare" gridRow="2" gridCol="3"
+       enabled="1" velocityGate="0.0" gateMode="Drop notes" padGroup="Snare"
+       retriggerGuardMs="0.0" aftertouchEnabled="0">
+    <Curve floor="0.0" ceiling="1.0">
+      <Point input="0.0" output="0.0"/>
+      <Point input="1.0" output="1.0"/>
+    </Curve>
+  </Pad>
+  <Pad midiNote="36" midiChannel="10" label="Kick" gridRow="3" gridCol="0"
+       enabled="1" velocityGate="0.0" gateMode="Drop notes" padGroup="Kick"
+       retriggerGuardMs="0.0" aftertouchEnabled="0">
+    <Curve floor="0.0" ceiling="1.0">
+      <Point input="0.0" output="0.0"/>
+      <Point input="1.0" output="1.0"/>
+    </Curve>
+  </Pad>
+  <Pad midiNote="43" midiChannel="10" label="Floor Tom" gridRow="3"
+       gridCol="1" enabled="1" velocityGate="0.0" gateMode="Drop notes"
+       padGroup="Tom" retriggerGuardMs="0.0" aftertouchEnabled="0">
+    <Curve floor="0.0" ceiling="1.0">
+      <Point input="0.0" output="0.0"/>
+      <Point input="1.0" output="1.0"/>
+    </Curve>
+  </Pad>
+  <Pad midiNote="41" midiChannel="10" label="Low Floor" gridRow="3"
+       gridCol="2" enabled="1" velocityGate="0.0" gateMode="Drop notes"
+       padGroup="Other" retriggerGuardMs="0.0" aftertouchEnabled="0">
+    <Curve floor="0.0" ceiling="1.0">
+      <Point input="0.0" output="0.0"/>
+      <Point input="1.0" output="1.0"/>
+    </Curve>
+  </Pad>
+  <Pad midiNote="47" midiChannel="10" label="Low-Mid" gridRow="3" gridCol="3"
+       enabled="1" velocityGate="0.0" gateMode="Drop notes" padGroup="Other"
+       retriggerGuardMs="0.0" aftertouchEnabled="0">
+    <Curve floor="0.0" ceiling="1.0">
+      <Point input="0.0" output="0.0"/>
+      <Point input="1.0" output="1.0"/>
+    </Curve>
+  </Pad>
+  <Pad midiNote="52" midiChannel="10" label="China" gridRow="4" gridCol="0"
+       enabled="1" velocityGate="0.0" gateMode="Drop notes" padGroup="Other"
+       retriggerGuardMs="0.0" aftertouchEnabled="0">
+    <Curve floor="0.0" ceiling="1.0">
+      <Point input="0.0" output="0.0"/>
+      <Point input="1.0" output="1.0"/>
+    </Curve>
+  </Pad>
+  <Pad midiNote="55" midiChannel="10" label="Splash" gridRow="4" gridCol="1"
+       enabled="1" velocityGate="0.0" gateMode="Drop notes" padGroup="Other"
+       retriggerGuardMs="0.0" aftertouchEnabled="0">
+    <Curve floor="0.0" ceiling="1.0">
+      <Point input="0.0" output="0.0"/>
+      <Point input="1.0" output="1.0"/>
+    </Curve>
+  </Pad>
+  <Pad midiNote="57" midiChannel="10" label="Crash 2" gridRow="4" gridCol="2"
+       enabled="1" velocityGate="0.0" gateMode="Drop notes" padGroup="Cymbal"
+       retriggerGuardMs="0.0" aftertouchEnabled="0">
+    <Curve floor="0.0" ceiling="1.0">
+      <Point input="0.0" output="0.0"/>
+      <Point input="1.0" output="1.0"/>
+    </Curve>
+  </Pad>
+  <Pad midiNote="59" midiChannel="10" label="Ride 2" gridRow="4" gridCol="3"
+       enabled="1" velocityGate="0.0" gateMode="Drop notes" padGroup="Cymbal"
+       retriggerGuardMs="0.0" aftertouchEnabled="0">
+    <Curve floor="0.0" ceiling="1.0">
+      <Point input="0.0" output="0.0"/>
+      <Point input="1.0" output="1.0"/>
+    </Curve>
+  </Pad>
+  <Pad midiNote="53" midiChannel="10" label="Ride Bell" gridRow="5"
+       gridCol="0" enabled="1" velocityGate="0.0" gateMode="Drop notes"
+       padGroup="Cymbal" retriggerGuardMs="0.0" aftertouchEnabled="0">
+    <Curve floor="0.0" ceiling="1.0">
+      <Point input="0.0" output="0.0"/>
+      <Point input="1.0" output="1.0"/>
+    </Curve>
+  </Pad>
+  <Pad midiNote="54" midiChannel="10" label="Tambourine" gridRow="5"
+       gridCol="1" enabled="1" velocityGate="0.0" gateMode="Drop notes"
+       padGroup="Percussion" retriggerGuardMs="0.0" aftertouchEnabled="0">
+    <Curve floor="0.0" ceiling="1.0">
+      <Point input="0.0" output="0.0"/>
+      <Point input="1.0" output="1.0"/>
+    </Curve>
+  </Pad>
+  <Pad midiNote="56" midiChannel="10" label="Cowbell" gridRow="5" gridCol="2"
+       enabled="1" velocityGate="0.0" gateMode="Drop notes" padGroup="Percussion"
+       retriggerGuardMs="0.0" aftertouchEnabled="0">
+    <Curve floor="0.0" ceiling="1.0">
+      <Point input="0.0" output="0.0"/>
+      <Point input="1.0" output="1.0"/>
+    </Curve>
+  </Pad>
+  <Pad midiNote="58" midiChannel="10" label="Vibraslap" gridRow="5"
+       gridCol="3" enabled="1" velocityGate="0.0" gateMode="Drop notes"
+       padGroup="Other" retriggerGuardMs="0.0" aftertouchEnabled="0">
+    <Curve floor="0.0" ceiling="1.0">
+      <Point input="0.0" output="0.0"/>
+      <Point input="1.0" output="1.0"/>
+    </Curve>
+  </Pad>
+  <Pad midiNote="35" midiChannel="10" label="Acoustic BD" gridRow="6"
+       gridCol="0" enabled="1" velocityGate="0.0" gateMode="Drop notes"
+       padGroup="Kick" retriggerGuardMs="0.0" aftertouchEnabled="0">
+    <Curve floor="0.0" ceiling="1.0">
+      <Point input="0.0" output="0.0"/>
+      <Point input="1.0" output="1.0"/>
+    </Curve>
+  </Pad>
+</ControllerProfile>

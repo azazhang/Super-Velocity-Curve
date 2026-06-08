@@ -176,7 +176,7 @@ void CurveEditorComponent::paint (juce::Graphics& g)
 
     g.setColour (juce::Colour (svc::ui::Theme::textPrimary));
     g.setFont (svc::ui::Theme::sectionFont());
-    g.drawText ("Velocity Curve — " + currentPad.label,
+    g.drawText ("Velocity Curve - " + currentPad.label,
                 getLocalBounds().removeFromTop (28).reduced (12, 0),
                 juce::Justification::centredLeft);
 

@@ -22,6 +22,9 @@ private:
     svc::ProfilePad currentPad;
     int currentPadIndex = 0;
 
+    juce::Viewport viewport;
+    juce::Component content;
+
     juce::ToggleButton enabledToggle { "Pad enabled" };
     juce::Slider velocityGateSlider;
     juce::Slider retriggerSlider;

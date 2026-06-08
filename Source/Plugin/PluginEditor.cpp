@@ -5,9 +5,10 @@ SuperVelocityCurveAudioProcessorEditor::SuperVelocityCurveAudioProcessorEditor (
     : AudioProcessorEditor (p),
       audioProcessor (p)
 {
+    setLookAndFeel (&appLookAndFeel);
     setResizable (true, true);
-    setResizeLimits (900, 640, 1600, 1000);
-    setSize (1100, 720);
+    setResizeLimits (960, 680, 1600, 1000);
+    setSize (1100, 760);
 
     titleLabel.setFont (svc::ui::Theme::titleFont());
     subtitleLabel.setFont (svc::ui::Theme::smallFont());
@@ -30,6 +31,7 @@ SuperVelocityCurveAudioProcessorEditor::SuperVelocityCurveAudioProcessorEditor (
     outputModeBox.addItemList ({ "Auto (match input)", "MIDI 1.0 (7-bit)", "MIDI 2.0 (high-res)" }, 1);
     curvePresetBox.addItemList ({ "Linear", "Soft (boost ghosts)", "Hard (tame accents)", "S-Curve",
                                   "Exponential", "Logarithmic" }, 1);
+    curvePresetBox.setSelectedId (1, juce::dontSendNotification);
 
     addAndMakeVisible (padGrid);
     addAndMakeVisible (curveEditor);
@@ -46,6 +48,7 @@ SuperVelocityCurveAudioProcessorEditor::SuperVelocityCurveAudioProcessorEditor (
     {
         juce::ignoreUnused (index);
         updateSelectedPadFromUI (pad);
+        curveEditor.setPad (pad);
     };
 
     profileBox.onChange = [this] { onProfileSelected(); };
@@ -208,7 +211,7 @@ void SuperVelocityCurveAudioProcessorEditor::resized()
     padGrid.setBounds (left);
 
     auto right = bounds.reduced (4);
-    auto inspector = right.removeFromBottom (220);
+    auto inspector = right.removeFromBottom (juce::jmax (200, right.getHeight() / 3));
     padInspector.setBounds (inspector);
     curveEditor.setBounds (right);
 }
@@ -311,14 +314,14 @@ void SuperVelocityCurveAudioProcessorEditor::updateLiveHits()
         const auto inVel = juce::String (static_cast<int> (std::lround (hit.inputVelocity * 127.0f)));
         const auto outVel = juce::String (static_cast<int> (std::lround (hit.outputVelocity * 127.0f)));
         const auto protocol = hit.isMidi2 ? "M2" : "M1";
-        text += "N" + juce::String (hit.note) + " " + protocol + " " + inVel + "→" + outVel + "   ";
+        text += "N" + juce::String (hit.note) + " " + protocol + " " + inVel + "->" + outVel + "   ";
         curveEditor.addHitMarker (hit.inputVelocity, hit.outputVelocity);
         padGrid.flashPadHit (hit.note, hit.channel, hit.outputVelocity);
         ++count;
     }
 
     if (text.isEmpty())
-        text = "Play your controller — live input→output velocity appears here";
+        text = "Play your controller - live input->output velocity appears here";
 
     liveHitsLabel.setText (text, juce::dontSendNotification);
 }

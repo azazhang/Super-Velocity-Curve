@@ -22,10 +22,20 @@ public:
 
     void paint (juce::Graphics& g) override;
     void resized() override;
-    void mouseDown (const juce::MouseEvent& event) override;
-    void mouseMove (const juce::MouseEvent& event) override;
 
 private:
+    class PadCanvas : public juce::Component
+    {
+    public:
+        explicit PadCanvas (PadGridComponent& owner);
+        void paint (juce::Graphics& g) override;
+        void mouseDown (const juce::MouseEvent& event) override;
+        void mouseMove (const juce::MouseEvent& event) override;
+
+    private:
+        PadGridComponent& owner;
+    };
+
     svc::ControllerProfile currentProfile;
     int selectedPadIndex = 0;
     int hoveredPadIndex = -1;
@@ -39,11 +49,13 @@ private:
     std::unordered_map<int, HitVisual> hitByPadIndex;
 
     juce::Viewport viewport;
-    juce::Component padCanvas;
+    PadCanvas padCanvas;
 
     int padIndexAt (juce::Point<int> pos) const;
     juce::Rectangle<int> padBoundsForIndex (int index) const;
     void updateCanvasSize();
     int cellWidth() const;
     int cellHeight() const;
+
+    friend class PadCanvas;
 };

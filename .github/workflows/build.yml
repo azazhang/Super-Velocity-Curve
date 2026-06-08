@@ -51,7 +51,7 @@ jobs:
         run: cmake --build build --config Release --parallel
 
       - name: Run engine tests
-        run: ctest --test-dir build --output-on-failure
+        run: ctest --test-dir build -C Release --output-on-failure
 
       - name: Package Windows artifacts
         shell: pwsh

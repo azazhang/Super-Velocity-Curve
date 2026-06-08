@@ -2,11 +2,15 @@
 
 PadInspectorComponent::PadInspectorComponent()
 {
-    addAndMakeVisible (enabledToggle);
+    addAndMakeVisible (viewport);
+    viewport.setViewedComponent (&content, false);
+    viewport.setScrollBarsShown (true, false);
+
+    content.addAndMakeVisible (enabledToggle);
     enabledToggle.onClick = [this] { currentPad.enabled = enabledToggle.getToggleState(); notifyChanged(); };
 
     for (auto* label : { &gateLabel, &retriggerLabel, &floorLabel, &ceilingLabel })
-        addAndMakeVisible (label);
+        content.addAndMakeVisible (label);
 
     setupSlider (velocityGateSlider, "");
     setupSlider (retriggerSlider, " ms");
@@ -43,13 +47,13 @@ PadInspectorComponent::PadInspectorComponent()
     };
 
     for (auto* slider : { &velocityGateSlider, &retriggerSlider, &floorSlider, &ceilingSlider })
-        addAndMakeVisible (slider);
+        content.addAndMakeVisible (slider);
 }
 
 void PadInspectorComponent::setupSlider (juce::Slider& slider, const juce::String& suffix)
 {
     slider.setTextValueSuffix (suffix);
-    slider.setTextBoxStyle (juce::Slider::TextBoxBelow, false, 56, 16);
+    slider.setTextBoxStyle (juce::Slider::TextBoxBelow, false, 52, 16);
 }
 
 void PadInspectorComponent::setPad (const svc::ProfilePad& pad, int padIndex)
@@ -80,20 +84,31 @@ void PadInspectorComponent::paint (juce::Graphics& g)
 
 void PadInspectorComponent::resized()
 {
-    auto area = getLocalBounds().reduced (12).withTrimmedTop (28);
-    enabledToggle.setBounds (area.removeFromTop (24));
-    area.removeFromTop (6);
+    auto area = getLocalBounds().reduced (8).withTrimmedTop (28);
+    viewport.setBounds (area);
 
-    auto row = [&area] (juce::Label& label, juce::Slider& slider)
+    content.setSize (area.getWidth() - 8, 250);
+
+    auto bounds = content.getLocalBounds().reduced (8);
+    enabledToggle.setBounds (bounds.removeFromTop (22));
+    bounds.removeFromTop (8);
+
+    auto row = [&bounds] (juce::Label& label, juce::Slider& slider)
     {
-        auto r = area.removeFromTop (58);
-        label.setBounds (r.removeFromTop (16));
+        auto r = bounds.removeFromTop (54);
+        label.setBounds (r.removeFromTop (14));
         slider.setBounds (r);
-        area.removeFromTop (4);
+        bounds.removeFromTop (6);
     };
 
     row (gateLabel, velocityGateSlider);
     row (retriggerLabel, retriggerSlider);
-    row (floorLabel, floorSlider);
-    row (ceilingLabel, ceilingSlider);
+
+    auto pair = bounds.removeFromTop (54);
+    auto left = pair.removeFromLeft (pair.getWidth() / 2).reduced (0, 0);
+    auto right = pair.reduced (0, 0);
+    floorLabel.setBounds (left.removeFromTop (14));
+    floorSlider.setBounds (left);
+    ceilingLabel.setBounds (right.removeFromTop (14));
+    ceilingSlider.setBounds (right);
 }

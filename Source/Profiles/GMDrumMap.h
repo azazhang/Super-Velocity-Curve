@@ -1,7 +1,6 @@
 #pragma once
 
 #include <JuceHeader.h>
-#include <optional>
 #include <vector>
 
 namespace svc
@@ -15,34 +14,35 @@ struct DrumPadDefinition
     int col;
 };
 
+// Finger-drumming oriented layout: 4 columns, primary kit in rows 0-3, extras below.
 inline const std::vector<DrumPadDefinition>& getGMDrumPads()
 {
     static const std::vector<DrumPadDefinition> pads = {
-        { 36, "Kick", 3, 0 },
-        { 38, "Snare", 2, 1 },
+        { 46, "Open HH",    0, 0 },
+        { 42, "Closed HH",  0, 1 },
+        { 44, "Pedal HH",   0, 2 },
+        { 51, "Ride",       0, 3 },
+        { 50, "High Tom",   1, 0 },
+        { 48, "Hi-Mid Tom", 1, 1 },
+        { 45, "Low Tom",    1, 2 },
+        { 49, "Crash",      1, 3 },
         { 37, "Side Stick", 2, 0 },
-        { 42, "Closed HH", 1, 0 },
-        { 46, "Open HH", 0, 0 },
-        { 44, "Pedal HH", 1, 1 },
-        { 49, "Crash", 0, 2 },
-        { 51, "Ride", 0, 3 },
-        { 41, "Low Floor Tom", 3, 1 },
-        { 43, "High Floor Tom", 3, 2 },
-        { 45, "Low Tom", 2, 2 },
-        { 47, "Low-Mid Tom", 2, 3 },
-        { 48, "Hi-Mid Tom", 1, 2 },
-        { 50, "High Tom", 1, 3 },
-        { 39, "Hand Clap", 2, 4 },
-        { 40, "E-Snare", 3, 4 },
-        { 35, "Acoustic BD", 3, 5 },
-        { 52, "China", 0, 4 },
-        { 53, "Ride Bell", 0, 5 },
-        { 54, "Tambourine", 1, 4 },
-        { 55, "Splash", 0, 6 },
-        { 56, "Cowbell", 1, 5 },
-        { 57, "Crash 2", 0, 7 },
-        { 58, "Vibraslap", 1, 6 },
-        { 59, "Ride 2", 0, 8 }
+        { 38, "Snare",      2, 1 },
+        { 39, "Hand Clap",  2, 2 },
+        { 40, "E-Snare",    2, 3 },
+        { 36, "Kick",       3, 0 },
+        { 43, "Floor Tom",  3, 1 },
+        { 41, "Low Floor",  3, 2 },
+        { 47, "Low-Mid",    3, 3 },
+        { 52, "China",      4, 0 },
+        { 55, "Splash",     4, 1 },
+        { 57, "Crash 2",    4, 2 },
+        { 59, "Ride 2",     4, 3 },
+        { 53, "Ride Bell",  5, 0 },
+        { 54, "Tambourine", 5, 1 },
+        { 56, "Cowbell",    5, 2 },
+        { 58, "Vibraslap",  5, 3 },
+        { 35, "Acoustic BD", 6, 0 }
     };
     return pads;
 }

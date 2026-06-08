@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../UI/CurveEditorComponent.h"
+#include "../UI/LookAndFeel.h"
 #include "../UI/PadGridComponent.h"
 #include "../UI/PadInspectorComponent.h"
 #include "../UI/Theme.h"
@@ -12,7 +13,7 @@ class SuperVelocityCurveAudioProcessorEditor : public juce::AudioProcessorEditor
 {
 public:
     explicit SuperVelocityCurveAudioProcessorEditor (SuperVelocityCurveAudioProcessor&);
-    ~SuperVelocityCurveAudioProcessorEditor() override = default;
+    ~SuperVelocityCurveAudioProcessorEditor() override { setLookAndFeel (nullptr); }
 
     void paint (juce::Graphics&) override;
     void resized() override;
@@ -57,6 +58,8 @@ private:
 
     juce::String statusMessage;
     bool statusIsError = false;
+
+    svc::ui::AppLookAndFeel appLookAndFeel;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SuperVelocityCurveAudioProcessorEditor)
 };

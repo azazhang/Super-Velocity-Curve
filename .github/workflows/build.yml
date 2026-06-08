@@ -73,6 +73,10 @@ jobs:
           if [ -d pluginval.app ]; then PV="./pluginval.app/Contents/MacOS/pluginval"; fi
           validate() {
             echo "=== pluginval: $1 ==="
+            # Unsigned AU bundles are invisible to macOS until ad-hoc signed (CI has no cert).
+            if [[ "$1" == *.component ]]; then
+              codesign --force --sign - --timestamp=none --deep "$1"
+            fi
             "$PV" --validate-in-process --strictness-level 5 --timeout-ms 120000 --output-dir pluginval-logs "$1"
           }
           validate "build/SuperVelocityCurve_artefacts/${CMAKE_BUILD_TYPE}/VST3/Super VelocityCurve.vst3"

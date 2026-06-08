@@ -71,6 +71,7 @@ See [docs/developer/CI.md](docs/developer/CI.md) for full analysis.
 |----|------|--------|
 | CI-1 | macOS timeout: disable LTO + Ninja + ccache + RelWithDebInfo in `build.yml` | **done** (~4m Build on run 27170647769) |
 | CI-1b | pluginval zip is `pluginval.app` only (no top-level binary); Windows: VS x64 not Ninja | **done** |
+| CI-1c | Ad-hoc `codesign` AU `.component` before pluginval on macOS CI | **done** |
 | CI-2 | `concurrency: cancel-in-progress` — stop stacked 90m macOS jobs | **done** |
 | CI-3 | Release universal binary via parallel matrix + `lipo` (not one 90m fat job) | open |
 | CI-4 | Shared static lib for engine/profile (needs JUCE header target — blocked) | open |
@@ -86,7 +87,7 @@ See [docs/developer/CI.md](docs/developer/CI.md) for full analysis.
 | Windows v0.5–0.6.0 | **pluginval** (~5–12s) | Windows CLAP flat DLL — **fixed** (skip) |
 | Windows post-fix | **success** ~10m | run 27166739473 |
 
-Last full green: **v0.4.2** (single plugin era). First v0.5+ Windows green after CLAP skip.
+Last full green: **v0.4.2** (single plugin era). First v0.5+ **Windows** green: run 27170936793. macOS blocked on unsigned AU pluginval (CI-1c).
 
 ## Validation
 

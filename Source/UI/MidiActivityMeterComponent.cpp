@@ -23,15 +23,15 @@ void MidiActivityMeterComponent::paint (juce::Graphics& g)
 {
     svc::ui::Theme::fillPanel (g, getLocalBounds().toFloat(), 6.0f);
     g.setFont (svc::ui::Theme::smallFont());
-    g.setColour (juce::Colour (svc::ui::Theme::textSecondary));
+    g.setColour (juce::Colour (svc::ui::Theme::textSecondary()));
     auto area = getLocalBounds().reduced (8);
     g.drawText ("MIDI I/O", area.removeFromTop (14), juce::Justification::centredLeft);
 
     auto drawMeter = [&g] (juce::Rectangle<int> bounds, float level, juce::Colour colour, const juce::String& label)
     {
-        g.setColour (juce::Colour (svc::ui::Theme::textSecondary));
+        g.setColour (juce::Colour (svc::ui::Theme::textSecondary()));
         g.drawText (label, bounds.removeFromLeft (36), juce::Justification::centredLeft);
-        g.setColour (juce::Colour (svc::ui::Theme::background).brighter (0.15f));
+        g.setColour (juce::Colour (svc::ui::Theme::background()).brighter (0.15f));
         g.fillRoundedRectangle (bounds.toFloat(), 3.0f);
         auto filled = bounds.withWidth (juce::roundToInt (static_cast<float> (bounds.getWidth()) * level));
         g.setColour (colour);
@@ -39,7 +39,7 @@ void MidiActivityMeterComponent::paint (juce::Graphics& g)
     };
 
     auto inRow = area.removeFromTop (14);
-    drawMeter (inRow, inputLevel, juce::Colour (svc::ui::Theme::accentWarm), "In");
+    drawMeter (inRow, inputLevel, juce::Colour (svc::ui::Theme::accentWarm()), "In");
     area.removeFromTop (4);
-    drawMeter (area, outputLevel, juce::Colour (svc::ui::Theme::accent), "Out");
+    drawMeter (area, outputLevel, juce::Colour (svc::ui::Theme::accent()), "Out");
 }

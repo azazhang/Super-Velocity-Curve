@@ -15,7 +15,7 @@ void HistogramComponent::setTitle (const juce::String& newTitle)
 void HistogramComponent::paint (juce::Graphics& g)
 {
     svc::ui::Theme::fillPanel (g, getLocalBounds().toFloat(), 8.0f);
-    g.setColour (juce::Colour (svc::ui::Theme::textPrimary));
+    g.setColour (juce::Colour (svc::ui::Theme::textPrimary()));
     g.setFont (svc::ui::Theme::sectionFont());
     g.drawText (title, getLocalBounds().removeFromTop (22).reduced (10, 0), juce::Justification::centredLeft);
 
@@ -23,7 +23,7 @@ void HistogramComponent::paint (juce::Graphics& g)
     if (plot.getWidth() < 10.0f || plot.getHeight() < 10.0f)
         return;
 
-    g.setColour (juce::Colour (svc::ui::Theme::accent).withAlpha (0.12f));
+    g.setColour (juce::Colour (svc::ui::Theme::accent()).withAlpha (0.12f));
     const auto bandLeft = plot.getX() + plot.getWidth() * (60.0f / 127.0f);
     const auto bandRight = plot.getX() + plot.getWidth() * (90.0f / 127.0f);
     g.fillRect (bandLeft, plot.getY(), bandRight - bandLeft, plot.getHeight());
@@ -45,13 +45,13 @@ void HistogramComponent::paint (juce::Graphics& g)
         const auto inH = plot.getHeight() * static_cast<float> (inCount) / static_cast<float> (maxCount);
         const auto outH = plot.getHeight() * static_cast<float> (outCount) / static_cast<float> (maxCount);
 
-        g.setColour (juce::Colour (svc::ui::Theme::accentWarm).withAlpha (0.55f));
+        g.setColour (juce::Colour (svc::ui::Theme::accentWarm()).withAlpha (0.55f));
         g.fillRect (x, plot.getBottom() - inH, barW * 0.45f, inH);
-        g.setColour (juce::Colour (svc::ui::Theme::accent).withAlpha (0.75f));
+        g.setColour (juce::Colour (svc::ui::Theme::accent()).withAlpha (0.75f));
         g.fillRect (x + barW * 0.5f, plot.getBottom() - outH, barW * 0.45f, outH);
     }
 
     g.setFont (svc::ui::Theme::smallFont());
-    g.setColour (juce::Colour (svc::ui::Theme::textSecondary));
+    g.setColour (juce::Colour (svc::ui::Theme::textSecondary()));
     g.drawText ("60-90", static_cast<int> (bandLeft), static_cast<int> (plot.getY()) - 12, 40, 12, juce::Justification::centred);
 }

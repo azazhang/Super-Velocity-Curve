@@ -184,6 +184,17 @@ static int testMidi2LutMonotonic()
     return 0;
 }
 
+static int testInputGateThresholds()
+{
+    svc::VelocityCurve curve;
+    curve.setControlPoints ({ { 0.25f, 0.0f }, { 0.75f, 1.0f } });
+
+    EXPECT_NEAR (curve.mapNormalized (0.1f), 0.0f, 0.001f);
+    EXPECT_NEAR (curve.mapNormalized (0.9f), 1.0f, 0.001f);
+    EXPECT_TRUE (curve.mapNormalized (0.5f) > 0.2f && curve.mapNormalized (0.5f) < 0.8f);
+    return 0;
+}
+
 static int testHumanizeWithinBounds()
 {
     svc::VelocityEngine engine;
@@ -221,6 +232,7 @@ int main()
     if (testPerPadHistogram() != 0) return 1;
     if (testLaunchpadProfileSize() != 0) return 1;
     if (testMidi2LutMonotonic() != 0) return 1;
+    if (testInputGateThresholds() != 0) return 1;
     if (testHumanizeWithinBounds() != 0) return 1;
     std::cout << "All engine tests passed.\n";
     return 0;

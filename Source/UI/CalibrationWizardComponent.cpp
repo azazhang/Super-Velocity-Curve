@@ -102,20 +102,20 @@ void CalibrationWizardComponent::drawPreviewCurve (juce::Graphics& g, juce::Rect
             path.lineTo (x, y);
     }
 
-    g.setColour (juce::Colour (svc::ui::Theme::curveLine));
+    g.setColour (juce::Colour (svc::ui::Theme::curveLine()));
     g.strokePath (path, juce::PathStrokeType (2.0f));
 }
 
 void CalibrationWizardComponent::paint (juce::Graphics& g)
 {
     svc::ui::Theme::fillPanel (g, getLocalBounds().toFloat(), 8.0f);
-    g.setColour (juce::Colour (svc::ui::Theme::textPrimary));
+    g.setColour (juce::Colour (svc::ui::Theme::textPrimary()));
     g.setFont (svc::ui::Theme::sectionFont());
     g.drawText ("Calibration Wizard", getLocalBounds().removeFromTop (22).reduced (10, 0), juce::Justification::centredLeft);
 
     auto info = getLocalBounds().reduced (10).withTrimmedTop (52).withTrimmedBottom (30);
     g.setFont (svc::ui::Theme::smallFont());
-    g.setColour (juce::Colour (svc::ui::Theme::textSecondary));
+    g.setColour (juce::Colour (svc::ui::Theme::textSecondary()));
     if (softHit >= 0.0f)
         g.drawText ("Soft: " + juce::String (static_cast<int> (softHit * 127.0f)), info.removeFromTop (14), juce::Justification::left);
     if (mediumHit >= 0.0f)
@@ -126,7 +126,7 @@ void CalibrationWizardComponent::paint (juce::Graphics& g)
     if (step == Step::done)
     {
         auto preview = info.removeFromTop (juce::jmax (40, info.getHeight()));
-        g.setColour (juce::Colour (svc::ui::Theme::background));
+        g.setColour (juce::Colour (svc::ui::Theme::background()));
         g.fillRoundedRectangle (preview.toFloat(), 4.0f);
         drawPreviewCurve (g, preview.reduced (4).toFloat());
     }

@@ -118,7 +118,7 @@ void PadInspectorComponent::notifyChanged()
 void PadInspectorComponent::paint (juce::Graphics& g)
 {
     svc::ui::Theme::fillPanel (g, getLocalBounds().toFloat(), 10.0f);
-    g.setColour (juce::Colour (svc::ui::Theme::textPrimary));
+    g.setColour (juce::Colour (svc::ui::Theme::textPrimary()));
     g.setFont (svc::ui::Theme::sectionFont());
     g.drawText ("Pad Settings", getLocalBounds().removeFromTop (28).reduced (12, 0), juce::Justification::centredLeft);
 }

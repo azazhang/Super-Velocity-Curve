@@ -100,15 +100,12 @@ void MidiRoutingPanel::notifyChanged()
 
 void MidiRoutingPanel::paint (juce::Graphics& g)
 {
-    svc::ui::Theme::fillPanel (g, getLocalBounds().toFloat(), 8.0f);
-    g.setColour (juce::Colour (svc::ui::Theme::textPrimary));
-    g.setFont (svc::ui::Theme::sectionFont());
-    g.drawText ("MIDI Routing & Processing", getLocalBounds().removeFromTop (22).reduced (10, 0), juce::Justification::centredLeft);
+    juce::ignoreUnused (g);
 }
 
 void MidiRoutingPanel::resized()
 {
-    auto area = getLocalBounds().reduced (10).withTrimmedTop (24);
+    auto area = getLocalBounds().reduced (8);
     inputLabel.setBounds (area.removeFromTop (14));
     inputChannelBox.setBounds (area.removeFromTop (22));
     area.removeFromTop (4);

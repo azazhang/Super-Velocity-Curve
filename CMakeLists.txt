@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(SuperVelocityCurve VERSION 0.5.3)
+project(SuperVelocityCurve VERSION 0.6.0)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -70,6 +70,12 @@ juce_add_plugin(SuperVelocityCurve
     COPY_PLUGIN_AFTER_BUILD ${SVC_COPY_PLUGIN_AFTER_BUILD})
 
 svc_configure_plugin_target(SuperVelocityCurve)
+
+if (APPLE AND TARGET SuperVelocityCurve_Standalone)
+    add_custom_command (TARGET SuperVelocityCurve_Standalone POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E touch "$<TARGET_BUNDLE_DIR:SuperVelocityCurve_Standalone>"
+        COMMENT "Refresh Standalone .app bundle timestamp")
+endif()
 
 # MIDI FX VST3 + AU MIDI Processor (aumi) — Logic MIDI FX slot, Reaper, Bitwig.
 juce_add_plugin(SuperVelocityCurveMidiFx

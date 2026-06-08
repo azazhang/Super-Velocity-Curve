@@ -13,14 +13,15 @@ env:
 jobs:
   build-macos:
     runs-on: macos-14
-    timeout-minutes: 60
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
 
       - name: Configure
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -DSVC_COPY_PLUGIN_AFTER_BUILD=OFF
+        # arm64-only on CI — universal builds exceed 60m; releases use universal (release.yml).
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES=arm64 -DSVC_COPY_PLUGIN_AFTER_BUILD=OFF
 
       - name: Build
         run: cmake --build build --config Release --parallel
@@ -133,7 +134,14 @@ jobs:
           Validate-Plugin "build/SuperVelocityCurveMidiFx_artefacts/Release/VST3/Super VelocityCurve MIDI FX.vst3"
           if (Test-Path "build/SuperVelocityCurveMidiFx_artefacts/Release/CLAP") {
             $clap = Get-ChildItem "build/SuperVelocityCurveMidiFx_artefacts/Release/CLAP" -Filter *.clap | Select-Object -First 1
-            if ($clap) { Validate-Plugin $clap.FullName }
+            if ($clap) {
+              # lilv/pluginval on Windows cannot load CLAP bundles whose path contains spaces.
+              $clapStaging = "pluginval-staging/SuperVelocityCurveMidiFx.clap"
+              New-Item -ItemType Directory -Force -Path pluginval-staging | Out-Null
+              if (Test-Path $clapStaging) { Remove-Item -Recurse -Force $clapStaging }
+              Copy-Item -Recurse $clap.FullName $clapStaging
+              Validate-Plugin (Resolve-Path -LiteralPath $clapStaging).Path
+            }
           }
 
       - name: Package Windows artifacts

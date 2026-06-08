@@ -12,10 +12,17 @@ SuperVelocityCurveAudioProcessorEditor::SuperVelocityCurveAudioProcessorEditor (
 
     titleLabel.setFont (svc::ui::Theme::titleFont());
     subtitleLabel.setFont (svc::ui::Theme::smallFont());
-    subtitleLabel.setColour (juce::Label::textColourId, juce::Colour (svc::ui::Theme::textSecondary));
+    subtitleLabel.setColour (juce::Label::textColourId, juce::Colour (svc::ui::Theme::textSecondary()));
 
-    for (auto* c : { &titleLabel, &subtitleLabel, &profileLabel, &outputModeLabel, &presetLabel, &liveHitsLabel })
+    for (auto* c : { &titleLabel, &subtitleLabel, &profileLabel, &outputModeLabel, &presetLabel,
+                     &liveHitsLabel, &themeLabel })
         addAndMakeVisible (c);
+
+    themeBox.addItem ("Dark", 1);
+    themeBox.addItem ("Light", 2);
+    themeBox.setSelectedId (1, juce::dontSendNotification);
+    themeBox.onChange = [this] { applyThemeFromUI(); };
+    addAndMakeVisible (themeBox);
 
     for (auto* c : { &profileBox, &outputModeBox, &curvePresetBox })
         addAndMakeVisible (c);
@@ -42,9 +49,12 @@ SuperVelocityCurveAudioProcessorEditor::SuperVelocityCurveAudioProcessorEditor (
     addAndMakeVisible (padHistogram);
     addAndMakeVisible (globalHistogram);
     addAndMakeVisible (calibrationWizard);
-    addAndMakeVisible (midiRoutingPanel);
-    addAndMakeVisible (noteRemapEditor);
     addAndMakeVisible (midiMeters);
+
+    midiToolsTabs.setOutline (0);
+    midiToolsTabs.addTab ("Routing", juce::Colour (svc::ui::Theme::panel()), &midiRoutingPanel, false);
+    midiToolsTabs.addTab ("Note Remap", juce::Colour (svc::ui::Theme::panel()), &noteRemapEditor, false);
+    addAndMakeVisible (midiToolsTabs);
 
     if (audioProcessor.wrapperType == juce::AudioProcessor::wrapperType_Standalone)
     {
@@ -271,28 +281,50 @@ SuperVelocityCurveAudioProcessorEditor::SuperVelocityCurveAudioProcessorEditor (
     startTimerHz (30);
 }
 
+void SuperVelocityCurveAudioProcessorEditor::applyThemeFromUI()
+{
+    svc::ui::Theme::setMode (themeBox.getSelectedId() == 2 ? svc::ui::ThemeMode::light
+                                                            : svc::ui::ThemeMode::dark);
+    appLookAndFeel.refreshTheme();
+    refreshThemedComponents();
+    repaint();
+}
+
+void SuperVelocityCurveAudioProcessorEditor::refreshThemedComponents()
+{
+    subtitleLabel.setColour (juce::Label::textColourId, juce::Colour (svc::ui::Theme::textSecondary()));
+    midiToolsTabs.setTabBackgroundColour (0, juce::Colour (svc::ui::Theme::panel()));
+    midiToolsTabs.setTabBackgroundColour (1, juce::Colour (svc::ui::Theme::panel()));
+}
+
 void SuperVelocityCurveAudioProcessorEditor::paint (juce::Graphics& g)
 {
-    g.fillAll (juce::Colour (svc::ui::Theme::background));
+    svc::ui::Theme::fillBackgroundGradient (g, getLocalBounds());
 
     auto header = getLocalBounds().removeFromTop (56).reduced (16, 10);
-    g.setColour (juce::Colour (svc::ui::Theme::textPrimary));
+    g.setColour (juce::Colour (svc::ui::Theme::textPrimary()));
     g.setFont (svc::ui::Theme::titleFont());
     g.drawText (titleLabel.getText(), header.removeFromTop (26), juce::Justification::centredLeft);
     g.setFont (svc::ui::Theme::smallFont());
-    g.setColour (juce::Colour (svc::ui::Theme::textSecondary));
-    g.drawText (subtitleLabel.getText(), header, juce::Justification::centredLeft);
+    g.setColour (juce::Colour (svc::ui::Theme::textSecondary()));
+    g.drawText (subtitleLabel.getText(), header.removeFromLeft (header.getWidth() - 160), juce::Justification::centredLeft);
 
     if (statusMessage.isNotEmpty())
     {
-        g.setColour (statusIsError ? juce::Colours::salmon : juce::Colour (svc::ui::Theme::success));
+        g.setColour (statusIsError ? juce::Colours::salmon : juce::Colour (svc::ui::Theme::success()));
         g.drawText (statusMessage, getLocalBounds().removeFromBottom (22).reduced (16, 0), juce::Justification::centredLeft);
     }
 }
 
 void SuperVelocityCurveAudioProcessorEditor::resized()
 {
-    auto bounds = getLocalBounds().reduced (12).withTrimmedTop (56).withTrimmedBottom (statusMessage.isEmpty() ? 0 : 22);
+    auto area = getLocalBounds();
+    auto header = area.removeFromTop (56).reduced (16, 8);
+    auto themeArea = header.removeFromRight (170);
+    themeLabel.setBounds (themeArea.removeFromTop (14));
+    themeBox.setBounds (themeArea.removeFromTop (24));
+
+    auto bounds = area.reduced (12).withTrimmedBottom (statusMessage.isEmpty() ? 0 : 22);
 
     if (standaloneMidiPanel != nullptr)
     {
@@ -300,7 +332,7 @@ void SuperVelocityCurveAudioProcessorEditor::resized()
         bounds.removeFromTop (4);
     }
 
-    auto toolbar = bounds.removeFromTop (140);
+    auto toolbar = bounds.removeFromTop (196);
     auto col = toolbar.removeFromLeft (toolbar.getWidth() / 2).reduced (4);
     profileLabel.setBounds (col.removeFromTop (16));
     profileBox.setBounds (col.removeFromTop (24));
@@ -315,15 +347,15 @@ void SuperVelocityCurveAudioProcessorEditor::resized()
     importButton.setBounds (profileButtons.removeFromLeft (btnW).reduced (1));
     exportButton.setBounds (profileButtons.reduced (1));
 
-    col = toolbar.reduced (4);
-    auto topRow = col.removeFromTop (44);
-    auto outCol = topRow.removeFromLeft (topRow.getWidth() / 2);
-    outputModeLabel.setBounds (outCol.removeFromTop (16));
+    auto rightToolbar = toolbar.reduced (4);
+    auto topRow = rightToolbar.removeFromTop (50);
+    auto outCol = topRow.removeFromLeft (topRow.getWidth() / 2).reduced (0, 2);
+    outputModeLabel.setBounds (outCol.removeFromTop (14));
     outputModeBox.setBounds (outCol);
     midiMeters.setBounds (topRow.reduced (2));
 
-    auto presetCol = col.removeFromTop (48);
-    presetLabel.setBounds (presetCol.removeFromTop (16));
+    auto presetCol = rightToolbar.removeFromTop (50);
+    presetLabel.setBounds (presetCol.removeFromTop (14));
     auto presetRow = presetCol.removeFromTop (24);
     curvePresetBox.setBounds (presetRow.removeFromLeft (presetRow.getWidth() - 340).reduced (0, 0));
     const int smallBtn = 44;
@@ -334,10 +366,8 @@ void SuperVelocityCurveAudioProcessorEditor::resized()
     captureAbButton.setBounds (presetRow.removeFromLeft (56).reduced (1));
     abToggleButton.setBounds (presetRow.reduced (1));
 
-    liveHitsLabel.setBounds (col.removeFromTop (32));
-    auto routingCol = col.removeFromTop (col.getHeight() / 2);
-    midiRoutingPanel.setBounds (routingCol);
-    noteRemapEditor.setBounds (col);
+    liveHitsLabel.setBounds (rightToolbar.removeFromTop (26));
+    midiToolsTabs.setBounds (rightToolbar);
 
     auto bottom = bounds.removeFromBottom (150);
     auto histRow = bottom.removeFromTop (bottom.getHeight() - 4);

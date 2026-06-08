@@ -1,0 +1,103 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+env:
+  PLUGINVAL_VERSION: v1.0.4
+
+jobs:
+  build-macos:
+    runs-on: macos-14
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -DSVC_COPY_PLUGIN_AFTER_BUILD=OFF
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Package
+        run: |
+          mkdir -p dist
+          cp -R "build/SuperVelocityCurve_artefacts/Release/AU/Super VelocityCurve.component" dist/
+          cp -R "build/SuperVelocityCurveMidiFx_artefacts/Release/AU/Super VelocityCurve MIDI FX.component" dist/
+          cp -R "build/SuperVelocityCurve_artefacts/Release/VST3/Super VelocityCurve.vst3" dist/
+          cp -R "build/SuperVelocityCurveMidiFx_artefacts/Release/VST3/Super VelocityCurve MIDI FX.vst3" dist/
+          cp -R "build/SuperVelocityCurve_artefacts/Release/Standalone/Super VelocityCurve.app" dist/
+          if [ -d "build/SuperVelocityCurveMidiFx_artefacts/Release/CLAP" ]; then
+            cp -R build/SuperVelocityCurveMidiFx_artefacts/Release/CLAP/*.clap dist/ 2>/dev/null || true
+          fi
+          cd dist && zip -r ../SuperVelocityCurve-macOS-unsigned.zip .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SuperVelocityCurve-macOS
+          path: SuperVelocityCurve-macOS-unsigned.zip
+
+  build-windows:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DSVC_COPY_PLUGIN_AFTER_BUILD=OFF
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Test
+        run: ctest --test-dir build -C Release --output-on-failure
+
+      - name: Package
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist
+          Copy-Item -Recurse "build/SuperVelocityCurve_artefacts/Release/VST3/Super VelocityCurve.vst3" dist/
+          Copy-Item -Recurse "build/SuperVelocityCurveMidiFx_artefacts/Release/VST3/Super VelocityCurve MIDI FX.vst3" dist/
+          Copy-Item -Recurse "build/SuperVelocityCurve_artefacts/Release/Standalone/Super VelocityCurve.exe" dist/
+          if (Test-Path "build/SuperVelocityCurveMidiFx_artefacts/Release/CLAP") {
+            Copy-Item -Recurse "build/SuperVelocityCurveMidiFx_artefacts/Release/CLAP/*.clap" dist/ -ErrorAction SilentlyContinue
+          }
+          Compress-Archive -Path dist/* -DestinationPath SuperVelocityCurve-Windows-unsigned.zip -Force
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SuperVelocityCurve-Windows
+          path: SuperVelocityCurve-Windows-unsigned.zip
+
+  publish:
+    needs: [build-macos, build-windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/SuperVelocityCurve-macOS/SuperVelocityCurve-macOS-unsigned.zip
+            artifacts/SuperVelocityCurve-Windows/SuperVelocityCurve-Windows-unsigned.zip
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

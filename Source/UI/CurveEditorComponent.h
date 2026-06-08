@@ -52,6 +52,7 @@ private:
     int findNearestControlPoint (juce::Point<float> pos) const;
     void notifyChanged();
     void drawGrid (juce::Graphics& g) const;
+    void drawGateZones (juce::Graphics& g) const;
     void drawCurve (juce::Graphics& g) const;
     svc::VelocityCurve& activeCurve() noexcept;
     const svc::VelocityCurve& activeCurve() const noexcept;

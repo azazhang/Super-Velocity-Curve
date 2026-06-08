@@ -50,6 +50,10 @@ private:
     juce::Label outputModeLabel { {}, "MIDI output" };
     juce::Label presetLabel { {}, "Curve preset" };
     juce::Label liveHitsLabel { {}, "Live" };
+    juce::Label themeLabel { {}, "Appearance" };
+    juce::ComboBox themeBox;
+
+    juce::TabbedComponent midiToolsTabs { juce::TabbedButtonBar::TabsAtTop };
 
     PadGridComponent padGrid;
     CurveEditorComponent curveEditor;
@@ -82,6 +86,8 @@ private:
     void showStatus (const juce::String& message, bool isError = false);
     void toggleAbCurve();
     void refreshRoutingPanels();
+    void applyThemeFromUI();
+    void refreshThemedComponents();
     bool isPadMapped (int note, int channel) const;
 
     juce::String statusMessage;

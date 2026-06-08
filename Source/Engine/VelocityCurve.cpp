@@ -75,8 +75,11 @@ void VelocityCurve::sortControlPoints (std::vector<CurveControlPoint>& points)
         return a.input < b.input;
     });
 
-    points.front().input = 0.0f;
-    points.back().input = 1.0f;
+    constexpr float minSpan = 0.02f;
+    points.front().input = std::clamp (points.front().input, 0.0f, 1.0f - minSpan);
+    points.back().input = std::clamp (points.back().input, points.front().input + minSpan, 1.0f);
+    points.front().output = std::clamp (points.front().output, 0.0f, 1.0f);
+    points.back().output = std::clamp (points.back().output, points.front().output, 1.0f);
 }
 
 void VelocityCurve::setFloor (float normalizedFloor) noexcept
@@ -129,12 +132,25 @@ float VelocityCurve::interpolateControlPoints (const std::vector<CurveControlPoi
 
 void VelocityCurve::rebuildLut()
 {
+    const auto inputGate = controlPoints.front().input;
+    const auto inputCeil = controlPoints.back().input;
+
     float previous = 0.0f;
     for (int i = 0; i < midi1LutSize; ++i)
     {
         const auto input = static_cast<float> (i) / static_cast<float> (midi1LutSize - 1);
-        auto output = interpolateControlPoints (controlPoints, input);
-        output = floor + output * (ceiling - floor);
+        float output = 0.0f;
+
+        if (input < inputGate)
+            output = 0.0f;
+        else if (input > inputCeil)
+            output = ceiling;
+        else
+        {
+            output = interpolateControlPoints (controlPoints, input);
+            output = floor + output * (ceiling - floor);
+        }
+
         output = std::max (previous, std::clamp (output, 0.0f, 1.0f));
         midi1Lut[static_cast<size_t> (i)] = output;
         previous = output;
@@ -144,8 +160,18 @@ void VelocityCurve::rebuildLut()
     for (int i = 0; i < midi2LutSize; ++i)
     {
         const auto input = static_cast<float> (i) / static_cast<float> (midi2LutSize - 1);
-        auto output = interpolateControlPoints (controlPoints, input);
-        output = floor + output * (ceiling - floor);
+        float output = 0.0f;
+
+        if (input < inputGate)
+            output = 0.0f;
+        else if (input > inputCeil)
+            output = ceiling;
+        else
+        {
+            output = interpolateControlPoints (controlPoints, input);
+            output = floor + output * (ceiling - floor);
+        }
+
         output = std::max (previous, std::clamp (output, 0.0f, 1.0f));
         midi2Lut[static_cast<size_t> (i)] = output;
         previous = output;

@@ -130,9 +130,9 @@ int NoteRemapEditorComponent::getNumRows()
 
 void NoteRemapEditorComponent::paintRowBackground (juce::Graphics& g, int, int width, int height, bool rowIsSelected)
 {
-    g.fillAll (rowIsSelected ? juce::Colour (svc::ui::Theme::accent).withAlpha (0.2f)
+    g.fillAll (rowIsSelected ? juce::Colour (svc::ui::Theme::accent()).withAlpha (0.2f)
                              : juce::Colours::transparentBlack);
-    g.setColour (juce::Colour (svc::ui::Theme::border));
+    g.setColour (juce::Colour (svc::ui::Theme::border()));
     g.drawHorizontalLine (height - 1, 0.0f, static_cast<float> (width));
 }
 
@@ -152,7 +152,7 @@ void NoteRemapEditorComponent::paintCell (juce::Graphics& g, int rowNumber, int 
         default: break;
     }
 
-    g.setColour (juce::Colour (svc::ui::Theme::textPrimary));
+    g.setColour (juce::Colour (svc::ui::Theme::textPrimary()));
     g.setFont (svc::ui::Theme::smallFont());
     g.drawText (text, 4, 0, width - 8, height, juce::Justification::centredLeft);
 }
@@ -201,15 +201,12 @@ void NoteRemapEditorComponent::cellClicked (int rowNumber, int columnId, const j
 
 void NoteRemapEditorComponent::paint (juce::Graphics& g)
 {
-    svc::ui::Theme::fillPanel (g, getLocalBounds().toFloat(), 8.0f);
-    g.setColour (juce::Colour (svc::ui::Theme::textPrimary));
-    g.setFont (svc::ui::Theme::sectionFont());
-    g.drawText ("Note Remap Table", getLocalBounds().removeFromTop (22).reduced (10, 0), juce::Justification::centredLeft);
+    juce::ignoreUnused (g);
 }
 
 void NoteRemapEditorComponent::resized()
 {
-    auto area = getLocalBounds().reduced (10).withTrimmedTop (24);
+    auto area = getLocalBounds().reduced (8);
     helpLabel.setBounds (area.removeFromBottom (16));
     auto buttons = area.removeFromBottom (24);
     addButton.setBounds (buttons.removeFromLeft (90).reduced (1));

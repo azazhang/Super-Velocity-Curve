@@ -38,7 +38,7 @@ void CurveEditorComponent::addHitMarker (int note, int channel, float inputNorma
 
 juce::Rectangle<float> CurveEditorComponent::plotArea() const
 {
-    return getLocalBounds().reduced (40, 36).withTrimmedTop (8).withTrimmedBottom (24).toFloat();
+    return getLocalBounds().reduced (44, 36).withTrimmedTop (10).withTrimmedBottom (28).toFloat();
 }
 
 juce::Point<float> CurveEditorComponent::normalizedToPoint (float input, float output) const
@@ -60,7 +60,7 @@ int CurveEditorComponent::findNearestControlPoint (juce::Point<float> pos) const
 {
     const auto& points = activeCurve().getControlPoints();
     int nearest = -1;
-    float bestDistance = 14.0f;
+    float bestDistance = 16.0f;
 
     for (int i = 0; i < static_cast<int> (points.size()); ++i)
     {
@@ -117,7 +117,7 @@ void CurveEditorComponent::setFloorCeiling (float floor, float ceiling)
 void CurveEditorComponent::drawGrid (juce::Graphics& g) const
 {
     const auto plot = plotArea();
-    g.setColour (juce::Colour (svc::ui::Theme::curveGrid));
+    g.setColour (juce::Colour (svc::ui::Theme::curveGrid()).withAlpha (0.55f));
 
     for (int i = 0; i <= 4; ++i)
     {
@@ -128,22 +128,57 @@ void CurveEditorComponent::drawGrid (juce::Graphics& g) const
         g.drawHorizontalLine (static_cast<int> (y), plot.getX(), plot.getRight());
     }
 
-    g.setColour (juce::Colour (svc::ui::Theme::textSecondary));
+    g.setColour (juce::Colour (svc::ui::Theme::textSecondary()));
     g.setFont (svc::ui::Theme::smallFont());
-    g.drawText ("0", static_cast<int> (plot.getX()) - 18, static_cast<int> (plot.getBottom()) - 6, 16, 12, juce::Justification::centred);
-    g.drawText ("127", static_cast<int> (plot.getRight()) - 8, static_cast<int> (plot.getY()) - 14, 28, 12, juce::Justification::centred);
-    g.drawText ("Input", static_cast<int> (plot.getCentreX()) - 20, static_cast<int> (plot.getBottom()) + 6, 40, 14, juce::Justification::centred);
-    g.drawText ("Out", static_cast<int> (plot.getX()) - 34, static_cast<int> (plot.getCentreY()) - 7, 28, 14, juce::Justification::centred);
+    g.drawText ("0", static_cast<int> (plot.getX()) - 20, static_cast<int> (plot.getBottom()) - 6, 16, 12, juce::Justification::centred);
+    g.drawText ("127", static_cast<int> (plot.getRight()) - 10, static_cast<int> (plot.getY()) - 14, 28, 12, juce::Justification::centred);
+    g.drawText ("Input velocity", static_cast<int> (plot.getCentreX()) - 40, static_cast<int> (plot.getBottom()) + 8, 80, 14, juce::Justification::centred);
+    g.drawText ("Out", static_cast<int> (plot.getX()) - 38, static_cast<int> (plot.getCentreY()) - 7, 28, 14, juce::Justification::centred);
 
-    g.setColour (juce::Colours::white.withAlpha (0.12f));
-    g.drawLine (plot.getX(), plot.getBottom(), plot.getRight(), plot.getY(), 1.0f);
+    g.setColour (juce::Colour (svc::ui::Theme::accent()).withAlpha (0.15f));
+    g.drawLine (plot.getX(), plot.getBottom(), plot.getRight(), plot.getY(), 1.2f);
+}
+
+void CurveEditorComponent::drawGateZones (juce::Graphics& g) const
+{
+    const auto plot = plotArea();
+    const auto& points = activeCurve().getControlPoints();
+    if (points.size() < 2)
+        return;
+
+    const auto inputGate = points.front().input;
+    const auto inputCeil = points.back().input;
+
+    if (inputGate > 0.001f)
+    {
+        const auto gateRect = juce::Rectangle<float> (plot.getX(), plot.getY(),
+                                                      inputGate * plot.getWidth(), plot.getHeight());
+        g.setColour (juce::Colour (svc::ui::Theme::curveGateMuted()).withAlpha (0.55f));
+        g.fillRect (gateRect);
+        const auto gateX = plot.getX() + inputGate * plot.getWidth();
+        g.setColour (juce::Colour (svc::ui::Theme::accentWarm()).withAlpha (0.35f));
+        g.drawLine (gateX, plot.getY(), gateX, plot.getBottom(), 1.5f);
+    }
+
+    if (inputCeil < 0.999f)
+    {
+        const auto ceilX = plot.getX() + inputCeil * plot.getWidth();
+        const auto satRect = juce::Rectangle<float> (ceilX, plot.getY(),
+                                                    plot.getRight() - ceilX, plot.getHeight());
+        g.setColour (juce::Colour (svc::ui::Theme::curveGateSaturated()).withAlpha (0.55f));
+        g.fillRect (satRect);
+        g.setColour (juce::Colour (svc::ui::Theme::accentSecondary()).withAlpha (0.4f));
+        g.drawLine (ceilX, plot.getY(), ceilX, plot.getBottom(), 1.5f);
+    }
 }
 
 void CurveEditorComponent::drawCurve (juce::Graphics& g) const
 {
     const auto plot = plotArea();
-    juce::Path curvePath;
     const auto& lut = activeCurve().getLut();
+
+    juce::Path curvePath;
+    juce::Path fillPath;
 
     for (int i = 0; i < svc::VelocityCurve::lutSize; ++i)
     {
@@ -152,15 +187,37 @@ void CurveEditorComponent::drawCurve (juce::Graphics& g) const
         const auto point = normalizedToPoint (input, output);
 
         if (i == 0)
+        {
             curvePath.startNewSubPath (point);
+            fillPath.startNewSubPath (point.x, plot.getBottom());
+            fillPath.lineTo (point);
+        }
         else
+        {
             curvePath.lineTo (point);
+            fillPath.lineTo (point);
+        }
     }
 
-    g.setColour (juce::Colour (svc::ui::Theme::curveLine).withAlpha (0.25f));
-    g.strokePath (curvePath, juce::PathStrokeType (6.0f));
-    g.setColour (juce::Colour (svc::ui::Theme::curveLine));
-    g.strokePath (curvePath, juce::PathStrokeType (2.5f));
+    fillPath.lineTo (normalizedToPoint (1.0f, lut.back()).x, plot.getBottom());
+    fillPath.closeSubPath();
+
+    juce::ColourGradient fillGrad (juce::Colour (svc::ui::Theme::accent()).withAlpha (0.18f),
+                                   plot.getCentreX(), plot.getY(),
+                                   juce::Colour (svc::ui::Theme::accentSecondary()).withAlpha (0.02f),
+                                   plot.getCentreX(), plot.getBottom(),
+                                   false);
+    g.setGradientFill (fillGrad);
+    g.fillPath (fillPath);
+
+    g.setColour (juce::Colour (svc::ui::Theme::curveLine()).withAlpha (0.2f));
+    g.strokePath (curvePath, juce::PathStrokeType (7.0f));
+
+    juce::ColourGradient strokeGrad (juce::Colour (svc::ui::Theme::curveLine()), plot.getX(), plot.getBottom(),
+                                     juce::Colour (svc::ui::Theme::curveLineEnd()), plot.getRight(), plot.getY(),
+                                     false);
+    g.setGradientFill (strokeGrad);
+    g.strokePath (curvePath, juce::PathStrokeType (2.8f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
 
     const auto now = juce::Time::getMillisecondCounterHiRes();
     for (const auto& hit : hitMarkers)
@@ -168,22 +225,41 @@ void CurveEditorComponent::drawCurve (juce::Graphics& g) const
         const auto age = now - hit.createdMs;
         const auto alpha = juce::jlimit (0.0f, 1.0f, 1.0f - static_cast<float> (age / 1200.0));
         const auto p = normalizedToPoint (hit.input, hit.output);
-        g.setColour (juce::Colour (svc::ui::Theme::curveHit).withAlpha (alpha));
+        g.setColour (juce::Colour (svc::ui::Theme::curveHit()).withAlpha (alpha * 0.35f));
+        g.fillEllipse (p.x - 7.0f, p.y - 7.0f, 14.0f, 14.0f);
+        g.setColour (juce::Colour (svc::ui::Theme::curveHit()).withAlpha (alpha));
         g.fillEllipse (p.x - 4.0f, p.y - 4.0f, 8.0f, 8.0f);
     }
 
-    const auto& points = currentPad.curve.getControlPoints();
+    const auto& points = activeCurve().getControlPoints();
     for (int i = 0; i < static_cast<int> (points.size()); ++i)
     {
         const auto& point = points[static_cast<size_t> (i)];
         const auto p = normalizedToPoint (point.input, point.output);
-        const auto isEndpoint = i == 0 || i == static_cast<int> (points.size()) - 1;
-        g.setColour (isEndpoint ? juce::Colour (svc::ui::Theme::accentWarm)
-                                : juce::Colours::white);
-        g.fillEllipse (p.x - (isEndpoint ? 6.0f : 5.0f), p.y - (isEndpoint ? 6.0f : 5.0f),
-                       isEndpoint ? 12.0f : 10.0f, isEndpoint ? 12.0f : 10.0f);
-        g.setColour (juce::Colour (svc::ui::Theme::border));
-        g.drawEllipse (p.x - 5.0f, p.y - 5.0f, 10.0f, 10.0f, 1.0f);
+        const auto isLeftGate = i == 0;
+        const auto isRightGate = i == static_cast<int> (points.size()) - 1;
+        const auto isEndpoint = isLeftGate || isRightGate;
+
+        if (isEndpoint)
+        {
+            const auto handleW = 12.0f;
+            const auto handleH = 14.0f;
+            juce::Rectangle<float> handle (p.x - handleW * 0.5f, p.y - handleH * 0.5f, handleW, handleH);
+            g.setColour (isLeftGate ? juce::Colour (svc::ui::Theme::accentGold())
+                                    : juce::Colour (svc::ui::Theme::accentSecondary()));
+            g.fillRoundedRectangle (handle, 3.0f);
+            g.setColour (juce::Colours::white.withAlpha (0.9f));
+            g.drawRoundedRectangle (handle, 3.0f, 1.2f);
+        }
+        else
+        {
+            g.setColour (juce::Colour (svc::ui::Theme::accent()).withAlpha (0.25f));
+            g.fillEllipse (p.x - 7.0f, p.y - 7.0f, 14.0f, 14.0f);
+            g.setColour (juce::Colours::white);
+            g.fillEllipse (p.x - 5.0f, p.y - 5.0f, 10.0f, 10.0f);
+            g.setColour (juce::Colour (svc::ui::Theme::border()));
+            g.drawEllipse (p.x - 5.0f, p.y - 5.0f, 10.0f, 10.0f, 1.0f);
+        }
     }
 
     juce::ignoreUnused (plot);
@@ -191,21 +267,27 @@ void CurveEditorComponent::drawCurve (juce::Graphics& g) const
 
 void CurveEditorComponent::paint (juce::Graphics& g)
 {
-    svc::ui::Theme::fillPanel (g, getLocalBounds().toFloat(), 10.0f);
+    svc::ui::Theme::fillPanel (g, getLocalBounds().toFloat(), 12.0f);
 
-    g.setColour (juce::Colour (svc::ui::Theme::textPrimary));
+    g.setColour (juce::Colour (svc::ui::Theme::textPrimary()));
     g.setFont (svc::ui::Theme::sectionFont());
     const juce::String mode = editTarget == EditTarget::aftertouch ? "Aftertouch" : "Velocity";
-    g.drawText (mode + " Curve - " + currentPad.label,
-                getLocalBounds().removeFromTop (28).reduced (12, 0),
+    g.drawText (mode + " curve  ·  " + currentPad.label,
+                getLocalBounds().removeFromTop (30).reduced (14, 0),
                 juce::Justification::centredLeft);
 
     const auto plot = plotArea();
-    g.setColour (juce::Colour (svc::ui::Theme::background));
-    g.fillRoundedRectangle (plot, 6.0f);
+    svc::ui::Theme::fillPlot (g, plot, 8.0f);
 
     drawGrid (g);
+    drawGateZones (g);
     drawCurve (g);
+
+    g.setFont (svc::ui::Theme::smallFont());
+    g.setColour (juce::Colour (svc::ui::Theme::textSecondary()).withAlpha (0.85f));
+    g.drawText ("Gate handles: move left/right for input range, up/down for output at gate · dbl-click add · right-click remove",
+                getLocalBounds().removeFromBottom (18).reduced (12, 0),
+                juce::Justification::centred);
 }
 
 void CurveEditorComponent::mouseDown (const juce::MouseEvent& event)
@@ -238,21 +320,32 @@ void CurveEditorComponent::mouseDrag (const juce::MouseEvent& event)
 
     const auto normalized = eventToNormalized (event.position);
     auto& point = points[static_cast<size_t> (draggedPointIndex)];
+    const auto lastIndex = static_cast<int> (points.size()) - 1;
 
     if (draggedPointIndex == 0)
-        point.input = 0.0f;
-    else if (draggedPointIndex == static_cast<int> (points.size()) - 1)
-        point.input = 1.0f;
+    {
+        // Left gate: X = input threshold (below → 0); Y = output at gate entry.
+        point.input = juce::jlimit (0.0f, points[1].input - 0.02f, normalized.x);
+        point.output = juce::jlimit (0.0f, points[1].output - 0.001f, normalized.y);
+    }
+    else if (draggedPointIndex == lastIndex)
+    {
+        // Right gate: X = input ceiling (above → max); Y = output at ceiling.
+        point.input = juce::jlimit (points[static_cast<size_t> (lastIndex - 1)].input + 0.02f,
+                                    1.0f, normalized.x);
+        point.output = juce::jlimit (points[static_cast<size_t> (lastIndex - 1)].output + 0.001f,
+                                     1.0f, normalized.y);
+    }
     else
+    {
         point.input = juce::jlimit (points[static_cast<size_t> (draggedPointIndex - 1)].input + 0.02f,
                                     points[static_cast<size_t> (draggedPointIndex + 1)].input - 0.02f,
                                     normalized.x);
 
-    const auto minOut = draggedPointIndex > 0 ? points[static_cast<size_t> (draggedPointIndex - 1)].output + 0.001f : 0.0f;
-    const auto maxOut = draggedPointIndex < static_cast<int> (points.size()) - 1
-                            ? points[static_cast<size_t> (draggedPointIndex + 1)].output - 0.001f
-                            : 1.0f;
-    point.output = juce::jlimit (minOut, maxOut, normalized.y);
+        const auto minOut = points[static_cast<size_t> (draggedPointIndex - 1)].output + 0.001f;
+        const auto maxOut = points[static_cast<size_t> (draggedPointIndex + 1)].output - 0.001f;
+        point.output = juce::jlimit (minOut, maxOut, normalized.y);
+    }
 
     activeCurve().setControlPoints (points);
     notifyChanged();
@@ -271,6 +364,12 @@ void CurveEditorComponent::mouseDoubleClick (const juce::MouseEvent& event)
 
     auto points = activeCurve().getControlPoints();
     const auto normalized = eventToNormalized (event.position);
+    const auto inputGate = points.front().input;
+    const auto inputCeil = points.back().input;
+
+    if (normalized.x <= inputGate + 0.01f || normalized.x >= inputCeil - 0.01f)
+        return;
+
     points.push_back ({ normalized.x, normalized.y });
     activeCurve().setControlPoints (points);
     notifyChanged();

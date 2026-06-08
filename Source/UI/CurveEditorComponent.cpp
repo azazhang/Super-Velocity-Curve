@@ -2,6 +2,16 @@
 
 CurveEditorComponent::CurveEditorComponent() = default;
 
+svc::VelocityCurve& CurveEditorComponent::activeCurve() noexcept
+{
+    return editTarget == EditTarget::aftertouch ? currentPad.aftertouch.curve : currentPad.curve;
+}
+
+const svc::VelocityCurve& CurveEditorComponent::activeCurve() const noexcept
+{
+    return editTarget == EditTarget::aftertouch ? currentPad.aftertouch.curve : currentPad.curve;
+}
+
 void CurveEditorComponent::setPad (const svc::ProfilePad& pad)
 {
     currentPad = pad;
@@ -9,8 +19,17 @@ void CurveEditorComponent::setPad (const svc::ProfilePad& pad)
     repaint();
 }
 
-void CurveEditorComponent::addHitMarker (float inputNormalized, float outputNormalized)
+void CurveEditorComponent::setEditTarget (EditTarget target)
 {
+    editTarget = target;
+    repaint();
+}
+
+void CurveEditorComponent::addHitMarker (int note, int channel, float inputNormalized, float outputNormalized, bool)
+{
+    if (note != currentPad.midiNote || channel != currentPad.midiChannel)
+        return;
+
     hitMarkers.push_back ({ inputNormalized, outputNormalized, juce::Time::getMillisecondCounterHiRes() });
     if (hitMarkers.size() > 48)
         hitMarkers.erase (hitMarkers.begin());
@@ -39,7 +58,7 @@ juce::Point<float> CurveEditorComponent::eventToNormalized (juce::Point<float> p
 
 int CurveEditorComponent::findNearestControlPoint (juce::Point<float> pos) const
 {
-    const auto& points = currentPad.curve.getControlPoints();
+    const auto& points = activeCurve().getControlPoints();
     int nearest = -1;
     float bestDistance = 14.0f;
 
@@ -66,14 +85,14 @@ void CurveEditorComponent::notifyChanged()
 
 void CurveEditorComponent::applyPreset (svc::CurvePreset preset)
 {
-    currentPad.curve.applyPreset (preset);
+    activeCurve().applyPreset (preset);
     notifyChanged();
     repaint();
 }
 
 void CurveEditorComponent::resetCurve()
 {
-    currentPad.curve.setIdentity();
+    activeCurve().setIdentity();
     notifyChanged();
     repaint();
 }
@@ -124,12 +143,12 @@ void CurveEditorComponent::drawCurve (juce::Graphics& g) const
 {
     const auto plot = plotArea();
     juce::Path curvePath;
-    const auto& lut = currentPad.curve.getLut();
+    const auto& lut = activeCurve().getLut();
 
     for (int i = 0; i < svc::VelocityCurve::lutSize; ++i)
     {
         const auto input = static_cast<float> (i) / static_cast<float> (svc::VelocityCurve::lutSize - 1);
-        const auto output = static_cast<float> (lut[static_cast<size_t> (i)]) / 127.0f;
+        const auto output = lut[static_cast<size_t> (i)];
         const auto point = normalizedToPoint (input, output);
 
         if (i == 0)
@@ -176,7 +195,8 @@ void CurveEditorComponent::paint (juce::Graphics& g)
 
     g.setColour (juce::Colour (svc::ui::Theme::textPrimary));
     g.setFont (svc::ui::Theme::sectionFont());
-    g.drawText ("Velocity Curve - " + currentPad.label,
+    const juce::String mode = editTarget == EditTarget::aftertouch ? "Aftertouch" : "Velocity";
+    g.drawText (mode + " Curve - " + currentPad.label,
                 getLocalBounds().removeFromTop (28).reduced (12, 0),
                 juce::Justification::centredLeft);
 
@@ -193,11 +213,11 @@ void CurveEditorComponent::mouseDown (const juce::MouseEvent& event)
     if (event.mods.isRightButtonDown())
     {
         const auto index = findNearestControlPoint (event.position);
-        auto points = currentPad.curve.getControlPoints();
+        auto points = activeCurve().getControlPoints();
         if (index > 0 && index < static_cast<int> (points.size()) - 1)
         {
             points.erase (points.begin() + index);
-            currentPad.curve.setControlPoints (points);
+            activeCurve().setControlPoints (points);
             notifyChanged();
             repaint();
         }
@@ -212,7 +232,7 @@ void CurveEditorComponent::mouseDrag (const juce::MouseEvent& event)
     if (draggedPointIndex < 0)
         return;
 
-    auto points = currentPad.curve.getControlPoints();
+    auto points = activeCurve().getControlPoints();
     if (draggedPointIndex >= static_cast<int> (points.size()))
         return;
 
@@ -228,8 +248,13 @@ void CurveEditorComponent::mouseDrag (const juce::MouseEvent& event)
                                     points[static_cast<size_t> (draggedPointIndex + 1)].input - 0.02f,
                                     normalized.x);
 
-    point.output = normalized.y;
-    currentPad.curve.setControlPoints (points);
+    const auto minOut = draggedPointIndex > 0 ? points[static_cast<size_t> (draggedPointIndex - 1)].output + 0.001f : 0.0f;
+    const auto maxOut = draggedPointIndex < static_cast<int> (points.size()) - 1
+                            ? points[static_cast<size_t> (draggedPointIndex + 1)].output - 0.001f
+                            : 1.0f;
+    point.output = juce::jlimit (minOut, maxOut, normalized.y);
+
+    activeCurve().setControlPoints (points);
     notifyChanged();
     repaint();
 }
@@ -244,10 +269,10 @@ void CurveEditorComponent::mouseDoubleClick (const juce::MouseEvent& event)
     if (findNearestControlPoint (event.position) >= 0)
         return;
 
-    auto points = currentPad.curve.getControlPoints();
+    auto points = activeCurve().getControlPoints();
     const auto normalized = eventToNormalized (event.position);
     points.push_back ({ normalized.x, normalized.y });
-    currentPad.curve.setControlPoints (points);
+    activeCurve().setControlPoints (points);
     notifyChanged();
     repaint();
 }

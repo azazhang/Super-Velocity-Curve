@@ -14,7 +14,8 @@ enum class CurvePreset
     hard,
     sCurve,
     exponential,
-    logarithmic
+    logarithmic,
+    power
 };
 
 struct CurveControlPoint
@@ -45,13 +46,14 @@ public:
     int mapMidi1 (int input) const noexcept;
     int mapMidi2 (int input) const noexcept;
 
-    const std::array<uint8_t, lutSize>& getLut() const noexcept { return lut; }
+    const std::array<float, lutSize>& getLut() const noexcept { return lut; }
 
     static std::vector<CurveControlPoint> makePresetPoints (CurvePreset preset);
+    static void enforceMonotonicOutputs (std::vector<CurveControlPoint>& points);
 
 private:
     std::vector<CurveControlPoint> controlPoints;
-    std::array<uint8_t, lutSize> lut {};
+    std::array<float, lutSize> lut {};
     float floor = 0.0f;
     float ceiling = 1.0f;
 

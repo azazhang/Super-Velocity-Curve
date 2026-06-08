@@ -47,6 +47,8 @@ public:
 
     void applyProfileToEngine();
     void syncOutputModeToEngine();
+    void injectStandaloneMidi (const juce::MidiMessage& message);
+    void setStandaloneMidiOutput (juce::MidiOutput* output) noexcept;
 
 private:
     static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
@@ -56,6 +58,10 @@ private:
     juce::AudioProcessorValueTreeState apvts;
 
     void parameterChanged (const juce::String& parameterID, float newValue) override;
+
+    juce::CriticalSection standaloneMidiLock;
+    juce::MidiBuffer standaloneMidiQueue;
+    juce::MidiOutput* standaloneMidiOutput = nullptr;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SuperVelocityCurveAudioProcessor)
 };

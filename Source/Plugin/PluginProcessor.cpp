@@ -65,11 +65,36 @@ void SuperVelocityCurveAudioProcessor::applyProfileToEngine()
     profileStore.applyActiveToEngine (engine);
 }
 
+void SuperVelocityCurveAudioProcessor::injectStandaloneMidi (const juce::MidiMessage& message)
+{
+    const juce::ScopedLock lock (standaloneMidiLock);
+    standaloneMidiQueue.addEvent (message, 0);
+}
+
+void SuperVelocityCurveAudioProcessor::setStandaloneMidiOutput (juce::MidiOutput* output) noexcept
+{
+    standaloneMidiOutput = output;
+}
+
 void SuperVelocityCurveAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
     juce::ScopedNoDenormals noDenormals;
     buffer.clear();
+
+    {
+        const juce::ScopedLock lock (standaloneMidiLock);
+        for (const auto metadata : standaloneMidiQueue)
+            midiMessages.addEvent (metadata.getMessage(), metadata.samplePosition);
+        standaloneMidiQueue.clear();
+    }
+
     engine.processMidiBuffer (midiMessages, buffer.getNumSamples());
+
+    if (wrapperType == wrapperType_Standalone && standaloneMidiOutput != nullptr)
+    {
+        for (const auto metadata : midiMessages)
+            standaloneMidiOutput->sendMessageNow (metadata.getMessage());
+    }
 }
 
 juce::AudioProcessorEditor* SuperVelocityCurveAudioProcessor::createEditor()

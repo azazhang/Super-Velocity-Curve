@@ -4,12 +4,15 @@ A free, open MIDI utility for finger drummers and pad players. Shape **per-pad v
 
 ## Features
 
-- Per-pad velocity curves with multi-point editor, presets, floor/ceiling
-- Per-pad retrigger guard, velocity gate, enable/disable
-- User profile system: save, duplicate, import/export (`.xml`)
-- Factory templates: GM, Launchpad, Maschine, SPD-SX, Yamaha FGDP
-- Live hit feedback on pad grid and curve editor
-- MIDI 2.0-ready internal pipeline (Auto / MIDI 1.0 / MIDI 2.0 output)
+- Per-pad velocity curves with multi-point editor, presets (incl. power), floor/ceiling (MIDI 0–127)
+- Monotonic curve enforcement, calibration wizard with preview, per-pad + global histograms
+- Per-pad retrigger guard, velocity gate (drop or clamp-to-floor), aftertouch curve editor
+- Note remap table, channel filter/transform, pad groups with group curve paste
+- A/B compare (Capture A / Hear A-B), copy/paste curves, unmapped-note warnings
+- User profile system: save, duplicate, import/export (`.svcp` / `.xml`)
+- Factory templates: GM, Blank, Launchpad 8×8, Maschine 16, SPD-SX, Yamaha FGDP + Rx
+- Standalone MIDI input + output device pickers (use IAC / loopMIDI for virtual ports)
+- MIDI 2.0-ready float pipeline (Auto / MIDI 1.0 / MIDI 2.0 output)
 - AU, VST3, Standalone (unsigned, free distribution)
 
 ## Host setup

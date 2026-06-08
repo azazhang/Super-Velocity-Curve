@@ -1,6 +1,8 @@
 #pragma once
 
+#include "../Engine/MidiUtilities.h"
 #include "../Engine/VelocityCurve.h"
+#include "PadTypes.h"
 #include <JuceHeader.h>
 #include <vector>
 
@@ -24,10 +26,13 @@ struct ProfilePad
     juce::String label;
     int gridRow = 0;
     int gridCol = 0;
+    PadGroup group = PadGroup::other;
     VelocityCurve curve;
     bool enabled = true;
     float velocityGate = 0.0f;
+    VelocityGateMode gateMode = VelocityGateMode::drop;
     double retriggerGuardMs = 0.0;
+    AftertouchPadSettings aftertouch;
 };
 
 class ControllerProfile
@@ -46,6 +51,9 @@ public:
 
     void getGridDimensions (int& rows, int& cols) const noexcept;
     void applyToEngine (class VelocityEngine& engine) const;
+
+    MidiRoutingSettings& getMidiRouting() noexcept { return midiRouting; }
+    const MidiRoutingSettings& getMidiRouting() const noexcept { return midiRouting; }
     ControllerProfile copy() const;
 
     juce::ValueTree toValueTree() const;
@@ -56,11 +64,13 @@ public:
     static ControllerProfile createMaschineGroup();
     static ControllerProfile createSpdSx();
     static ControllerProfile createFgdp();
+    static ControllerProfile createBlank();
 
 private:
     juce::String name { "GM Standard" };
     ProfileLayout layout = ProfileLayout::gmStandard;
     std::vector<ProfilePad> pads;
+    MidiRoutingSettings midiRouting;
 };
 
 } // namespace svc

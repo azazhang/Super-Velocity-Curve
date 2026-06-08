@@ -73,12 +73,14 @@ ControllerProfile ControllerProfile::copy() const
     copy.name = name;
     copy.layout = layout;
     copy.pads = pads;
+    copy.midiRouting = midiRouting;
     return copy;
 }
 
 void ControllerProfile::applyToEngine (VelocityEngine& engine) const
 {
     engine.clearAllPads();
+    engine.setMidiRouting (midiRouting);
 
     for (const auto& pad : pads)
     {
@@ -89,7 +91,9 @@ void ControllerProfile::applyToEngine (VelocityEngine& engine) const
         settings.curve = pad.curve;
         settings.enabled = pad.enabled;
         settings.velocityGate = pad.velocityGate;
+        settings.gateMode = pad.gateMode;
         settings.retriggerGuardMs = pad.retriggerGuardMs;
+        settings.aftertouch = pad.aftertouch;
         engine.setPadSettings (pad.midiNote, pad.midiChannel, settings);
     }
 }
@@ -99,6 +103,25 @@ juce::ValueTree ControllerProfile::toValueTree() const
     juce::ValueTree tree ("ControllerProfile");
     tree.setProperty ("name", name, nullptr);
     tree.setProperty ("layout", static_cast<int> (layout), nullptr);
+    tree.setProperty ("inputChannel", midiRouting.inputChannelFilter, nullptr);
+    tree.setProperty ("outputChannel", midiRouting.outputChannel, nullptr);
+    tree.setProperty ("remapEnabled", midiRouting.remapEnabled, nullptr);
+
+    juce::ValueTree remaps ("Remaps");
+    for (int i = 0; i < 128; ++i)
+    {
+        if (midiRouting.noteRemap[static_cast<size_t> (i)].has_value())
+        {
+            const auto& e = *midiRouting.noteRemap[static_cast<size_t> (i)];
+            juce::ValueTree r ("Remap");
+            r.setProperty ("sourceNote", e.sourceNote, nullptr);
+            r.setProperty ("sourceChannel", e.sourceChannel, nullptr);
+            r.setProperty ("targetNote", e.targetNote, nullptr);
+            r.setProperty ("targetChannel", e.targetChannel, nullptr);
+            remaps.appendChild (r, nullptr);
+        }
+    }
+    tree.appendChild (remaps, nullptr);
 
     for (const auto& pad : pads)
     {
@@ -110,8 +133,17 @@ juce::ValueTree ControllerProfile::toValueTree() const
         padTree.setProperty ("gridCol", pad.gridCol, nullptr);
         padTree.setProperty ("enabled", pad.enabled, nullptr);
         padTree.setProperty ("velocityGate", pad.velocityGate, nullptr);
+        padTree.setProperty ("gateMode", gateModeToString (pad.gateMode), nullptr);
+        padTree.setProperty ("padGroup", padGroupToString (pad.group), nullptr);
         padTree.setProperty ("retriggerGuardMs", pad.retriggerGuardMs, nullptr);
+        padTree.setProperty ("aftertouchEnabled", pad.aftertouch.enabled, nullptr);
         padTree.appendChild (curveToTree (pad.curve), nullptr);
+        if (pad.aftertouch.enabled)
+        {
+            auto atTree = curveToTree (pad.aftertouch.curve);
+            atTree.setProperty ("aftertouch", true, nullptr);
+            padTree.appendChild (atTree, nullptr);
+        }
         tree.appendChild (padTree, nullptr);
     }
 
@@ -123,28 +155,54 @@ ControllerProfile ControllerProfile::fromValueTree (const juce::ValueTree& tree)
     ControllerProfile profile;
     profile.name = tree.getProperty ("name", "Custom");
     profile.layout = static_cast<ProfileLayout> (static_cast<int> (tree.getProperty ("layout", 0)));
+    profile.midiRouting.inputChannelFilter = tree.getProperty ("inputChannel", 0);
+    profile.midiRouting.outputChannel = tree.getProperty ("outputChannel", 0);
+    profile.midiRouting.remapEnabled = tree.getProperty ("remapEnabled", false);
 
     for (int i = 0; i < tree.getNumChildren(); ++i)
     {
-        const auto padTree = tree.getChild (i);
-        if (! padTree.hasType ("Pad"))
+        const auto child = tree.getChild (i);
+
+        if (child.hasType ("Remaps"))
+        {
+            for (int r = 0; r < child.getNumChildren(); ++r)
+            {
+                const auto remapTree = child.getChild (r);
+                profile.midiRouting.setRemap (
+                    remapTree.getProperty ("sourceNote", 0),
+                    remapTree.getProperty ("sourceChannel", 0),
+                    remapTree.getProperty ("targetNote", 0),
+                    remapTree.getProperty ("targetChannel", 0));
+            }
+            continue;
+        }
+
+        if (! child.hasType ("Pad"))
             continue;
 
         ProfilePad pad;
-        pad.midiNote = padTree.getProperty ("midiNote", 36);
-        pad.midiChannel = padTree.getProperty ("midiChannel", 10);
-        pad.label = padTree.getProperty ("label", juce::String());
-        pad.gridRow = padTree.getProperty ("gridRow", 0);
-        pad.gridCol = padTree.getProperty ("gridCol", 0);
-        pad.enabled = padTree.getProperty ("enabled", true);
-        pad.velocityGate = padTree.getProperty ("velocityGate", 0.0f);
-        pad.retriggerGuardMs = padTree.getProperty ("retriggerGuardMs", 0.0);
+        pad.midiNote = child.getProperty ("midiNote", 36);
+        pad.midiChannel = child.getProperty ("midiChannel", 10);
+        pad.label = child.getProperty ("label", juce::String());
+        pad.gridRow = child.getProperty ("gridRow", 0);
+        pad.gridCol = child.getProperty ("gridCol", 0);
+        pad.enabled = child.getProperty ("enabled", true);
+        pad.velocityGate = child.getProperty ("velocityGate", 0.0f);
+        pad.gateMode = gateModeFromString (child.getProperty ("gateMode", "Drop notes").toString());
+        pad.group = padGroupFromString (child.getProperty ("padGroup", "Other").toString());
+        pad.retriggerGuardMs = child.getProperty ("retriggerGuardMs", 0.0);
+        pad.aftertouch.enabled = child.getProperty ("aftertouchEnabled", false);
 
-        for (int c = 0; c < padTree.getNumChildren(); ++c)
+        for (int c = 0; c < child.getNumChildren(); ++c)
         {
-            const auto child = padTree.getChild (c);
-            if (child.hasType ("Curve"))
-                pad.curve = curveFromTree (child);
+            const auto curveTree = child.getChild (c);
+            if (! curveTree.hasType ("Curve"))
+                continue;
+
+            if (static_cast<bool> (curveTree.getProperty ("aftertouch", false)))
+                pad.aftertouch.curve = curveFromTree (curveTree);
+            else
+                pad.curve = curveFromTree (curveTree);
         }
 
         profile.pads.push_back (pad);
@@ -152,6 +210,27 @@ ControllerProfile ControllerProfile::fromValueTree (const juce::ValueTree& tree)
 
     return profile;
 }
+
+namespace
+{
+PadGroup inferGroupFromName (const juce::String& name)
+{
+    const auto lower = name.toLowerCase();
+    if (lower.contains ("kick") || lower.contains ("bd"))
+        return PadGroup::kick;
+    if (lower.contains ("snare") || lower.contains ("rim"))
+        return PadGroup::snare;
+    if (lower.contains ("hh") || lower.contains ("hat"))
+        return PadGroup::hat;
+    if (lower.contains ("tom"))
+        return PadGroup::tom;
+    if (lower.contains ("crash") || lower.contains ("ride") || lower.contains ("cym"))
+        return PadGroup::cymbal;
+    if (lower.contains ("clap") || lower.contains ("tamb") || lower.contains ("cow"))
+        return PadGroup::percussion;
+    return PadGroup::other;
+}
+} // namespace
 
 ControllerProfile ControllerProfile::createGMStandard()
 {
@@ -165,6 +244,7 @@ ControllerProfile ControllerProfile::createGMStandard()
         pad.label = def.name;
         pad.gridRow = def.row;
         pad.gridCol = def.col;
+        pad.group = inferGroupFromName (def.name);
         profile.pads.push_back (pad);
     }
 
@@ -175,19 +255,19 @@ ControllerProfile ControllerProfile::createLaunchpadDrumRack()
 {
     ControllerProfile profile ("Launchpad Drum Rack", ProfileLayout::launchpadDrumRack);
 
-    int note = 36;
-    for (int row = 3; row >= 0; --row)
+    for (int row = 7; row >= 0; --row)
     {
-        for (int col = 0; col < 4; ++col)
+        for (int col = 0; col < 8; ++col)
         {
+            const int note = 36 + (7 - row) * 8 + col;
             ProfilePad pad;
             pad.midiNote = note;
             pad.midiChannel = 1;
-            pad.label = getGMDrumName (note);
+            pad.label = "N" + juce::String (note);
             pad.gridRow = row;
             pad.gridCol = col;
+            pad.group = inferGroupFromName (getGMDrumName (note));
             profile.pads.push_back (pad);
-            ++note;
         }
     }
 
@@ -198,19 +278,20 @@ ControllerProfile ControllerProfile::createMaschineGroup()
 {
     ControllerProfile profile ("Maschine Group", ProfileLayout::maschineGroup);
 
-    int note = 36;
+    int slot = 1;
     for (int row = 3; row >= 0; --row)
     {
         for (int col = 0; col < 4; ++col)
         {
             ProfilePad pad;
-            pad.midiNote = note;
+            pad.midiNote = 35 + slot;
             pad.midiChannel = 1;
-            pad.label = "Slot " + juce::String (note - 35);
+            pad.label = "Slot " + juce::String (slot);
             pad.gridRow = row;
             pad.gridCol = col;
+            pad.group = PadGroup::other;
             profile.pads.push_back (pad);
-            ++note;
+            ++slot;
         }
     }
 
@@ -233,12 +314,17 @@ ControllerProfile ControllerProfile::createSpdSx()
         profile.pads.push_back (pad);
     }
 
+    static const int gmTargets[] = { 36, 38, 42, 46, 41, 43, 45, 47, 49, 51, 37, 40 };
+    for (int i = 0; i < 12; ++i)
+        profile.midiRouting.setRemap (60 + i, 10, gmTargets[i], 10);
+
     return profile;
 }
 
 ControllerProfile ControllerProfile::createFgdp()
 {
     ControllerProfile profile ("Yamaha FGDP", ProfileLayout::fgdp);
+    profile.midiRouting.outputChannel = 3;
 
     const int notes[] = { 36, 38, 42, 46, 41, 43, 45, 47, 49, 51, 37, 40 };
     const char* labels[] = {
@@ -255,9 +341,36 @@ ControllerProfile ControllerProfile::createFgdp()
         pad.label = labels[i];
         pad.gridRow = i / 4;
         pad.gridCol = i % 4;
+        pad.group = inferGroupFromName (labels[i]);
         profile.pads.push_back (pad);
     }
 
+    for (int i = 0; i < 8; ++i)
+    {
+        ProfilePad pad;
+        pad.midiNote = 82 + i;
+        pad.midiChannel = 3;
+        pad.label = "Rx " + juce::String (i + 1);
+        pad.gridRow = 4;
+        pad.gridCol = i;
+        pad.group = PadGroup::percussion;
+        profile.pads.push_back (pad);
+    }
+
+    return profile;
+}
+
+ControllerProfile ControllerProfile::createBlank()
+{
+    ControllerProfile profile ("Blank Custom", ProfileLayout::custom);
+    ProfilePad pad;
+    pad.midiNote = 36;
+    pad.midiChannel = 10;
+    pad.label = "Pad 1";
+    pad.gridRow = 0;
+    pad.gridCol = 0;
+    pad.group = PadGroup::other;
+    profile.pads.push_back (pad);
     return profile;
 }
 

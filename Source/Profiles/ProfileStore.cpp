@@ -14,6 +14,7 @@ void ProfileStore::rebuildFactoryTemplates()
 {
     factoryTemplates = {
         ControllerProfile::createGMStandard(),
+        ControllerProfile::createBlank(),
         ControllerProfile::createLaunchpadDrumRack(),
         ControllerProfile::createMaschineGroup(),
         ControllerProfile::createSpdSx(),

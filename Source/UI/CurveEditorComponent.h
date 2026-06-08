@@ -14,7 +14,10 @@ public:
     void setPad (const svc::ProfilePad& pad);
     const svc::ProfilePad& getPad() const noexcept { return currentPad; }
 
-    void addHitMarker (float inputNormalized, float outputNormalized);
+    enum class EditTarget { velocity, aftertouch };
+
+    void setEditTarget (EditTarget target);
+    void addHitMarker (int note, int channel, float inputNormalized, float outputNormalized, bool isMidi2);
 
     std::function<void (const svc::ProfilePad&)> onPadChanged;
 
@@ -41,6 +44,7 @@ private:
 
     std::vector<HitMarker> hitMarkers;
     int draggedPointIndex = -1;
+    EditTarget editTarget = EditTarget::velocity;
 
     juce::Rectangle<float> plotArea() const;
     juce::Point<float> normalizedToPoint (float input, float output) const;
@@ -49,4 +53,6 @@ private:
     void notifyChanged();
     void drawGrid (juce::Graphics& g) const;
     void drawCurve (juce::Graphics& g) const;
+    svc::VelocityCurve& activeCurve() noexcept;
+    const svc::VelocityCurve& activeCurve() const noexcept;
 };

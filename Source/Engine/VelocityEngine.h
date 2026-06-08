@@ -1,10 +1,11 @@
 #pragma once
 
+#include "../Profiles/PadTypes.h"
 #include "HitEventFifo.h"
+#include "MidiUtilities.h"
 #include "MidiVelocity.h"
 #include "VelocityCurve.h"
 #include <JuceHeader.h>
-#include <array>
 #include <shared_mutex>
 #include <unordered_map>
 
@@ -19,7 +20,9 @@ struct PadSettings
     VelocityCurve curve;
     bool enabled = true;
     float velocityGate = 0.0f;
+    VelocityGateMode gateMode = VelocityGateMode::drop;
     double retriggerGuardMs = 0.0;
+    AftertouchPadSettings aftertouch;
 };
 
 class VelocityEngine
@@ -35,19 +38,24 @@ public:
     void setPadSettings (int note, int channel, const PadSettings& settings);
     PadSettings getPadSettings (int note, int channel) const;
 
+    void setMidiRouting (const MidiRoutingSettings& settings);
+    const MidiRoutingSettings& getMidiRouting() const noexcept;
+
     void processMidiBuffer (juce::MidiBuffer& buffer, int numSamples);
     HitEventFifo& getHitFifo() noexcept { return hitFifo; }
+    HistogramBank& getHistogramBank() noexcept { return histogramBank; }
+    const HistogramBank& getHistogramBank() const noexcept { return histogramBank; }
+    HistogramSnapshot getGlobalHistogramSnapshot() const;
+    HistogramSnapshot getPadHistogramSnapshot (int note, int channel) const;
+    void clearHistogram() noexcept { histogramBank.clear(); }
+    void clearPadHistogram (int note, int channel) noexcept { histogramBank.clearPad (note, channel); }
 
 private:
     struct NoteKey
     {
         int note;
         int channel;
-
-        bool operator== (const NoteKey& other) const noexcept
-        {
-            return note == other.note && channel == other.channel;
-        }
+        bool operator== (const NoteKey& o) const noexcept { return note == o.note && channel == o.channel; }
     };
 
     struct NoteKeyHash
@@ -58,19 +66,18 @@ private:
         }
     };
 
-    struct RetriggerState
-    {
-        double lastNoteOnTime = -1.0;
-    };
+    struct RetriggerState { double lastNoteOnTime = -1.0; };
 
     using PadMap = std::unordered_map<NoteKey, PadSettings, NoteKeyHash>;
     using RetriggerMap = std::unordered_map<NoteKey, RetriggerState, NoteKeyHash>;
 
     PadMap pads;
     RetriggerMap retriggerStates;
+    MidiRoutingProcessor midiRouting;
     mutable std::shared_mutex padMutex;
     VelocityOutputMode outputMode = VelocityOutputMode::autoDetect;
     HitEventFifo hitFifo;
+    HistogramBank histogramBank;
     double sampleRate = 44100.0;
     double runningTimeSeconds = 0.0;
 

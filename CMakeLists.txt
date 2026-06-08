@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(SuperVelocityCurve VERSION 0.2.0)
+project(SuperVelocityCurve VERSION 0.4.0)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -30,13 +30,20 @@ target_sources(SuperVelocityCurve
     PRIVATE
         Source/Engine/VelocityCurve.cpp
         Source/Engine/VelocityEngine.cpp
+        Source/Engine/MidiUtilities.cpp
         Source/Profiles/ControllerProfile.cpp
         Source/Profiles/ProfileStore.cpp
         Source/Plugin/PluginProcessor.cpp
         Source/Plugin/PluginEditor.cpp
+        Source/Standalone/StandaloneMidiPanel.cpp
         Source/UI/PadGridComponent.cpp
         Source/UI/CurveEditorComponent.cpp
-        Source/UI/PadInspectorComponent.cpp)
+        Source/UI/PadInspectorComponent.cpp
+        Source/UI/HistogramComponent.cpp
+        Source/UI/CalibrationWizardComponent.cpp
+        Source/UI/MidiRoutingPanel.cpp
+        Source/UI/NoteRemapEditorComponent.cpp
+        Source/UI/MidiActivityMeterComponent.cpp)
 
 target_compile_definitions(SuperVelocityCurve
     PUBLIC
@@ -68,6 +75,7 @@ if(SVC_BUILD_TESTS)
             Tests/EngineTests.cpp
             Source/Engine/VelocityCurve.cpp
             Source/Engine/VelocityEngine.cpp
+            Source/Engine/MidiUtilities.cpp
             Source/Profiles/ControllerProfile.cpp
             Source/Profiles/ProfileStore.cpp)
 

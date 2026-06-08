@@ -36,10 +36,22 @@ std::vector<CurveControlPoint> VelocityCurve::makePresetPoints (CurvePreset pres
             return { { 0.0f, 0.0f }, { 0.15f, 0.03f }, { 0.4f, 0.18f }, { 0.7f, 0.52f }, { 1.0f, 1.0f } };
         case CurvePreset::logarithmic:
             return { { 0.0f, 0.0f }, { 0.3f, 0.48f }, { 0.6f, 0.78f }, { 0.85f, 0.93f }, { 1.0f, 1.0f } };
+        case CurvePreset::power:
+            return { { 0.0f, 0.0f }, { 0.2f, 0.04f }, { 0.45f, 0.2f }, { 0.7f, 0.55f }, { 1.0f, 1.0f } };
         case CurvePreset::linear:
         default:
             return { { 0.0f, 0.0f }, { 1.0f, 1.0f } };
     }
+}
+
+void VelocityCurve::enforceMonotonicOutputs (std::vector<CurveControlPoint>& points)
+{
+    if (points.empty())
+        return;
+
+    points.front().output = std::clamp (points.front().output, 0.0f, 1.0f);
+    for (size_t i = 1; i < points.size(); ++i)
+        points[i].output = std::clamp (points[i].output, points[i - 1].output, 1.0f);
 }
 
 void VelocityCurve::setControlPoints (std::vector<CurveControlPoint> points)
@@ -51,6 +63,7 @@ void VelocityCurve::setControlPoints (std::vector<CurveControlPoint> points)
     }
 
     sortControlPoints (points);
+    enforceMonotonicOutputs (points);
     controlPoints = std::move (points);
     rebuildLut();
 }
@@ -116,12 +129,15 @@ float VelocityCurve::interpolateControlPoints (const std::vector<CurveControlPoi
 
 void VelocityCurve::rebuildLut()
 {
+    float previous = 0.0f;
     for (int i = 0; i < lutSize; ++i)
     {
         const auto input = static_cast<float> (i) / static_cast<float> (lutSize - 1);
         auto output = interpolateControlPoints (controlPoints, input);
         output = floor + output * (ceiling - floor);
-        lut[static_cast<size_t> (i)] = static_cast<uint8_t> (normalizedToMidi1 (output));
+        output = std::max (previous, std::clamp (output, 0.0f, 1.0f));
+        lut[static_cast<size_t> (i)] = output;
+        previous = output;
     }
 }
 
@@ -132,15 +148,14 @@ float VelocityCurve::mapNormalized (float input) const noexcept
     const auto i0 = static_cast<int> (index);
     const auto i1 = std::min (i0 + 1, lutSize - 1);
     const auto frac = index - static_cast<float> (i0);
-    const auto v0 = midi1ToNormalized (lut[static_cast<size_t> (i0)]);
-    const auto v1 = midi1ToNormalized (lut[static_cast<size_t> (i1)]);
+    const auto v0 = lut[static_cast<size_t> (i0)];
+    const auto v1 = lut[static_cast<size_t> (i1)];
     return v0 + frac * (v1 - v0);
 }
 
 int VelocityCurve::mapMidi1 (int input) const noexcept
 {
-    const auto clamped = std::clamp (input, 0, midi1Max);
-    return static_cast<int> (lut[static_cast<size_t> (clamped)]);
+    return normalizedToMidi1 (mapNormalized (midi1ToNormalized (input)));
 }
 
 int VelocityCurve::mapMidi2 (int input) const noexcept

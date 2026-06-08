@@ -20,12 +20,15 @@ void VelocityEngine::clearAllPads()
     const std::unique_lock lock (padMutex);
     pads.clear();
     retriggerStates.clear();
+    midiRouting.clearAftertouchSettings();
 }
 
 void VelocityEngine::setPadSettings (int note, int channel, const PadSettings& settings)
 {
     const std::unique_lock lock (padMutex);
     pads[{ note, channel }] = settings;
+    if (settings.aftertouch.enabled)
+        midiRouting.setAftertouchSettings (note, channel, settings.aftertouch);
 }
 
 PadSettings VelocityEngine::getPadSettings (int note, int channel) const
@@ -41,6 +44,27 @@ PadSettings VelocityEngine::getPadSettings (int note, int channel) const
     defaults.midiChannel = channel;
     defaults.name = "Note " + juce::String (note);
     return defaults;
+}
+
+void VelocityEngine::setMidiRouting (const MidiRoutingSettings& settings)
+{
+    const std::unique_lock lock (padMutex);
+    midiRouting.setSettings (settings);
+}
+
+const MidiRoutingSettings& VelocityEngine::getMidiRouting() const noexcept
+{
+    return midiRouting.getSettings();
+}
+
+HistogramSnapshot VelocityEngine::getGlobalHistogramSnapshot() const
+{
+    return histogramBank.getGlobalSnapshot();
+}
+
+HistogramSnapshot VelocityEngine::getPadHistogramSnapshot (int note, int channel) const
+{
+    return histogramBank.getPadSnapshot (note, channel);
 }
 
 const PadSettings* VelocityEngine::findPad (int note, int channel) const
@@ -63,8 +87,7 @@ bool VelocityEngine::shouldDropRetrigger (const PadSettings& pad,
     if (it == retriggerStates.end() || it->second.lastNoteOnTime < 0.0)
         return false;
 
-    const auto guardSeconds = pad.retriggerGuardMs * 0.001;
-    return (eventTimeSeconds - it->second.lastNoteOnTime) < guardSeconds;
+    return (eventTimeSeconds - it->second.lastNoteOnTime) < (pad.retriggerGuardMs * 0.001);
 }
 
 float VelocityEngine::processNoteVelocity (const PadSettings& pad, float inputNormalized) const
@@ -73,7 +96,11 @@ float VelocityEngine::processNoteVelocity (const PadSettings& pad, float inputNo
         return inputNormalized;
 
     if (inputNormalized < pad.velocityGate)
+    {
+        if (pad.gateMode == VelocityGateMode::clampToFloor)
+            return pad.curve.mapNormalized (pad.velocityGate);
         return -1.0f;
+    }
 
     return pad.curve.mapNormalized (inputNormalized);
 }
@@ -82,9 +109,8 @@ void VelocityEngine::applyOutputVelocity (juce::MidiMessage& message,
                                           float outputNormalized,
                                           bool inputIsMidi2) const
 {
-    const auto mode = outputMode;
-    const auto forceMidi1 = mode == VelocityOutputMode::midi1;
-    const auto forceMidi2 = mode == VelocityOutputMode::midi2;
+    const auto forceMidi1 = outputMode == VelocityOutputMode::midi1;
+    const auto forceMidi2 = outputMode == VelocityOutputMode::midi2;
     const auto useMidi1 = forceMidi1 || (! forceMidi2 && ! inputIsMidi2);
 
     if (useMidi1)
@@ -111,6 +137,9 @@ void VelocityEngine::processMidiBuffer (juce::MidiBuffer& buffer, int numSamples
         const auto sampleOffset = metadata.samplePosition;
         const auto eventTime = runningTimeSeconds + (static_cast<double> (sampleOffset) / sampleRate);
 
+        if (! midiRouting.processMessage (message))
+            continue;
+
         if (message.isNoteOn())
         {
             const auto note = message.getNoteNumber();
@@ -127,7 +156,6 @@ void VelocityEngine::processMidiBuffer (juce::MidiBuffer& buffer, int numSamples
             {
                 settings.midiNote = note;
                 settings.midiChannel = channel;
-                settings.name = "Note " + juce::String (note);
             }
 
             if (shouldDropRetrigger (settings, note, channel, eventTime))
@@ -138,6 +166,7 @@ void VelocityEngine::processMidiBuffer (juce::MidiBuffer& buffer, int numSamples
                 continue;
 
             applyOutputVelocity (message, outputNormalized, inputIsMidi2);
+            histogramBank.record (note, channel, inputNormalized, outputNormalized);
 
             HitEvent hit;
             hit.note = note;
@@ -148,7 +177,12 @@ void VelocityEngine::processMidiBuffer (juce::MidiBuffer& buffer, int numSamples
             hit.timestamp = static_cast<std::uint64_t> (eventTime * 1000.0);
             hitFifo.push (hit);
 
-            retriggerStates[{ note, channel }].lastNoteOnTime = eventTime;
+            lock.unlock();
+            {
+                const std::unique_lock writeLock (padMutex);
+                retriggerStates[{ note, channel }].lastNoteOnTime = eventTime;
+            }
+            lock.lock();
         }
 
         processed.addEvent (message, sampleOffset);

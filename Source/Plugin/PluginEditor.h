@@ -1,12 +1,19 @@
 #pragma once
 
+#include "../Standalone/StandaloneMidiPanel.h"
+#include "../UI/CalibrationWizardComponent.h"
 #include "../UI/CurveEditorComponent.h"
+#include "../UI/HistogramComponent.h"
 #include "../UI/LookAndFeel.h"
+#include "../UI/MidiActivityMeterComponent.h"
+#include "../UI/MidiRoutingPanel.h"
+#include "../UI/NoteRemapEditorComponent.h"
 #include "../UI/PadGridComponent.h"
 #include "../UI/PadInspectorComponent.h"
 #include "../UI/Theme.h"
 #include "PluginProcessor.h"
 #include <JuceHeader.h>
+#include <optional>
 
 class SuperVelocityCurveAudioProcessorEditor : public juce::AudioProcessorEditor,
                                                private juce::Timer
@@ -32,7 +39,13 @@ private:
     juce::TextButton deleteProfileButton { "Delete" };
     juce::TextButton importButton { "Import" };
     juce::TextButton exportButton { "Export" };
-    juce::TextButton resetCurveButton { "Reset Curve" };
+    juce::TextButton resetCurveButton { "Reset" };
+    juce::TextButton copyCurveButton { "Copy" };
+    juce::TextButton pasteCurveButton { "Paste" };
+    juce::TextButton pasteGroupButton { "Paste Group" };
+    juce::TextButton captureAbButton { "Capture A" };
+    juce::TextButton abToggleButton { "Hear A" };
+    juce::TextButton clearHistogramButton { "Clear Hist" };
     juce::Label profileLabel { {}, "Profile" };
     juce::Label outputModeLabel { {}, "MIDI output" };
     juce::Label presetLabel { {}, "Curve preset" };
@@ -41,10 +54,21 @@ private:
     PadGridComponent padGrid;
     CurveEditorComponent curveEditor;
     PadInspectorComponent padInspector;
+    HistogramComponent padHistogram;
+    HistogramComponent globalHistogram;
+    CalibrationWizardComponent calibrationWizard;
+    MidiRoutingPanel midiRoutingPanel;
+    NoteRemapEditorComponent noteRemapEditor;
+    MidiActivityMeterComponent midiMeters;
+    std::unique_ptr<StandaloneMidiPanel> standaloneMidiPanel;
 
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> outputModeAttachment;
 
     int selectedPadIndex = 0;
+    bool hearingCurveA = false;
+    std::optional<svc::VelocityCurve> clipboardCurve;
+    std::optional<svc::VelocityCurve> curveA;
+    std::optional<svc::VelocityCurve> curveB;
 
     void timerCallback() override;
     void rebuildProfileList();
@@ -54,7 +78,11 @@ private:
     void updateSelectedPadFromUI (const svc::ProfilePad& pad);
     void applyProfileToEngine();
     void updateLiveHits();
+    void updateHistograms();
     void showStatus (const juce::String& message, bool isError = false);
+    void toggleAbCurve();
+    void refreshRoutingPanels();
+    bool isPadMapped (int note, int channel) const;
 
     juce::String statusMessage;
     bool statusIsError = false;

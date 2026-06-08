@@ -71,7 +71,7 @@ See [docs/developer/CI.md](docs/developer/CI.md) for full analysis.
 |----|------|--------|
 | CI-1 | macOS timeout: disable LTO + Ninja + ccache + RelWithDebInfo in `build.yml` | **done** (~4m Build on run 27170647769) |
 | CI-1b | pluginval zip is `pluginval.app` only (no top-level binary); Windows: VS x64 not Ninja | **done** |
-| CI-1c | Ad-hoc `codesign` AU `.component` before pluginval on macOS CI | **done** |
+| CI-1c | AU pluginval: install to `~/Library/Audio/Plug-Ins/Components/` + codesign + registrar kick | **done** |
 | CI-2 | `concurrency: cancel-in-progress` — stop stacked 90m macOS jobs | **done** |
 | CI-3 | Release universal binary via parallel matrix + `lipo` (not one 90m fat job) | open |
 | CI-4 | Shared static lib for engine/profile (needs JUCE header target — blocked) | open |

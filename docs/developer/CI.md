@@ -41,7 +41,7 @@ Windows completes build in ~7–10m because MSVC LTCG is faster here and there i
 
 Last full green before v0.5 dual-plugin era: **v0.4.2** (~16 min macOS). v0.5+ added dual plugins + CLAP + LTO duplication → macOS timeout regression.
 
-Windows first green on v0.5+ stack: run 27170936793 (~10 min). macOS Build ~4m; AU pluginval needs ad-hoc `codesign` on CI (unsigned bundles return “Num plugins found: 0”).
+Windows first green on v0.5+ stack: run 27170936793 (~10 min). macOS Build ~4m; AU pluginval must copy `.component` to `~/Library/Audio/Plug-Ins/Components/`, `codesign`, then `killall AudioComponentRegistrar` (scanning build tree alone returns “Num plugins found: 0”).
 
 ## Local parity
 

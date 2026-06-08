@@ -72,12 +72,21 @@ jobs:
           PV="./pluginval"
           if [ -d pluginval.app ]; then PV="./pluginval.app/Contents/MacOS/pluginval"; fi
           validate() {
-            echo "=== pluginval: $1 ==="
-            # Unsigned AU bundles are invisible to macOS until ad-hoc signed (CI has no cert).
-            if [[ "$1" == *.component ]]; then
-              codesign --force --sign - --timestamp=none --deep "$1"
+            local target="$1"
+            echo "=== pluginval: $target ==="
+            # macOS only registers AUs under ~/Library/Audio/Plug-Ins/Components (pluginval #122).
+            if [[ "$target" == *.component ]]; then
+              local name
+              name=$(basename "$target")
+              mkdir -p "$HOME/Library/Audio/Plug-Ins/Components"
+              rm -rf "$HOME/Library/Audio/Plug-Ins/Components/$name"
+              cp -R "$target" "$HOME/Library/Audio/Plug-Ins/Components/"
+              target="$HOME/Library/Audio/Plug-Ins/Components/$name"
+              codesign --force --sign - --timestamp=none --deep "$target"
+              killall -9 AudioComponentRegistrar 2>/dev/null || true
+              sleep 2
             fi
-            "$PV" --validate-in-process --strictness-level 5 --timeout-ms 120000 --output-dir pluginval-logs "$1"
+            "$PV" --validate-in-process --strictness-level 5 --timeout-ms 120000 --output-dir pluginval-logs "$target"
           }
           validate "build/SuperVelocityCurve_artefacts/${CMAKE_BUILD_TYPE}/VST3/Super VelocityCurve.vst3"
           validate "build/SuperVelocityCurveMidiFx_artefacts/${CMAKE_BUILD_TYPE}/VST3/Super VelocityCurve MIDI FX.vst3"

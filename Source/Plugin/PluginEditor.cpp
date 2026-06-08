@@ -1,6 +1,29 @@
 #include "PluginEditor.h"
 #include <juce_gui_basics/juce_gui_basics.h>
 
+namespace
+{
+juce::String padMutationMessage (svc::PadMutationResult result)
+{
+    switch (result)
+    {
+        case svc::PadMutationResult::duplicateMidiKey:
+            return "That MIDI note and channel is already used by another pad.";
+        case svc::PadMutationResult::wouldEmptyProfile:
+            return "Cannot delete the last pad in a profile.";
+        case svc::PadMutationResult::maxPadsReached:
+            return "Maximum number of pads reached.";
+        case svc::PadMutationResult::invalidMidiKey:
+            return "MIDI note must be 0-127 and channel 1-16.";
+        case svc::PadMutationResult::indexOutOfRange:
+            return "Pad index out of range.";
+        case svc::PadMutationResult::ok:
+        default:
+            return {};
+    }
+}
+} // namespace
+
 SuperVelocityCurveAudioProcessorEditor::SuperVelocityCurveAudioProcessorEditor (SuperVelocityCurveAudioProcessor& p)
     : AudioProcessorEditor (p),
       audioProcessor (p)
@@ -34,8 +57,18 @@ SuperVelocityCurveAudioProcessorEditor::SuperVelocityCurveAudioProcessorEditor (
     for (auto* b : { &saveProfileButton, &duplicateProfileButton, &deleteProfileButton,
                      &importButton, &exportButton, &resetCurveButton, &copyCurveButton,
                      &pasteCurveButton, &pasteGroupButton, &captureAbButton, &abToggleButton,
-                     &clearHistogramButton })
+                     &clearHistogramButton, &aboutButton })
+    {
         addAndMakeVisible (b);
+        b->setMouseClickGrabsKeyboardFocus (false);
+    }
+
+    aboutButton.onClick = [this] { showAboutPanel(); };
+
+    for (auto* c : { &profileBox, &outputModeBox, &curvePresetBox, &themeBox })
+        c->setMouseClickGrabsKeyboardFocus (false);
+
+    liveHitsLabel.setInterceptsMouseClicks (false, false);
 
     outputModeBox.addItemList ({ "Auto (match input)", "MIDI 1.0 (7-bit)", "MIDI 2.0 (high-res)" }, 1);
     curvePresetBox.addItemList ({ "Linear", "Soft", "Hard", "S-Curve", "Exponential", "Logarithmic", "Power" }, 1);
@@ -74,13 +107,55 @@ SuperVelocityCurveAudioProcessorEditor::SuperVelocityCurveAudioProcessorEditor (
         audioProcessor.getApvts(), "outputMode", outputModeBox);
 
     padGrid.onPadSelected = [this] (int index) { onPadSelected (index); };
+
+    padGrid.onAddPadRequested = [this]
+    {
+        auto& store = audioProcessor.getProfileStore();
+        const auto result = store.addPadToActive();
+        if (result != svc::PadMutationResult::ok)
+        {
+            showStatus (padMutationMessage (result), true);
+            return;
+        }
+
+        applyProfileToEngine();
+        onPadSelected (static_cast<int> (store.getActiveProfile().getPads().size()) - 1);
+        showStatus ("Pad added.");
+    };
+
+    padGrid.onDeletePadRequested = [this]
+    {
+        auto& store = audioProcessor.getProfileStore();
+        if (selectedPadIndex < 0)
+            return;
+
+        const auto& removed = store.getActiveProfile().getPads()[static_cast<size_t> (selectedPadIndex)];
+        const auto removedNote = removed.midiNote;
+        const auto removedChannel = removed.midiChannel;
+        const auto result = store.removePadFromActive (selectedPadIndex);
+
+        if (result != svc::PadMutationResult::ok)
+        {
+            showStatus (padMutationMessage (result), true);
+            return;
+        }
+
+        audioProcessor.getEngine().clearPadHistogram (removedNote, removedChannel);
+        clearAbCompare();
+        applyProfileToEngine();
+        const auto newIndex = juce::jmin (selectedPadIndex,
+                                          static_cast<int> (store.getActiveProfile().getPads().size()) - 1);
+        onPadSelected (juce::jmax (0, newIndex));
+        showStatus ("Pad deleted.");
+    };
     curveEditor.onPadChanged = [this] (const svc::ProfilePad& pad) { updateSelectedPadFromUI (pad); };
 
     padInspector.onPadChanged = [this] (int index, const svc::ProfilePad& pad)
     {
-        juce::ignoreUnused (index);
         updateSelectedPadFromUI (pad);
-        curveEditor.setPad (pad);
+        curveEditor.setPad (pad, false);
+        padGrid.updatePad (index, pad);
+        padHistogram.setTitle ("Pad: " + pad.label);
     };
 
     padInspector.onEditAftertouchRequested = [this]
@@ -151,10 +226,13 @@ SuperVelocityCurveAudioProcessorEditor::SuperVelocityCurveAudioProcessorEditor (
     captureAbButton.onClick = [this]
     {
         curveA = curveEditor.getPad().curve;
-        curveB.reset();
         hearingCurveA = false;
         abToggleButton.setButtonText ("Hear A");
-        showStatus ("Curve A captured. Edit, then Hear A/B to compare.");
+        curveEditor.clearCompareCurve();
+        applyProfileToEngine();
+        captureAbButton.setColour (juce::TextButton::buttonOnColourId,
+                                   juce::Colour (svc::ui::Theme::accentDim()));
+        showStatus ("Captured A. Edit the curve, then click Hear A to switch audition.");
     };
 
     abToggleButton.onClick = [this] { toggleAbCurve(); };
@@ -190,11 +268,18 @@ SuperVelocityCurveAudioProcessorEditor::SuperVelocityCurveAudioProcessorEditor (
     saveProfileButton.onClick = [this]
     {
         const auto name = profileNameEditor.getText().trim();
-        if (audioProcessor.getProfileStore().saveActiveAsUserProfile (name))
+        auto& store = audioProcessor.getProfileStore();
+        const bool saved = store.getActiveEntryType() == svc::ProfileEntryType::userProfile
+                               ? store.updateActiveUserProfile (name)
+                               : store.saveActiveAsUserProfile (name);
+
+        if (saved)
         {
             rebuildProfileList();
             applyProfileToEngine();
-            showStatus ("Saved profile: " + name);
+            showStatus (store.getActiveEntryType() == svc::ProfileEntryType::userProfile
+                            ? "Updated profile: " + name
+                            : "Saved profile: " + name);
         }
         else
             showStatus ("Enter a profile name to save.", true);
@@ -290,6 +375,23 @@ void SuperVelocityCurveAudioProcessorEditor::applyThemeFromUI()
     repaint();
 }
 
+void SuperVelocityCurveAudioProcessorEditor::showAboutPanel()
+{
+    if (aboutPanel != nullptr)
+        return;
+
+    aboutPanel = std::make_unique<AboutPanelComponent>();
+    aboutPanel->onDismiss = [this] { hideAboutPanel(); };
+    addAndMakeVisible (*aboutPanel);
+    aboutPanel->setBounds (getLocalBounds());
+    aboutPanel->toFront (true);
+}
+
+void SuperVelocityCurveAudioProcessorEditor::hideAboutPanel()
+{
+    aboutPanel.reset();
+}
+
 void SuperVelocityCurveAudioProcessorEditor::refreshThemedComponents()
 {
     subtitleLabel.setColour (juce::Label::textColourId, juce::Colour (svc::ui::Theme::textSecondary()));
@@ -321,10 +423,11 @@ void SuperVelocityCurveAudioProcessorEditor::resized()
     auto area = getLocalBounds();
     auto header = area.removeFromTop (56).reduced (16, 8);
     auto themeArea = header.removeFromRight (170);
+    aboutButton.setBounds (header.removeFromRight (64).reduced (0, 14));
     themeLabel.setBounds (themeArea.removeFromTop (14));
     themeBox.setBounds (themeArea.removeFromTop (24));
 
-    auto bounds = area.reduced (12).withTrimmedBottom (statusMessage.isEmpty() ? 0 : 22);
+    auto bounds = area.reduced (12).withTrimmedBottom (22);
 
     if (standaloneMidiPanel != nullptr)
     {
@@ -332,7 +435,7 @@ void SuperVelocityCurveAudioProcessorEditor::resized()
         bounds.removeFromTop (4);
     }
 
-    auto toolbar = bounds.removeFromTop (196);
+    auto toolbar = bounds.removeFromTop (172);
     auto col = toolbar.removeFromLeft (toolbar.getWidth() / 2).reduced (4);
     profileLabel.setBounds (col.removeFromTop (16));
     profileBox.setBounds (col.removeFromTop (24));
@@ -366,8 +469,11 @@ void SuperVelocityCurveAudioProcessorEditor::resized()
     captureAbButton.setBounds (presetRow.removeFromLeft (56).reduced (1));
     abToggleButton.setBounds (presetRow.reduced (1));
 
-    liveHitsLabel.setBounds (rightToolbar.removeFromTop (26));
-    midiToolsTabs.setBounds (rightToolbar);
+    auto liveRow = bounds.removeFromTop (22);
+    liveHitsLabel.setBounds (liveRow.reduced (4, 0));
+
+    auto tabsRow = bounds.removeFromTop (200);
+    midiToolsTabs.setBounds (tabsRow.reduced (4));
 
     auto bottom = bounds.removeFromBottom (150);
     auto histRow = bottom.removeFromTop (bottom.getHeight() - 4);
@@ -378,11 +484,18 @@ void SuperVelocityCurveAudioProcessorEditor::resized()
 
     auto left = bounds.removeFromLeft (juce::jmax (280, bounds.getWidth() * 2 / 5)).reduced (4);
     padGrid.setBounds (left);
+    padGrid.toFront (false);
 
     auto right = bounds.reduced (4);
     auto inspector = right.removeFromBottom (juce::jmax (200, right.getHeight() / 3));
     padInspector.setBounds (inspector);
     curveEditor.setBounds (right);
+
+    if (aboutPanel != nullptr)
+    {
+        aboutPanel->setBounds (getLocalBounds());
+        aboutPanel->toFront (true);
+    }
 }
 
 void SuperVelocityCurveAudioProcessorEditor::rebuildProfileList()
@@ -413,12 +526,7 @@ void SuperVelocityCurveAudioProcessorEditor::refreshRoutingPanels()
 
 bool SuperVelocityCurveAudioProcessorEditor::isPadMapped (int note, int channel) const
 {
-    for (const auto& pad : audioProcessor.getProfileStore().getActiveProfile().getPads())
-    {
-        if (pad.midiNote == note && pad.midiChannel == channel)
-            return true;
-    }
-    return false;
+    return audioProcessor.getProfileStore().getActiveProfile().findPadIndex (note, channel) >= 0;
 }
 
 void SuperVelocityCurveAudioProcessorEditor::onProfileSelected()
@@ -438,10 +546,9 @@ void SuperVelocityCurveAudioProcessorEditor::onProfileSelected()
     else
         audioProcessor.getProfileStore().loadUserProfile (entry.index);
 
-    curveA.reset();
-    curveB.reset();
-    hearingCurveA = false;
-    abToggleButton.setButtonText ("Hear A");
+    profileNameEditor.setText (audioProcessor.getProfileStore().getActiveProfile().getName(),
+                               juce::dontSendNotification);
+    clearAbCompare();
     curveEditor.setEditTarget (CurveEditorComponent::EditTarget::velocity);
 
     onPadSelected (0);
@@ -451,10 +558,12 @@ void SuperVelocityCurveAudioProcessorEditor::onProfileSelected()
 
 void SuperVelocityCurveAudioProcessorEditor::onPadSelected (int padIndex)
 {
+    unfocusAllComponents();
     selectedPadIndex = padIndex;
     padGrid.setSelectedPadIndex (padIndex);
     calibrationWizard.reset();
     curveEditor.setEditTarget (CurveEditorComponent::EditTarget::velocity);
+    clearAbCompare();
     refreshPadUI();
 }
 
@@ -478,15 +587,66 @@ void SuperVelocityCurveAudioProcessorEditor::updateSelectedPadFromUI (const svc:
     if (selectedPadIndex < 0 || selectedPadIndex >= static_cast<int> (profile.getPads().size()))
         return;
 
-    profile.getPads()[static_cast<size_t> (selectedPadIndex)] = pad;
+    const auto result = profile.setPadAt (selectedPadIndex, pad);
+    if (result != svc::PadMutationResult::ok)
+    {
+        showStatus (padMutationMessage (result), true);
+        refreshPadUI();
+        return;
+    }
+
     audioProcessor.getProfileStore().syncActiveUserProfileFromEdits();
     applyProfileToEngine();
     padInspector.setPad (pad, selectedPadIndex);
+    padGrid.updatePad (selectedPadIndex, pad);
 }
 
 void SuperVelocityCurveAudioProcessorEditor::applyProfileToEngine()
 {
     audioProcessor.applyProfileToEngine();
+    syncAbAuditionIfActive();
+}
+
+void SuperVelocityCurveAudioProcessorEditor::syncAbAuditionIfActive()
+{
+    if (! curveA.has_value() || ! abToggleButton.getButtonText().contains ("Hearing"))
+        return;
+
+    if (hearingCurveA)
+        applyListenCurveToEngine (*curveA);
+    else
+        applyListenCurveToEngine (curveEditor.getPad().curve);
+}
+
+void SuperVelocityCurveAudioProcessorEditor::applyListenCurveToEngine (const svc::VelocityCurve& curve)
+{
+    const auto& profile = audioProcessor.getProfileStore().getActiveProfile();
+    if (selectedPadIndex < 0 || selectedPadIndex >= static_cast<int> (profile.getPads().size()))
+        return;
+
+    const auto& pad = profile.getPads()[static_cast<size_t> (selectedPadIndex)];
+    svc::PadSettings settings;
+    settings.midiNote = pad.midiNote;
+    settings.midiChannel = pad.midiChannel;
+    settings.name = pad.label;
+    settings.group = pad.group;
+    settings.curve = curve;
+    settings.enabled = pad.enabled;
+    settings.velocityGate = pad.velocityGate;
+    settings.gateMode = pad.gateMode;
+    settings.retriggerGuardMs = pad.retriggerGuardMs;
+    settings.aftertouch = pad.aftertouch;
+    audioProcessor.getEngine().setPadSettings (pad.midiNote, pad.midiChannel, settings);
+}
+
+void SuperVelocityCurveAudioProcessorEditor::clearAbCompare()
+{
+    curveA.reset();
+    hearingCurveA = false;
+    abToggleButton.setButtonText ("Hear A");
+    curveEditor.clearCompareCurve();
+    captureAbButton.removeColour (juce::TextButton::buttonOnColourId);
+    applyProfileToEngine();
 }
 
 void SuperVelocityCurveAudioProcessorEditor::toggleAbCurve()
@@ -497,24 +657,29 @@ void SuperVelocityCurveAudioProcessorEditor::toggleAbCurve()
         return;
     }
 
-    auto pad = curveEditor.getPad();
-
-    if (! curveB.has_value())
-        curveB = pad.curve;
-
+    const auto working = curveEditor.getPad().curve;
     hearingCurveA = ! hearingCurveA;
-    pad.curve = hearingCurveA ? *curveA : *curveB;
-    abToggleButton.setButtonText (hearingCurveA ? "Hearing A" : "Hearing B");
 
-    updateSelectedPadFromUI (pad);
-    curveEditor.setPad (pad);
+    if (hearingCurveA)
+    {
+        applyListenCurveToEngine (*curveA);
+        curveEditor.setCompareCurve (&working);
+        abToggleButton.setButtonText ("Hearing A");
+        showStatus ("Auditioning captured A (gold line = your edits). Play pads to hear.");
+    }
+    else
+    {
+        applyListenCurveToEngine (working);
+        curveEditor.setCompareCurve (&*curveA);
+        abToggleButton.setButtonText ("Hearing B");
+        showStatus ("Auditioning your edits (gold line = captured A). Play pads to hear.");
+    }
 }
 
 void SuperVelocityCurveAudioProcessorEditor::showStatus (const juce::String& message, bool isError)
 {
     statusMessage = message;
     statusIsError = isError;
-    resized();
     repaint();
 }
 

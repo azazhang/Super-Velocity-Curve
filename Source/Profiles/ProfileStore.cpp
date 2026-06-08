@@ -97,6 +97,49 @@ bool ProfileStore::saveActiveAsUserProfile (const juce::String& name)
     return true;
 }
 
+bool ProfileStore::updateActiveUserProfile (const juce::String& name)
+{
+    if (name.trim().isEmpty())
+        return false;
+
+    activeProfile.setName (name.trim());
+    activeProfile.setLayout (ProfileLayout::custom);
+
+    if (activeEntryType == ProfileEntryType::userProfile
+        && activeEntryIndex >= 0
+        && activeEntryIndex < static_cast<int> (userProfiles.size()))
+    {
+        userProfiles[static_cast<size_t> (activeEntryIndex)] = activeProfile.copy();
+        notifyChanged();
+        return true;
+    }
+
+    return saveActiveAsUserProfile (name);
+}
+
+PadMutationResult ProfileStore::addPadToActive (const ProfilePad& pad)
+{
+    auto newPad = pad.label.isEmpty() ? activeProfile.makeDefaultPad() : pad;
+    const auto result = activeProfile.addPad (std::move (newPad));
+    if (result == PadMutationResult::ok)
+    {
+        syncActiveUserProfileFromEdits();
+        notifyChanged();
+    }
+    return result;
+}
+
+PadMutationResult ProfileStore::removePadFromActive (int index)
+{
+    const auto result = activeProfile.removePad (index);
+    if (result == PadMutationResult::ok)
+    {
+        syncActiveUserProfileFromEdits();
+        notifyChanged();
+    }
+    return result;
+}
+
 bool ProfileStore::deleteUserProfile (int index)
 {
     if (index < 0 || index >= static_cast<int> (userProfiles.size()))

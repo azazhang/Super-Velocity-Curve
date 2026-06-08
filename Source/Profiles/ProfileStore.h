@@ -39,6 +39,9 @@ public:
     void loadFactoryTemplate (int index);
     void loadUserProfile (int index);
     bool saveActiveAsUserProfile (const juce::String& name);
+    bool updateActiveUserProfile (const juce::String& name);
+    PadMutationResult addPadToActive (const ProfilePad& pad = {});
+    PadMutationResult removePadFromActive (int index);
     bool deleteUserProfile (int index);
     bool duplicateActiveAsUserProfile (const juce::String& name);
     void applyActiveToEngine (class VelocityEngine& engine) const;

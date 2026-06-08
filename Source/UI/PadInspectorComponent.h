@@ -26,6 +26,12 @@ private:
     juce::Viewport viewport;
     juce::Component content;
 
+    juce::Label padNameLabel { {}, "Pad name" };
+    juce::TextEditor padNameEditor;
+    juce::Label midiNoteLabel { {}, "MIDI note (0-127)" };
+    juce::Slider midiNoteSlider;
+    juce::Label midiChannelLabel { {}, "MIDI channel" };
+    juce::ComboBox midiChannelBox;
     juce::ToggleButton enabledToggle { "Pad enabled" };
     juce::ToggleButton aftertouchToggle { "Aftertouch curve enabled" };
     juce::TextButton editAftertouchButton { "Edit AT curve" };

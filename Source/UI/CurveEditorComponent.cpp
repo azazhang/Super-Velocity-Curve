@@ -12,10 +12,11 @@ const svc::VelocityCurve& CurveEditorComponent::activeCurve() const noexcept
     return editTarget == EditTarget::aftertouch ? currentPad.aftertouch.curve : currentPad.curve;
 }
 
-void CurveEditorComponent::setPad (const svc::ProfilePad& pad)
+void CurveEditorComponent::setPad (const svc::ProfilePad& pad, bool clearHitMarkers)
 {
     currentPad = pad;
-    hitMarkers.clear();
+    if (clearHitMarkers)
+        hitMarkers.clear();
     repaint();
 }
 
@@ -172,10 +173,35 @@ void CurveEditorComponent::drawGateZones (juce::Graphics& g) const
     }
 }
 
+void CurveEditorComponent::drawCurvePath (juce::Graphics& g, const svc::VelocityCurve& curve,
+                                          juce::Colour colour, float strokeWidth) const
+{
+    const auto plot = plotArea();
+    const auto& lut = curve.getLut();
+    juce::Path curvePath;
+
+    for (int i = 0; i < svc::VelocityCurve::lutSize; ++i)
+    {
+        const auto input = static_cast<float> (i) / static_cast<float> (svc::VelocityCurve::lutSize - 1);
+        const auto point = normalizedToPoint (input, lut[static_cast<size_t> (i)]);
+
+        if (i == 0)
+            curvePath.startNewSubPath (point);
+        else
+            curvePath.lineTo (point);
+    }
+
+    g.setColour (colour);
+    g.strokePath (curvePath, juce::PathStrokeType (strokeWidth));
+}
+
 void CurveEditorComponent::drawCurve (juce::Graphics& g) const
 {
     const auto plot = plotArea();
     const auto& lut = activeCurve().getLut();
+
+    if (compareCurve != nullptr)
+        drawCurvePath (g, *compareCurve, juce::Colour (svc::ui::Theme::accentGold()).withAlpha (0.55f), 2.0f);
 
     juce::Path curvePath;
     juce::Path fillPath;
@@ -272,7 +298,7 @@ void CurveEditorComponent::paint (juce::Graphics& g)
     g.setColour (juce::Colour (svc::ui::Theme::textPrimary()));
     g.setFont (svc::ui::Theme::sectionFont());
     const juce::String mode = editTarget == EditTarget::aftertouch ? "Aftertouch" : "Velocity";
-    g.drawText (mode + " curve  ·  " + currentPad.label,
+    g.drawText (mode + " curve - " + currentPad.label,
                 getLocalBounds().removeFromTop (30).reduced (14, 0),
                 juce::Justification::centredLeft);
 
@@ -285,7 +311,7 @@ void CurveEditorComponent::paint (juce::Graphics& g)
 
     g.setFont (svc::ui::Theme::smallFont());
     g.setColour (juce::Colour (svc::ui::Theme::textSecondary()).withAlpha (0.85f));
-    g.drawText ("Gate handles: move left/right for input range, up/down for output at gate · dbl-click add · right-click remove",
+    g.drawText ("Gate handles: left/right = input range, up/down = output at gate | dbl-click add | right-click remove",
                 getLocalBounds().removeFromBottom (18).reduced (12, 0),
                 juce::Justification::centred);
 }

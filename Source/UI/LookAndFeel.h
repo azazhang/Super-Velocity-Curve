@@ -19,7 +19,7 @@ public:
                                bool shouldDrawButtonAsHighlighted,
                                bool shouldDrawButtonAsDown) override
     {
-        auto bounds = button.getLocalBounds().toFloat().reduced (0.5f);
+        auto bounds = button.getLocalBounds().toFloat().reduced (1.0f, 0.5f);
         const bool toggled = button.getToggleState();
 
         juce::Colour base = juce::Colour (Theme::panelRaised());
@@ -31,7 +31,7 @@ public:
             base = juce::Colour (Theme::padHover());
 
         g.setColour (base);
-        g.fillRoundedRectangle (bounds, 5.0f);
+        g.fillRoundedRectangle (bounds, 6.0f);
 
         if (toggled)
         {
@@ -40,7 +40,28 @@ public:
         }
 
         g.setColour (juce::Colour (Theme::border()).withAlpha (0.8f));
-        g.drawRoundedRectangle (bounds, 5.0f, 1.0f);
+        g.drawRoundedRectangle (bounds, 6.0f, 1.0f);
+    }
+
+    void drawTabButton (juce::TabBarButton& button, juce::Graphics& g, bool isMouseOver, bool isMouseDown) override
+    {
+        const auto area = button.getLocalBounds().toFloat().reduced (1.0f, 2.0f);
+        const bool active = button.isFrontTab();
+
+        g.setColour (active ? juce::Colour (Theme::panelRaised())
+                            : juce::Colour (Theme::panel()).withAlpha (0.6f));
+        g.fillRoundedRectangle (area, 5.0f);
+
+        if (active)
+        {
+            g.setColour (juce::Colour (Theme::accentGold()).withAlpha (0.45f));
+            g.fillRect (area.getX(), area.getBottom() - 2.0f, area.getWidth(), 2.0f);
+        }
+
+        g.setColour (juce::Colour (Theme::textPrimary()).withAlpha (active ? 1.0f : 0.75f));
+        g.setFont (Theme::smallFont().boldened());
+        g.drawFittedText (button.getButtonText(), area.toNearestInt(), juce::Justification::centred, 1);
+        juce::ignoreUnused (isMouseOver, isMouseDown);
     }
 
     void drawButtonText (juce::Graphics& g,

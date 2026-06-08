@@ -6,6 +6,39 @@ PadInspectorComponent::PadInspectorComponent()
     viewport.setViewedComponent (&content, false);
     viewport.setScrollBarsShown (true, false);
 
+    padNameEditor.setFont (svc::ui::Theme::bodyFont());
+    padNameEditor.setTextToShowWhenEmpty ("Pad name", juce::Colour (svc::ui::Theme::textSecondary()));
+    padNameEditor.onFocusLost = padNameEditor.onReturnKey = [this]
+    {
+        currentPad.label = padNameEditor.getText().trim();
+        if (currentPad.label.isEmpty())
+            currentPad.label = "Pad " + juce::String (currentPadIndex + 1);
+        notifyChanged();
+    };
+    content.addAndMakeVisible (padNameLabel);
+    content.addAndMakeVisible (padNameEditor);
+
+    midiNoteSlider.setRange (0.0, 127.0, 1.0);
+    midiNoteSlider.setTextBoxStyle (juce::Slider::TextBoxBelow, false, 52, 16);
+    midiNoteSlider.textFromValueFunction = [] (double v) { return juce::String (static_cast<int> (v)); };
+    midiNoteSlider.onValueChange = [this]
+    {
+        currentPad.midiNote = static_cast<int> (midiNoteSlider.getValue());
+        notifyChanged();
+    };
+    content.addAndMakeVisible (midiNoteLabel);
+    content.addAndMakeVisible (midiNoteSlider);
+
+    for (int ch = 1; ch <= 16; ++ch)
+        midiChannelBox.addItem ("Ch " + juce::String (ch), ch);
+    midiChannelBox.onChange = [this]
+    {
+        currentPad.midiChannel = midiChannelBox.getSelectedId();
+        notifyChanged();
+    };
+    content.addAndMakeVisible (midiChannelLabel);
+    content.addAndMakeVisible (midiChannelBox);
+
     content.addAndMakeVisible (enabledToggle);
     enabledToggle.onClick = [this] { currentPad.enabled = enabledToggle.getToggleState(); notifyChanged(); };
 
@@ -99,6 +132,9 @@ void PadInspectorComponent::setPad (const svc::ProfilePad& pad, int padIndex)
     currentPad = pad;
     currentPadIndex = padIndex;
 
+    padNameEditor.setText (pad.label, juce::dontSendNotification);
+    midiNoteSlider.setValue (pad.midiNote, juce::dontSendNotification);
+    midiChannelBox.setSelectedId (juce::jlimit (1, 16, pad.midiChannel), juce::dontSendNotification);
     enabledToggle.setToggleState (pad.enabled, juce::dontSendNotification);
     aftertouchToggle.setToggleState (pad.aftertouch.enabled, juce::dontSendNotification);
     groupBox.setSelectedItemIndex (static_cast<int> (pad.group), juce::dontSendNotification);
@@ -127,13 +163,9 @@ void PadInspectorComponent::resized()
 {
     auto area = getLocalBounds().reduced (8).withTrimmedTop (28);
     viewport.setBounds (area);
-    content.setSize (area.getWidth() - 8, 360);
+    content.setSize (area.getWidth() - 8, 480);
 
     auto bounds = content.getLocalBounds().reduced (8);
-    enabledToggle.setBounds (bounds.removeFromTop (22));
-    aftertouchToggle.setBounds (bounds.removeFromTop (22));
-    editAftertouchButton.setBounds (bounds.removeFromTop (24));
-    bounds.removeFromTop (6);
 
     auto row = [&bounds] (juce::Label& label, juce::Component& comp, int h = 44)
     {
@@ -142,6 +174,15 @@ void PadInspectorComponent::resized()
         comp.setBounds (r);
         bounds.removeFromTop (4);
     };
+
+    row (padNameLabel, padNameEditor, 40);
+    row (midiNoteLabel, midiNoteSlider);
+    row (midiChannelLabel, midiChannelBox, 40);
+    bounds.removeFromTop (2);
+    enabledToggle.setBounds (bounds.removeFromTop (22));
+    aftertouchToggle.setBounds (bounds.removeFromTop (22));
+    editAftertouchButton.setBounds (bounds.removeFromTop (24));
+    bounds.removeFromTop (6);
 
     row (groupLabel, groupBox, 40);
     row (gateLabel, velocityGateSlider);

@@ -14,6 +14,7 @@
 | [developer/CONTRIBUTING.md](developer/CONTRIBUTING.md) | Build, test, PR workflow |
 | [developer/DAW_TEST_MATRIX.md](developer/DAW_TEST_MATRIX.md) | Host compatibility checklist |
 | [developer/PLUGINVAL.md](developer/PLUGINVAL.md) | CI validation with pluginval |
+| [developer/TESTING.md](developer/TESTING.md) | QA strategy, smoke matrix, automation |
 
 ## For AI agents
 

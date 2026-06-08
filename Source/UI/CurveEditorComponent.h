@@ -11,7 +11,7 @@ class CurveEditorComponent : public juce::Component
 public:
     CurveEditorComponent();
 
-    void setPad (const svc::ProfilePad& pad);
+    void setPad (const svc::ProfilePad& pad, bool clearHitMarkers = true);
     const svc::ProfilePad& getPad() const noexcept { return currentPad; }
 
     enum class EditTarget { velocity, aftertouch };
@@ -32,8 +32,13 @@ public:
     void copyFrom (const svc::VelocityCurve& other);
     void setFloorCeiling (float floor, float ceiling);
 
+    /** Ghost overlay for A/B compare (does not change editable pad). */
+    void setCompareCurve (const svc::VelocityCurve* curve) noexcept { compareCurve = curve; repaint(); }
+    void clearCompareCurve() noexcept { compareCurve = nullptr; repaint(); }
+
 private:
     svc::ProfilePad currentPad;
+    const svc::VelocityCurve* compareCurve = nullptr;
 
     struct HitMarker
     {
@@ -54,6 +59,7 @@ private:
     void drawGrid (juce::Graphics& g) const;
     void drawGateZones (juce::Graphics& g) const;
     void drawCurve (juce::Graphics& g) const;
+    void drawCurvePath (juce::Graphics& g, const svc::VelocityCurve& curve, juce::Colour colour, float strokeWidth) const;
     svc::VelocityCurve& activeCurve() noexcept;
     const svc::VelocityCurve& activeCurve() const noexcept;
 };

@@ -221,6 +221,26 @@ static int testHumanizeWithinBounds()
     return 0;
 }
 
+static int testPadAddRemoveAndDuplicateKey()
+{
+    svc::ControllerProfile profile = svc::ControllerProfile::createBlank();
+    EXPECT_TRUE (profile.getPads().size() == 1);
+
+    const auto pad2 = profile.makeDefaultPad();
+    EXPECT_TRUE (profile.addPad (pad2) == svc::PadMutationResult::ok);
+    EXPECT_TRUE (profile.getPads().size() == 2);
+
+    auto duplicate = profile.getPads().front();
+    duplicate.midiNote = profile.getPads().back().midiNote;
+    duplicate.midiChannel = profile.getPads().back().midiChannel;
+    EXPECT_TRUE (profile.setPadAt (0, duplicate) == svc::PadMutationResult::duplicateMidiKey);
+
+    EXPECT_TRUE (profile.removePad (1) == svc::PadMutationResult::ok);
+    EXPECT_TRUE (profile.getPads().size() == 1);
+    EXPECT_TRUE (profile.removePad (0) == svc::PadMutationResult::wouldEmptyProfile);
+    return 0;
+}
+
 int main()
 {
     if (testVelocityCurveMonotonic() != 0) return 1;
@@ -234,6 +254,7 @@ int main()
     if (testMidi2LutMonotonic() != 0) return 1;
     if (testInputGateThresholds() != 0) return 1;
     if (testHumanizeWithinBounds() != 0) return 1;
+    if (testPadAddRemoveAndDuplicateKey() != 0) return 1;
     std::cout << "All engine tests passed.\n";
     return 0;
 }

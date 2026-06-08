@@ -17,11 +17,11 @@ struct Theme
     static void setMode (ThemeMode mode) noexcept { currentMode = mode; }
     static ThemeMode getMode() noexcept { return currentMode; }
 
-    static juce::uint32 background()       { return currentMode == ThemeMode::dark ? 0xff16161a : 0xfff0f1f4; }
-    static juce::uint32 backgroundTop()    { return currentMode == ThemeMode::dark ? 0xff1c1c22 : 0xfff8f9fb; }
-    static juce::uint32 panel()            { return currentMode == ThemeMode::dark ? 0xff24242c : 0xffffffff; }
-    static juce::uint32 panelRaised()      { return currentMode == ThemeMode::dark ? 0xff2c2c36 : 0xfff4f5f7; }
-    static juce::uint32 border()           { return currentMode == ThemeMode::dark ? 0xff3a3a48 : 0xffd1d5db; }
+    static juce::uint32 background()       { return currentMode == ThemeMode::dark ? 0xff14141a : 0xffe8eaef; }
+    static juce::uint32 backgroundTop()    { return currentMode == ThemeMode::dark ? 0xff1a1a22 : 0xfff4f5f8; }
+    static juce::uint32 panel()            { return currentMode == ThemeMode::dark ? 0xff22222c : 0xffffffff; }
+    static juce::uint32 panelRaised()      { return currentMode == ThemeMode::dark ? 0xff2a2a36 : 0xfff8f9fb; }
+    static juce::uint32 border()           { return currentMode == ThemeMode::dark ? 0xff404050 : 0xffc5cad3; }
     static juce::uint32 borderBright()     { return currentMode == ThemeMode::dark ? 0xff4a4a58 : 0xffb8bcc4; }
     static juce::uint32 accent()           { return currentMode == ThemeMode::dark ? 0xff5eb0ff : 0xff2563eb; }
     static juce::uint32 accentGold()       { return currentMode == ThemeMode::dark ? 0xffd4a84b : 0xffb8860b; }
@@ -30,9 +30,9 @@ struct Theme
     static juce::uint32 accentWarm()       { return currentMode == ThemeMode::dark ? 0xffe8b84a : 0xffd97706; }
     static juce::uint32 textPrimary()      { return currentMode == ThemeMode::dark ? 0xfff0f0f4 : 0xff111827; }
     static juce::uint32 textSecondary()    { return currentMode == ThemeMode::dark ? 0xff9b9ba8 : 0xff6b7280; }
-    static juce::uint32 padIdle()          { return currentMode == ThemeMode::dark ? 0xff2a2a34 : 0xffe5e7eb; }
-    static juce::uint32 padHover()         { return currentMode == ThemeMode::dark ? 0xff343440 : 0xffd1d5db; }
-    static juce::uint32 padSelected()      { return currentMode == ThemeMode::dark ? 0xff3d4f66 : 0xff93c5fd; }
+    static juce::uint32 padIdle()          { return currentMode == ThemeMode::dark ? 0xff2c2c38 : 0xffe2e5ea; }
+    static juce::uint32 padHover()         { return currentMode == ThemeMode::dark ? 0xff383848 : 0xffcdd3dc; }
+    static juce::uint32 padSelected()      { return currentMode == ThemeMode::dark ? 0xff3a5070 : 0xff7eb8ff; }
     static juce::uint32 padHit()           { return currentMode == ThemeMode::dark ? 0xffe8b84a : 0xfff59e0b; }
     static juce::uint32 padDisabled()      { return currentMode == ThemeMode::dark ? 0xff1a1a20 : 0xfff3f4f6; }
     static juce::uint32 curveLine()        { return currentMode == ThemeMode::dark ? 0xff5eb0ff : 0xff2563eb; }
@@ -61,9 +61,15 @@ struct Theme
 
     static void fillPanel (juce::Graphics& g, juce::Rectangle<float> bounds, float radius = 8.0f)
     {
+        if (currentMode == ThemeMode::light)
+        {
+            g.setColour (juce::Colours::black.withAlpha (0.06f));
+            g.fillRoundedRectangle (bounds.translated (0.0f, 1.0f), radius);
+        }
+
         g.setColour (juce::Colour (panel()));
         g.fillRoundedRectangle (bounds, radius);
-        g.setColour (juce::Colour (border()).withAlpha (0.7f));
+        g.setColour (juce::Colour (border()).withAlpha (currentMode == ThemeMode::dark ? 0.75f : 0.9f));
         g.drawRoundedRectangle (bounds, radius, 1.0f);
     }
 

@@ -401,6 +401,130 @@ ControllerProfile ControllerProfile::createFgdp()
     return profile;
 }
 
+int ControllerProfile::getDisplayGridColumns() const noexcept
+{
+    return layout == ProfileLayout::launchpadDrumRack ? 8 : 4;
+}
+
+int ControllerProfile::findPadIndex (int midiNote, int midiChannel) const
+{
+    for (int i = 0; i < static_cast<int> (pads.size()); ++i)
+    {
+        const auto& pad = pads[static_cast<size_t> (i)];
+        if (pad.midiNote == midiNote && pad.midiChannel == midiChannel)
+            return i;
+    }
+    return -1;
+}
+
+bool ControllerProfile::hasDuplicateMidiKey (int midiNote, int midiChannel, int ignoreIndex) const
+{
+    for (int i = 0; i < static_cast<int> (pads.size()); ++i)
+    {
+        if (i == ignoreIndex)
+            continue;
+
+        const auto& pad = pads[static_cast<size_t> (i)];
+        if (pad.midiNote == midiNote && pad.midiChannel == midiChannel)
+            return true;
+    }
+    return false;
+}
+
+std::pair<int, int> ControllerProfile::suggestNextGridCell() const
+{
+    const auto cols = getDisplayGridColumns();
+    int maxDisplayRow = 0;
+
+    for (const auto& pad : pads)
+        maxDisplayRow = std::max (maxDisplayRow, pad.gridRow + (pad.gridCol / cols));
+
+    const auto nextIndex = static_cast<int> (pads.size());
+    return { maxDisplayRow + (nextIndex / cols), nextIndex % cols };
+}
+
+ProfilePad ControllerProfile::makeDefaultPad() const
+{
+    const auto [row, col] = suggestNextGridCell();
+    const int defaultChannel = pads.empty() ? 10 : pads.back().midiChannel;
+
+    int note = 36;
+    for (int candidate = 0; candidate <= 127; ++candidate)
+    {
+        if (! hasDuplicateMidiKey (candidate, defaultChannel))
+        {
+            note = candidate;
+            break;
+        }
+    }
+
+    ProfilePad pad;
+    pad.midiNote = note;
+    pad.midiChannel = defaultChannel;
+    pad.label = "Pad " + juce::String (static_cast<int> (pads.size()) + 1);
+    pad.gridRow = row;
+    pad.gridCol = col;
+    pad.group = PadGroup::other;
+    return pad;
+}
+
+PadMutationResult ControllerProfile::addPad (ProfilePad pad, std::optional<int> insertIndex)
+{
+    if (static_cast<int> (pads.size()) >= kMaxProfilePads)
+        return PadMutationResult::maxPadsReached;
+
+    if (pad.midiNote < 0 || pad.midiNote > 127 || pad.midiChannel < 1 || pad.midiChannel > 16)
+        return PadMutationResult::invalidMidiKey;
+
+    if (hasDuplicateMidiKey (pad.midiNote, pad.midiChannel))
+        return PadMutationResult::duplicateMidiKey;
+
+    layout = ProfileLayout::custom;
+
+    if (insertIndex.has_value())
+    {
+        const auto idx = *insertIndex;
+        if (idx < 0 || idx > static_cast<int> (pads.size()))
+            return PadMutationResult::indexOutOfRange;
+        pads.insert (pads.begin() + idx, std::move (pad));
+    }
+    else
+    {
+        pads.push_back (std::move (pad));
+    }
+
+    return PadMutationResult::ok;
+}
+
+PadMutationResult ControllerProfile::removePad (int index)
+{
+    if (index < 0 || index >= static_cast<int> (pads.size()))
+        return PadMutationResult::indexOutOfRange;
+
+    if (static_cast<int> (pads.size()) <= kMinProfilePads)
+        return PadMutationResult::wouldEmptyProfile;
+
+    pads.erase (pads.begin() + index);
+    layout = ProfileLayout::custom;
+    return PadMutationResult::ok;
+}
+
+PadMutationResult ControllerProfile::setPadAt (int index, const ProfilePad& pad)
+{
+    if (index < 0 || index >= static_cast<int> (pads.size()))
+        return PadMutationResult::indexOutOfRange;
+
+    if (pad.midiNote < 0 || pad.midiNote > 127 || pad.midiChannel < 1 || pad.midiChannel > 16)
+        return PadMutationResult::invalidMidiKey;
+
+    if (hasDuplicateMidiKey (pad.midiNote, pad.midiChannel, index))
+        return PadMutationResult::duplicateMidiKey;
+
+    pads[static_cast<size_t> (index)] = pad;
+    layout = ProfileLayout::custom;
+    return PadMutationResult::ok;
+}
+
 ControllerProfile ControllerProfile::createBlank()
 {
     ControllerProfile profile ("Blank Custom", ProfileLayout::custom);

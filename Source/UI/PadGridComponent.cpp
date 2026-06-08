@@ -91,19 +91,43 @@ void PadGridComponent::PadCanvas::mouseMove (const juce::MouseEvent& event)
 PadGridComponent::PadGridComponent()
     : padCanvas (*this)
 {
+    addAndMakeVisible (addPadButton);
+    addAndMakeVisible (deletePadButton);
     addAndMakeVisible (viewport);
     viewport.setViewedComponent (&padCanvas, false);
     viewport.setScrollBarsShown (true, false);
+
+    addPadButton.onClick = [this]
+    {
+        if (onAddPadRequested)
+            onAddPadRequested();
+    };
+
+    deletePadButton.onClick = [this]
+    {
+        if (onDeletePadRequested)
+            onDeletePadRequested();
+    };
 }
 
 void PadGridComponent::setProfile (const svc::ControllerProfile& profile)
 {
     currentProfile = profile;
+    displayGridColumns = profile.getDisplayGridColumns();
     selectedPadIndex = juce::jlimit (0, juce::jmax (0, static_cast<int> (profile.getPads().size()) - 1), selectedPadIndex);
     hitByPadIndex.clear();
     updateCanvasSize();
     padCanvas.repaint();
     repaint();
+}
+
+void PadGridComponent::updatePad (int index, const svc::ProfilePad& pad)
+{
+    if (index < 0 || index >= static_cast<int> (currentProfile.getPads().size()))
+        return;
+
+    currentProfile.getPads()[static_cast<size_t> (index)] = pad;
+    padCanvas.repaint();
 }
 
 void PadGridComponent::setSelectedPadIndex (int index)
@@ -154,7 +178,7 @@ void PadGridComponent::decayHitVisuals()
 
 int PadGridComponent::cellWidth() const
 {
-    return 96;
+    return displayGridColumns >= 8 ? 72 : 96;
 }
 
 int PadGridComponent::cellHeight() const
@@ -166,9 +190,9 @@ void PadGridComponent::updateCanvasSize()
 {
     int maxDisplayRow = 0;
     for (const auto& pad : currentProfile.getPads())
-        maxDisplayRow = juce::jmax (maxDisplayRow, pad.gridRow + (pad.gridCol / 4));
+        maxDisplayRow = juce::jmax (maxDisplayRow, pad.gridRow + (pad.gridCol / displayGridColumns));
 
-    padCanvas.setSize (juce::jmax (4 * cellWidth() + 16, viewport.getWidth()),
+    padCanvas.setSize (juce::jmax (displayGridColumns * cellWidth() + 16, viewport.getWidth()),
                        (maxDisplayRow + 1) * cellHeight() + 16);
 }
 
@@ -179,9 +203,8 @@ juce::Rectangle<int> PadGridComponent::padBoundsForIndex (int index) const
         return {};
 
     const auto& pad = pads[static_cast<size_t> (index)];
-    const int cols = 4;
-    const int displayCol = pad.gridCol % cols;
-    const int displayRow = pad.gridRow + (pad.gridCol / cols);
+    const int displayCol = pad.gridCol % displayGridColumns;
+    const int displayRow = pad.gridRow + (pad.gridCol / displayGridColumns);
 
     return { 8 + displayCol * cellWidth(),
              8 + displayRow * cellHeight(),
@@ -213,6 +236,9 @@ void PadGridComponent::paint (juce::Graphics& g)
 void PadGridComponent::resized()
 {
     auto area = getLocalBounds().reduced (8).withTrimmedTop (28);
+    auto buttonRow = area.removeFromTop (26);
+    addPadButton.setBounds (buttonRow.removeFromLeft (buttonRow.getWidth() / 2).reduced (1));
+    deletePadButton.setBounds (buttonRow.reduced (1));
     viewport.setBounds (area);
     updateCanvasSize();
 }

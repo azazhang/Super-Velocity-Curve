@@ -1,6 +1,24 @@
 # Changelog
 
-## v0.6.0 (unreleased)
+## v0.6.2
+
+### Added
+- **Add pad** / **Delete pad** on Pad Layout — build kits from Blank Custom or trim factory templates
+- Save-in-place for `[My]` profiles; Save on factory template creates a new user copy
+- About panel (version, pluginval badge, links)
+- Per-group zone routing channel combos; scrollable Routing tab
+- Dynamic pad grid columns (8 for Launchpad, 4 for other profiles)
+- Engine tests for pad add/remove and duplicate MIDI key rejection
+- QA docs: `docs/developer/TESTING.md`, pluginval exception notes
+
+### Fixed
+- A/B audition stays in sync after profile/engine updates (BUG-001)
+- Pad inspector no longer clears live hit flashes (BUG-002)
+- Copy curve no longer breaks pad selection
+- Live hits row vs tabs layout overlap; tab panel height
+- Launchpad 8×8 grid overlap
+
+## v0.6.0
 
 ### Added
 - Logic-inspired dark theme + optional light theme (Appearance menu)

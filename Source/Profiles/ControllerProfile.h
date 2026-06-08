@@ -5,6 +5,7 @@
 #include "../Engine/VelocityCurve.h"
 #include "PadTypes.h"
 #include <JuceHeader.h>
+#include <optional>
 #include <vector>
 
 namespace svc
@@ -19,6 +20,19 @@ enum class ProfileLayout
     fgdp,
     custom
 };
+
+enum class PadMutationResult
+{
+    ok,
+    indexOutOfRange,
+    wouldEmptyProfile,
+    duplicateMidiKey,
+    invalidMidiKey,
+    maxPadsReached
+};
+
+inline constexpr int kMinProfilePads = 1;
+inline constexpr int kMaxProfilePads = 128;
 
 struct ProfilePad
 {
@@ -51,6 +65,14 @@ public:
     std::vector<ProfilePad>& getPads() noexcept { return pads; }
 
     void getGridDimensions (int& rows, int& cols) const noexcept;
+    int getDisplayGridColumns() const noexcept;
+    int findPadIndex (int midiNote, int midiChannel) const;
+    bool hasDuplicateMidiKey (int midiNote, int midiChannel, int ignoreIndex = -1) const;
+    std::pair<int, int> suggestNextGridCell() const;
+    ProfilePad makeDefaultPad() const;
+    PadMutationResult addPad (ProfilePad pad, std::optional<int> insertIndex = std::nullopt);
+    PadMutationResult removePad (int index);
+    PadMutationResult setPadAt (int index, const ProfilePad& pad);
     void applyToEngine (class VelocityEngine& engine) const;
 
     MidiRoutingSettings& getMidiRouting() noexcept { return midiRouting; }

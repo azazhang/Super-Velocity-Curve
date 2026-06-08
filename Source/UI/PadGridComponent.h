@@ -12,13 +12,17 @@ public:
     PadGridComponent();
 
     void setProfile (const svc::ControllerProfile& profile);
+    void updatePad (int index, const svc::ProfilePad& pad);
     void setSelectedPadIndex (int index);
+    int getDisplayGridColumns() const noexcept { return displayGridColumns; }
     int getSelectedPadIndex() const noexcept { return selectedPadIndex; }
 
     void flashPadHit (int note, int channel, float outputVelocity);
     void decayHitVisuals();
 
     std::function<void (int padIndex)> onPadSelected;
+    std::function<void()> onAddPadRequested;
+    std::function<void()> onDeletePadRequested;
 
     void paint (juce::Graphics& g) override;
     void resized() override;
@@ -37,6 +41,7 @@ private:
     };
 
     svc::ControllerProfile currentProfile;
+    int displayGridColumns = 4;
     int selectedPadIndex = 0;
     int hoveredPadIndex = -1;
 
@@ -48,6 +53,8 @@ private:
 
     std::unordered_map<int, HitVisual> hitByPadIndex;
 
+    juce::TextButton addPadButton { "Add pad" };
+    juce::TextButton deletePadButton { "Delete pad" };
     juce::Viewport viewport;
     PadCanvas padCanvas;
 

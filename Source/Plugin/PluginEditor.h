@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Standalone/StandaloneMidiPanel.h"
+#include "../UI/AboutPanelComponent.h"
 #include "../UI/CalibrationWizardComponent.h"
 #include "../UI/CurveEditorComponent.h"
 #include "../UI/HistogramComponent.h"
@@ -46,6 +47,8 @@ private:
     juce::TextButton captureAbButton { "Capture A" };
     juce::TextButton abToggleButton { "Hear A" };
     juce::TextButton clearHistogramButton { "Clear Hist" };
+    juce::TextButton aboutButton { "About" };
+    std::unique_ptr<AboutPanelComponent> aboutPanel;
     juce::Label profileLabel { {}, "Profile" };
     juce::Label outputModeLabel { {}, "MIDI output" };
     juce::Label presetLabel { {}, "Curve preset" };
@@ -72,7 +75,6 @@ private:
     bool hearingCurveA = false;
     std::optional<svc::VelocityCurve> clipboardCurve;
     std::optional<svc::VelocityCurve> curveA;
-    std::optional<svc::VelocityCurve> curveB;
 
     void timerCallback() override;
     void rebuildProfileList();
@@ -81,13 +83,18 @@ private:
     void refreshPadUI();
     void updateSelectedPadFromUI (const svc::ProfilePad& pad);
     void applyProfileToEngine();
+    void syncAbAuditionIfActive();
     void updateLiveHits();
     void updateHistograms();
     void showStatus (const juce::String& message, bool isError = false);
     void toggleAbCurve();
+    void applyListenCurveToEngine (const svc::VelocityCurve& curve);
+    void clearAbCompare();
     void refreshRoutingPanels();
     void applyThemeFromUI();
     void refreshThemedComponents();
+    void showAboutPanel();
+    void hideAboutPanel();
     bool isPadMapped (int note, int channel) const;
 
     juce::String statusMessage;

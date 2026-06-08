@@ -3,6 +3,7 @@
 #include "../Profiles/ControllerProfile.h"
 #include "Theme.h"
 #include <JuceHeader.h>
+#include <array>
 #include <functional>
 
 class MidiRoutingPanel : public juce::Component
@@ -19,6 +20,9 @@ public:
 private:
     svc::ControllerProfile* profile = nullptr;
 
+    juce::Viewport viewport;
+    juce::Component content;
+
     juce::ComboBox inputChannelBox;
     juce::ComboBox outputChannelBox;
     juce::ToggleButton remapToggle { "Enable note remap" };
@@ -29,7 +33,11 @@ private:
     juce::Label libraryLabel;
     juce::ComboBox libraryPresetBox;
     juce::Slider libraryBlendSlider { juce::Slider::LinearHorizontal, juce::Slider::TextBoxLeft };
-    juce::ToggleButton zoneRoutingToggle { "Zone routing" };
+    juce::ToggleButton zoneRoutingToggle { "Zone routing (per pad group)" };
+    juce::Label zoneChannelsLabel { {}, "Group output channels (0=keep incoming)" };
+    std::array<juce::Label, 7> zoneGroupLabels;
+    std::array<juce::ComboBox, 7> zoneGroupChannelBoxes;
 
     void notifyChanged();
+    void layoutContent();
 };

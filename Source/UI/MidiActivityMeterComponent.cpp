@@ -31,7 +31,7 @@ void MidiActivityMeterComponent::paint (juce::Graphics& g)
     {
         g.setColour (juce::Colour (svc::ui::Theme::textSecondary()));
         g.drawText (label, bounds.removeFromLeft (36), juce::Justification::centredLeft);
-        g.setColour (juce::Colour (svc::ui::Theme::background()).brighter (0.15f));
+        g.setColour (juce::Colour (svc::ui::Theme::panelRaised()).darker (0.08f));
         g.fillRoundedRectangle (bounds.toFloat(), 3.0f);
         auto filled = bounds.withWidth (juce::roundToInt (static_cast<float> (bounds.getWidth()) * level));
         g.setColour (colour);

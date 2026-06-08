@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(SuperVelocityCurve VERSION 0.6.0)
+project(SuperVelocityCurve VERSION 0.6.2)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -13,6 +13,8 @@ else()
 endif()
 
 add_subdirectory(JUCE)
+
+juce_add_binary_data(SuperVelocityCurveBinaryData SOURCES Resources/pluginval_badge.png)
 
 set(SVC_PLUGIN_SOURCES
     Source/Engine/VelocityCurve.cpp
@@ -30,12 +32,17 @@ set(SVC_PLUGIN_SOURCES
     Source/UI/CalibrationWizardComponent.cpp
     Source/UI/MidiRoutingPanel.cpp
     Source/UI/NoteRemapEditorComponent.cpp
-    Source/UI/MidiActivityMeterComponent.cpp)
+    Source/UI/MidiActivityMeterComponent.cpp
+    Source/UI/AboutPanelComponent.cpp)
 
 function(svc_configure_plugin_target target)
     juce_generate_juce_header(${target})
 
     target_sources(${target} PRIVATE ${SVC_PLUGIN_SOURCES})
+
+    target_compile_definitions(${target}
+        PRIVATE
+            SVC_VERSION="${PROJECT_VERSION}")
 
     target_compile_definitions(${target}
         PUBLIC
@@ -44,9 +51,13 @@ function(svc_configure_plugin_target target)
             JUCE_VST3_CAN_REPLACE_VST2=0
             JUCE_DISPLAY_SPLASH_SCREEN=0)
 
+    target_include_directories(${target} PRIVATE
+        ${CMAKE_BINARY_DIR}/juce_binarydata_SuperVelocityCurveBinaryData/JuceLibraryCode)
+
     target_link_libraries(${target}
         PRIVATE
             juce::juce_audio_utils
+            SuperVelocityCurveBinaryData
         PUBLIC
             juce::juce_recommended_config_flags
             juce::juce_recommended_lto_flags

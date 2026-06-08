@@ -1,5 +1,6 @@
 #include "MidiRoutingPanel.h"
 #include "../Engine/EngineSettings.h"
+#include "../Profiles/PadTypes.h"
 
 namespace
 {
@@ -8,19 +9,22 @@ constexpr const char* groupLabels[] = { "Other", "Kick", "Snare", "Hat", "Tom", 
 
 MidiRoutingPanel::MidiRoutingPanel()
 {
-    addAndMakeVisible (inputLabel);
-    addAndMakeVisible (outputLabel);
-    addAndMakeVisible (inputChannelBox);
-    addAndMakeVisible (outputChannelBox);
-    addAndMakeVisible (remapToggle);
-    addAndMakeVisible (humanizeLabel);
-    addAndMakeVisible (humanizeSlider);
-    addAndMakeVisible (libraryLabel);
-    addAndMakeVisible (libraryPresetBox);
-    addAndMakeVisible (libraryBlendSlider);
-    addAndMakeVisible (zoneRoutingToggle);
+    addAndMakeVisible (viewport);
+    viewport.setViewedComponent (&content, false);
+    viewport.setScrollBarsShown (true, false);
 
-    zoneRoutingToggle.setButtonText ("Zone routing (per pad group channel)");
+    content.addAndMakeVisible (inputLabel);
+    content.addAndMakeVisible (outputLabel);
+    content.addAndMakeVisible (inputChannelBox);
+    content.addAndMakeVisible (outputChannelBox);
+    content.addAndMakeVisible (remapToggle);
+    content.addAndMakeVisible (humanizeLabel);
+    content.addAndMakeVisible (humanizeSlider);
+    content.addAndMakeVisible (libraryLabel);
+    content.addAndMakeVisible (libraryPresetBox);
+    content.addAndMakeVisible (libraryBlendSlider);
+    content.addAndMakeVisible (zoneRoutingToggle);
+    content.addAndMakeVisible (zoneChannelsLabel);
 
     humanizeLabel.setText ("Humanize amount", juce::dontSendNotification);
     libraryLabel.setText ("Library compensation", juce::dontSendNotification);
@@ -37,6 +41,18 @@ MidiRoutingPanel::MidiRoutingPanel()
     libraryPresetBox.addItem ("Acoustic library", 2);
     libraryPresetBox.addItem ("Electronic library", 3);
     libraryPresetBox.addItem ("Compressed library", 4);
+
+    for (int i = 0; i < 7; ++i)
+    {
+        zoneGroupLabels[static_cast<size_t> (i)].setText (groupLabels[i], juce::dontSendNotification);
+        content.addAndMakeVisible (zoneGroupLabels[static_cast<size_t> (i)]);
+        content.addAndMakeVisible (zoneGroupChannelBoxes[static_cast<size_t> (i)]);
+
+        for (int ch = 0; ch <= 16; ++ch)
+            zoneGroupChannelBoxes[static_cast<size_t> (i)].addItem (ch == 0 ? "Keep" : "Ch " + juce::String (ch), ch + 1);
+
+        zoneGroupChannelBoxes[static_cast<size_t> (i)].onChange = [this] { notifyChanged(); };
+    }
 
     inputChannelBox.onChange = [this] { notifyChanged(); };
     outputChannelBox.onChange = [this] { notifyChanged(); };
@@ -59,6 +75,12 @@ void MidiRoutingPanel::setProfile (svc::ControllerProfile& p)
     humanizeSlider.setValue (processing.humanizeAmount, juce::dontSendNotification);
     libraryBlendSlider.setValue (processing.libraryBlend, juce::dontSendNotification);
     zoneRoutingToggle.setToggleState (processing.zoneRouting.enabled, juce::dontSendNotification);
+
+    for (int i = 0; i < 7; ++i)
+    {
+        const auto ch = processing.zoneRouting.groupOutputChannel[static_cast<size_t> (i)];
+        zoneGroupChannelBoxes[static_cast<size_t> (i)].setSelectedId (ch + 1, juce::dontSendNotification);
+    }
 
     int presetId = 1;
     switch (processing.libraryPreset)
@@ -86,6 +108,10 @@ void MidiRoutingPanel::notifyChanged()
     processing.libraryBlend = static_cast<float> (libraryBlendSlider.getValue());
     processing.zoneRouting.enabled = zoneRoutingToggle.getToggleState();
 
+    for (int i = 0; i < 7; ++i)
+        processing.zoneRouting.groupOutputChannel[static_cast<size_t> (i)] =
+            zoneGroupChannelBoxes[static_cast<size_t> (i)].getSelectedId() - 1;
+
     switch (libraryPresetBox.getSelectedId())
     {
         case 2:  processing.libraryPreset = svc::LibraryCompensationPreset::acoustic; break;
@@ -98,6 +124,45 @@ void MidiRoutingPanel::notifyChanged()
         onRoutingChanged();
 }
 
+void MidiRoutingPanel::layoutContent()
+{
+    auto bounds = juce::Rectangle<int> (0, 0, juce::jmax (viewport.getWidth(), 280), 520).reduced (4);
+
+    auto row = [&bounds] (juce::Component& comp, int h)
+    {
+        comp.setBounds (bounds.removeFromTop (h));
+        bounds.removeFromTop (4);
+    };
+
+    auto labelRow = [&bounds] (juce::Label& label, juce::Component& comp, int h = 40)
+    {
+        auto r = bounds.removeFromTop (h);
+        label.setBounds (r.removeFromTop (14));
+        comp.setBounds (r);
+        bounds.removeFromTop (4);
+    };
+
+    labelRow (inputLabel, inputChannelBox);
+    labelRow (outputLabel, outputChannelBox);
+    row (remapToggle, 22);
+    bounds.removeFromTop (4);
+    labelRow (humanizeLabel, humanizeSlider);
+    labelRow (libraryLabel, libraryPresetBox);
+    row (libraryBlendSlider, 22);
+    row (zoneRoutingToggle, 22);
+    row (zoneChannelsLabel, 16);
+
+    for (int i = 0; i < 7; ++i)
+    {
+        auto r = bounds.removeFromTop (40);
+        zoneGroupLabels[static_cast<size_t> (i)].setBounds (r.removeFromTop (14));
+        zoneGroupChannelBoxes[static_cast<size_t> (i)].setBounds (r);
+        bounds.removeFromTop (2);
+    }
+
+    content.setSize (bounds.getWidth() + 8, bounds.getY() + 8);
+}
+
 void MidiRoutingPanel::paint (juce::Graphics& g)
 {
     juce::ignoreUnused (g);
@@ -105,22 +170,6 @@ void MidiRoutingPanel::paint (juce::Graphics& g)
 
 void MidiRoutingPanel::resized()
 {
-    auto area = getLocalBounds().reduced (8);
-    inputLabel.setBounds (area.removeFromTop (14));
-    inputChannelBox.setBounds (area.removeFromTop (22));
-    area.removeFromTop (4);
-    outputLabel.setBounds (area.removeFromTop (14));
-    outputChannelBox.setBounds (area.removeFromTop (22));
-    area.removeFromTop (4);
-    remapToggle.setBounds (area.removeFromTop (22));
-    area.removeFromTop (6);
-    humanizeLabel.setBounds (area.removeFromTop (14));
-    humanizeSlider.setBounds (area.removeFromTop (22));
-    area.removeFromTop (4);
-    libraryLabel.setBounds (area.removeFromTop (14));
-    libraryPresetBox.setBounds (area.removeFromTop (22));
-    area.removeFromTop (2);
-    libraryBlendSlider.setBounds (area.removeFromTop (22));
-    area.removeFromTop (4);
-    zoneRoutingToggle.setBounds (area.removeFromTop (22));
+    viewport.setBounds (getLocalBounds());
+    layoutContent();
 }

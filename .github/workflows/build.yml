@@ -20,7 +20,7 @@ jobs:
           submodules: recursive
 
       - name: Configure
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -DSVC_COPY_PLUGIN_AFTER_BUILD=OFF
 
       - name: Build
         run: cmake --build build --config Release --parallel
@@ -92,7 +92,7 @@ jobs:
           submodules: recursive
 
       - name: Configure
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DSVC_COPY_PLUGIN_AFTER_BUILD=OFF
 
       - name: Build
         run: cmake --build build --config Release --parallel
@@ -114,9 +114,19 @@ jobs:
           New-Item -ItemType Directory -Force -Path pluginval-logs | Out-Null
           function Validate-Plugin($path) {
             Write-Host "=== pluginval: $path ==="
-            & $pv.FullName --validate-in-process --strictness-level 5 --timeout-ms 120000 --output-dir pluginval-logs $path
-            $exitCode = $LASTEXITCODE
-            if ($exitCode -ne 0) { throw "pluginval failed for $path (exit $exitCode)" }
+            # Start-Process -Wait: pluginval on Windows can return before validation finishes
+            # when invoked with &, leaving $LASTEXITCODE empty while tests still run.
+            $args = @(
+              '--validate-in-process',
+              '--strictness-level', '5',
+              '--timeout-ms', '120000',
+              '--output-dir', 'pluginval-logs',
+              $path
+            )
+            $proc = Start-Process -FilePath $pv.FullName -ArgumentList $args -Wait -PassThru -NoNewWindow
+            if ($proc.ExitCode -ne 0) {
+              throw "pluginval failed for $path (exit $($proc.ExitCode))"
+            }
           }
           Validate-Plugin "build/SuperVelocityCurve_artefacts/Release/VST3/Super VelocityCurve.vst3"
           Validate-Plugin "build/SuperVelocityCurveMidiFx_artefacts/Release/VST3/Super VelocityCurve MIDI FX.vst3"

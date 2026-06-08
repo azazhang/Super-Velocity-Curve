@@ -1,0 +1,14 @@
+{
+	"InstallScripts" : 
+	[
+		"/Users/friend/Library/Mobile Documents/com~apple~CloudDocs/Documents/Dev/Super_VelocityCurve/build-ci-test/cmake_install.cmake",
+		"/Users/friend/Library/Mobile Documents/com~apple~CloudDocs/Documents/Dev/Super_VelocityCurve/build-ci-test/JUCE/cmake_install.cmake",
+		"/Users/friend/Library/Mobile Documents/com~apple~CloudDocs/Documents/Dev/Super_VelocityCurve/build-ci-test/JUCE/modules/cmake_install.cmake",
+		"/Users/friend/Library/Mobile Documents/com~apple~CloudDocs/Documents/Dev/Super_VelocityCurve/build-ci-test/JUCE/extras/Build/cmake_install.cmake",
+		"/Users/friend/Library/Mobile Documents/com~apple~CloudDocs/Documents/Dev/Super_VelocityCurve/build-ci-test/JUCE/extras/Build/juceaide/cmake_install.cmake",
+		"/Users/friend/Library/Mobile Documents/com~apple~CloudDocs/Documents/Dev/Super_VelocityCurve/build-ci-test/third_party/clap-juce-extensions/cmake_install.cmake",
+		"/Users/friend/Library/Mobile Documents/com~apple~CloudDocs/Documents/Dev/Super_VelocityCurve/build-ci-test/third_party/clap-juce-extensions/clapjuceext_clap/cmake_install.cmake",
+		"/Users/friend/Library/Mobile Documents/com~apple~CloudDocs/Documents/Dev/Super_VelocityCurve/build-ci-test/third_party/clap-juce-extensions/clapjuceext_claphelpers/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

@@ -1,9 +1,16 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(SuperVelocityCurve VERSION 0.5.1)
+project(SuperVelocityCurve VERSION 0.5.2)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Post-build install to ~/Library/Audio/Plug-Ins is for local dev only — slows/hangs CI.
+if(DEFINED ENV{CI})
+    set(SVC_COPY_PLUGIN_AFTER_BUILD FALSE)
+else()
+    set(SVC_COPY_PLUGIN_AFTER_BUILD TRUE)
+endif()
 
 add_subdirectory(JUCE)
 
@@ -60,7 +67,7 @@ juce_add_plugin(SuperVelocityCurve
     IS_MIDI_EFFECT FALSE
     VST3_CATEGORIES Instrument
     EDITOR_WANTS_KEYBOARD_FOCUS FALSE
-    COPY_PLUGIN_AFTER_BUILD TRUE)
+    COPY_PLUGIN_AFTER_BUILD ${SVC_COPY_PLUGIN_AFTER_BUILD})
 
 svc_configure_plugin_target(SuperVelocityCurve)
 
@@ -78,7 +85,7 @@ juce_add_plugin(SuperVelocityCurveMidiFx
     IS_MIDI_EFFECT TRUE
     VST3_CATEGORIES Fx
     EDITOR_WANTS_KEYBOARD_FOCUS FALSE
-    COPY_PLUGIN_AFTER_BUILD TRUE)
+    COPY_PLUGIN_AFTER_BUILD ${SVC_COPY_PLUGIN_AFTER_BUILD})
 
 svc_configure_plugin_target(SuperVelocityCurveMidiFx)
 

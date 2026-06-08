@@ -34,6 +34,8 @@ Push to `main` runs `.github/workflows/build.yml` (macOS + Windows, pluginval st
 
 Tag `v*.*.*` runs `.github/workflows/release.yml` and publishes GitHub Release artifacts.
 
+CI uses **RelWithDebInfo + no LTO + Ninja + ccache** on macOS (see [CI.md](CI.md)). Local Release builds still use LTO by default.
+
 ## Versioning
 
 - Bump `project(VERSION …)` in `CMakeLists.txt`

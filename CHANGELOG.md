@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.6.3 (unreleased)
+
+### Fixed
+- **CI root cause:** macOS jobs timed out during compile (~90m), not pluginval — disabled LTO in CI, Ninja + ccache, RelWithDebInfo, cancel-in-progress concurrency
+- Windows CLAP pluginval skip retained; artefact paths use `${CMAKE_BUILD_TYPE}`
+
+### Added
+- [docs/developer/CI.md](docs/developer/CI.md) — CI architecture and failure audit
+
 ## v0.6.2
 
 ### Added

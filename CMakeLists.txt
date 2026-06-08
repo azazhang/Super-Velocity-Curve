@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(SuperVelocityCurve VERSION 0.6.2)
+project(SuperVelocityCurve VERSION 0.6.3)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -10,6 +10,12 @@ if(DEFINED ENV{CI})
     set(SVC_COPY_PLUGIN_AFTER_BUILD FALSE)
 else()
     set(SVC_COPY_PLUGIN_AFTER_BUILD TRUE)
+endif()
+
+# LTO makes Apple Clang CI links take 60–90+ minutes for dual JUCE plugins. Keep for local Release.
+option(SVC_ENABLE_LTO "Link-time optimization (disable in CI)" ON)
+if(DEFINED ENV{CI})
+    set(SVC_ENABLE_LTO OFF CACHE BOOL "LTO off in CI" FORCE)
 endif()
 
 add_subdirectory(JUCE)
@@ -60,8 +66,11 @@ function(svc_configure_plugin_target target)
             SuperVelocityCurveBinaryData
         PUBLIC
             juce::juce_recommended_config_flags
-            juce::juce_recommended_lto_flags
             juce::juce_recommended_warning_flags)
+
+    if(SVC_ENABLE_LTO)
+        target_link_libraries(${target} PUBLIC juce::juce_recommended_lto_flags)
+    endif()
 endfunction()
 
 # Instrument VST3 + AU Music Effect (aumf) + Standalone — required for Ableton Live.

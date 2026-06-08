@@ -9,22 +9,41 @@ permissions:
   contents: write
 
 env:
-  PLUGINVAL_VERSION: v1.0.4
+  CMAKE_BUILD_TYPE: Release
 
 jobs:
   build-macos:
     runs-on: macos-14
-    timeout-minutes: 90
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
 
+      - name: Install Ninja and ccache
+        run: brew install ninja ccache
+
+      - name: Cache ccache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ccache
+          key: ccache-release-macos-${{ hashFiles('CMakeLists.txt', 'Source/**') }}
+          restore-keys: |
+            ccache-release-macos-
+
       - name: Configure
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -DSVC_COPY_PLUGIN_AFTER_BUILD=OFF
+        # arm64-only until matrix+lipo (CI-3): universal in one job exceeded 90m with LTO.
+        run: |
+          cmake -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DSVC_ENABLE_LTO=OFF \
+            -DSVC_COPY_PLUGIN_AFTER_BUILD=OFF
 
       - name: Build
-        run: cmake --build build --config Release --parallel
+        run: cmake --build build --parallel
 
       - name: Test
         run: ctest --test-dir build --output-on-failure
@@ -56,13 +75,17 @@ jobs:
           submodules: recursive
 
       - name: Configure
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DSVC_COPY_PLUGIN_AFTER_BUILD=OFF
+        run: |
+          cmake -B build -G Ninja ^
+            -DCMAKE_BUILD_TYPE=%CMAKE_BUILD_TYPE% ^
+            -DSVC_ENABLE_LTO=OFF ^
+            -DSVC_COPY_PLUGIN_AFTER_BUILD=OFF
 
       - name: Build
-        run: cmake --build build --config Release --parallel
+        run: cmake --build build --parallel
 
       - name: Test
-        run: ctest --test-dir build -C Release --output-on-failure
+        run: ctest --test-dir build --output-on-failure
 
       - name: Package
         shell: pwsh

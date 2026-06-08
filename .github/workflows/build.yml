@@ -7,30 +7,58 @@ on:
     branches: [main, master]
   workflow_dispatch:
 
+# Avoid stacked 90-minute macOS jobs when pushes land close together.
+concurrency:
+  group: build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   PLUGINVAL_VERSION: v1.0.4
+  # RelWithDebInfo + no LTO: see docs/developer/CI.md (Release+LTO exceeded 90m on macOS).
+  CMAKE_BUILD_TYPE: RelWithDebInfo
 
 jobs:
   build-macos:
     runs-on: macos-14
-    timeout-minutes: 90
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
 
+      - name: Install Ninja and ccache
+        run: brew install ninja ccache
+
+      - name: Cache ccache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ccache
+          key: ccache-macos-${{ runner.os }}-${{ hashFiles('CMakeLists.txt', 'Source/**', 'Tests/**') }}
+          restore-keys: |
+            ccache-macos-${{ runner.os }}-
+
       - name: Configure
-        # arm64-only on CI — universal builds exceed 60m; releases use universal (release.yml).
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES=arm64 -DSVC_COPY_PLUGIN_AFTER_BUILD=OFF
+        run: |
+          ccache -z
+          cmake -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DSVC_ENABLE_LTO=OFF \
+            -DSVC_COPY_PLUGIN_AFTER_BUILD=OFF
 
       - name: Build
-        run: cmake --build build --config Release --parallel
+        run: cmake --build build --parallel
+
+      - name: ccache stats
+        run: ccache -s
 
       - name: Run engine tests
         run: ctest --test-dir build --output-on-failure
 
       - name: Export factory profiles
-        run: cmake --build build --config Release --target export-factory-profiles
+        run: cmake --build build --target export-factory-profiles
 
       - name: Install pluginval
         run: |
@@ -47,12 +75,12 @@ jobs:
             echo "=== pluginval: $1 ==="
             "$PV" --validate-in-process --strictness-level 5 --timeout-ms 120000 --output-dir pluginval-logs "$1"
           }
-          validate "build/SuperVelocityCurve_artefacts/Release/VST3/Super VelocityCurve.vst3"
-          validate "build/SuperVelocityCurveMidiFx_artefacts/Release/VST3/Super VelocityCurve MIDI FX.vst3"
-          validate "build/SuperVelocityCurve_artefacts/Release/AU/Super VelocityCurve.component"
-          validate "build/SuperVelocityCurveMidiFx_artefacts/Release/AU/Super VelocityCurve MIDI FX.component"
-          if [ -d "build/SuperVelocityCurveMidiFx_artefacts/Release/CLAP" ]; then
-            validate "$(find build/SuperVelocityCurveMidiFx_artefacts/Release/CLAP -name '*.clap' | head -1)"
+          validate "build/SuperVelocityCurve_artefacts/${CMAKE_BUILD_TYPE}/VST3/Super VelocityCurve.vst3"
+          validate "build/SuperVelocityCurveMidiFx_artefacts/${CMAKE_BUILD_TYPE}/VST3/Super VelocityCurve MIDI FX.vst3"
+          validate "build/SuperVelocityCurve_artefacts/${CMAKE_BUILD_TYPE}/AU/Super VelocityCurve.component"
+          validate "build/SuperVelocityCurveMidiFx_artefacts/${CMAKE_BUILD_TYPE}/AU/Super VelocityCurve MIDI FX.component"
+          if [ -d "build/SuperVelocityCurveMidiFx_artefacts/${CMAKE_BUILD_TYPE}/CLAP" ]; then
+            validate "$(find build/SuperVelocityCurveMidiFx_artefacts/${CMAKE_BUILD_TYPE}/CLAP -name '*.clap' | head -1)"
           fi
 
       - name: Validate AU (auval)
@@ -64,13 +92,13 @@ jobs:
       - name: Package macOS artifacts
         run: |
           mkdir -p dist
-          cp -R "build/SuperVelocityCurve_artefacts/Release/AU/Super VelocityCurve.component" dist/
-          cp -R "build/SuperVelocityCurveMidiFx_artefacts/Release/AU/Super VelocityCurve MIDI FX.component" dist/
-          cp -R "build/SuperVelocityCurve_artefacts/Release/VST3/Super VelocityCurve.vst3" dist/
-          cp -R "build/SuperVelocityCurveMidiFx_artefacts/Release/VST3/Super VelocityCurve MIDI FX.vst3" dist/
-          cp -R "build/SuperVelocityCurve_artefacts/Release/Standalone/Super VelocityCurve.app" dist/
-          if [ -d "build/SuperVelocityCurveMidiFx_artefacts/Release/CLAP" ]; then
-            cp -R build/SuperVelocityCurveMidiFx_artefacts/Release/CLAP/*.clap dist/ 2>/dev/null || true
+          cp -R "build/SuperVelocityCurve_artefacts/${CMAKE_BUILD_TYPE}/AU/Super VelocityCurve.component" dist/
+          cp -R "build/SuperVelocityCurveMidiFx_artefacts/${CMAKE_BUILD_TYPE}/AU/Super VelocityCurve MIDI FX.component" dist/
+          cp -R "build/SuperVelocityCurve_artefacts/${CMAKE_BUILD_TYPE}/VST3/Super VelocityCurve.vst3" dist/
+          cp -R "build/SuperVelocityCurveMidiFx_artefacts/${CMAKE_BUILD_TYPE}/VST3/Super VelocityCurve MIDI FX.vst3" dist/
+          cp -R "build/SuperVelocityCurve_artefacts/${CMAKE_BUILD_TYPE}/Standalone/Super VelocityCurve.app" dist/
+          if [ -d "build/SuperVelocityCurveMidiFx_artefacts/${CMAKE_BUILD_TYPE}/CLAP" ]; then
+            cp -R build/SuperVelocityCurveMidiFx_artefacts/${CMAKE_BUILD_TYPE}/CLAP/*.clap dist/ 2>/dev/null || true
           fi
           cd dist && zip -r ../SuperVelocityCurve-macOS-unsigned.zip .
 
@@ -86,23 +114,27 @@ jobs:
 
   build-windows:
     runs-on: windows-latest
-    timeout-minutes: 45
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
 
       - name: Configure
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DSVC_COPY_PLUGIN_AFTER_BUILD=OFF
+        run: |
+          cmake -B build -G Ninja ^
+            -DCMAKE_BUILD_TYPE=%CMAKE_BUILD_TYPE% ^
+            -DSVC_ENABLE_LTO=OFF ^
+            -DSVC_COPY_PLUGIN_AFTER_BUILD=OFF
 
       - name: Build
-        run: cmake --build build --config Release --parallel
+        run: cmake --build build --parallel
 
       - name: Run engine tests
-        run: ctest --test-dir build -C Release --output-on-failure
+        run: ctest --test-dir build --output-on-failure
 
       - name: Export factory profiles
-        run: cmake --build build --config Release --target export-factory-profiles
+        run: cmake --build build --target export-factory-profiles
 
       - name: Validate plugins (pluginval strictness 5)
         shell: pwsh
@@ -116,8 +148,6 @@ jobs:
           function Validate-Plugin($path) {
             $absPath = (Resolve-Path -LiteralPath $path).Path
             Write-Host "=== pluginval: $absPath ==="
-            # Start-Process -Wait with a single quoted argument string — paths contain spaces
-            # ("Super VelocityCurve.vst3") and must not be split into separate argv tokens.
             $argumentList = @(
               '--validate-in-process',
               '--strictness-level', '5',
@@ -130,12 +160,11 @@ jobs:
               throw "pluginval failed for $absPath (exit $($proc.ExitCode))"
             }
           }
-          Validate-Plugin "build/SuperVelocityCurve_artefacts/Release/VST3/Super VelocityCurve.vst3"
-          Validate-Plugin "build/SuperVelocityCurveMidiFx_artefacts/Release/VST3/Super VelocityCurve MIDI FX.vst3"
-          # Windows CLAP is a flat .clap DLL; pluginval's lilv scanner expects a macOS-style
-          # bundle with manifest.ttl and cannot validate it here. CLAP is pluginval-tested on macOS.
-          if (Test-Path "build/SuperVelocityCurveMidiFx_artefacts/Release/CLAP") {
-            $clap = Get-ChildItem "build/SuperVelocityCurveMidiFx_artefacts/Release/CLAP" -Filter *.clap | Select-Object -First 1
+          Validate-Plugin "build/SuperVelocityCurve_artefacts/$env:CMAKE_BUILD_TYPE/VST3/Super VelocityCurve.vst3"
+          Validate-Plugin "build/SuperVelocityCurveMidiFx_artefacts/$env:CMAKE_BUILD_TYPE/VST3/Super VelocityCurve MIDI FX.vst3"
+          # Windows CLAP is a flat .clap DLL; pluginval's lilv scanner expects a macOS-style bundle.
+          if (Test-Path "build/SuperVelocityCurveMidiFx_artefacts/$env:CMAKE_BUILD_TYPE/CLAP") {
+            $clap = Get-ChildItem "build/SuperVelocityCurveMidiFx_artefacts/$env:CMAKE_BUILD_TYPE/CLAP" -Filter *.clap | Select-Object -First 1
             if ($clap) {
               Write-Host "=== CLAP built: $($clap.FullName) (pluginval skipped on Windows — flat DLL) ==="
             }
@@ -145,11 +174,11 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path dist
-          Copy-Item -Recurse "build/SuperVelocityCurve_artefacts/Release/VST3/Super VelocityCurve.vst3" dist/
-          Copy-Item -Recurse "build/SuperVelocityCurveMidiFx_artefacts/Release/VST3/Super VelocityCurve MIDI FX.vst3" dist/
-          Copy-Item -Recurse "build/SuperVelocityCurve_artefacts/Release/Standalone/Super VelocityCurve.exe" dist/
-          if (Test-Path "build/SuperVelocityCurveMidiFx_artefacts/Release/CLAP") {
-            Copy-Item -Recurse "build/SuperVelocityCurveMidiFx_artefacts/Release/CLAP/*.clap" dist/ -ErrorAction SilentlyContinue
+          Copy-Item -Recurse "build/SuperVelocityCurve_artefacts/$env:CMAKE_BUILD_TYPE/VST3/Super VelocityCurve.vst3" dist/
+          Copy-Item -Recurse "build/SuperVelocityCurveMidiFx_artefacts/$env:CMAKE_BUILD_TYPE/VST3/Super VelocityCurve MIDI FX.vst3" dist/
+          Copy-Item -Recurse "build/SuperVelocityCurve_artefacts/$env:CMAKE_BUILD_TYPE/Standalone/Super VelocityCurve.exe" dist/
+          if (Test-Path "build/SuperVelocityCurveMidiFx_artefacts/$env:CMAKE_BUILD_TYPE/CLAP") {
+            Copy-Item -Recurse "build/SuperVelocityCurveMidiFx_artefacts/$env:CMAKE_BUILD_TYPE/CLAP/*.clap" dist/ -ErrorAction SilentlyContinue
           }
           Compress-Archive -Path dist/* -DestinationPath SuperVelocityCurve-Windows-unsigned.zip -Force
 

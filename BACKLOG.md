@@ -63,6 +63,30 @@ From test pyramid: `ctest` pass (12 engine tests), pluginval local skip (binary 
 | Super VelocityCurve | `aumf` | Instrument-track / legacy hosts |
 | Super VelocityCurve MIDI FX | `aumi` | Logic MIDI FX slot |
 
+## CI backlog (2026-06-08 root-cause audit)
+
+See [docs/developer/CI.md](docs/developer/CI.md) for full analysis.
+
+| ID | Item | Status |
+|----|------|--------|
+| CI-1 | macOS timeout: disable LTO + Ninja + ccache + RelWithDebInfo in `build.yml` | **done** |
+| CI-2 | `concurrency: cancel-in-progress` — stop stacked 90m macOS jobs | **done** |
+| CI-3 | Release universal binary via parallel matrix + `lipo` (not one 90m fat job) | open |
+| CI-4 | Shared static lib for engine/profile (needs JUCE header target — blocked) | open |
+| CI-5 | Shared OBJECT lib for plugin sources across both targets (halve JUCE compile) | open |
+| CI-6 | Windows `clap-info` smoke for flat CLAP DLL | open |
+| CI-7 | Tiered CI: fast PR gate (VST3-only) vs nightly full pluginval | open |
+
+### CI failure pattern (pre-fix)
+
+| Platform | Root step | Cause |
+|----------|-----------|-------|
+| macOS v0.5+ | **Build** cancelled @90m | Release+LTO dual JUCE plugins, no cache |
+| Windows v0.5–0.6.0 | **pluginval** (~5–12s) | Windows CLAP flat DLL — **fixed** (skip) |
+| Windows post-fix | **success** ~10m | run 27166739473 |
+
+Last full green: **v0.4.2** (single plugin era). First v0.5+ Windows green after CLAP skip.
+
 ## Validation
 
 - Version: **0.6.2**

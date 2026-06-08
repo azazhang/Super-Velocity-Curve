@@ -113,19 +113,20 @@ jobs:
           if (-not $pv) { throw "pluginval.exe not found" }
           New-Item -ItemType Directory -Force -Path pluginval-logs | Out-Null
           function Validate-Plugin($path) {
-            Write-Host "=== pluginval: $path ==="
-            # Start-Process -Wait: pluginval on Windows can return before validation finishes
-            # when invoked with &, leaving $LASTEXITCODE empty while tests still run.
-            $args = @(
+            $absPath = (Resolve-Path -LiteralPath $path).Path
+            Write-Host "=== pluginval: $absPath ==="
+            # Start-Process -Wait with a single quoted argument string — paths contain spaces
+            # ("Super VelocityCurve.vst3") and must not be split into separate argv tokens.
+            $argumentList = @(
               '--validate-in-process',
               '--strictness-level', '5',
               '--timeout-ms', '120000',
               '--output-dir', 'pluginval-logs',
-              $path
-            )
-            $proc = Start-Process -FilePath $pv.FullName -ArgumentList $args -Wait -PassThru -NoNewWindow
+              "`"$absPath`""
+            ) -join ' '
+            $proc = Start-Process -FilePath $pv.FullName -ArgumentList $argumentList -Wait -PassThru -NoNewWindow
             if ($proc.ExitCode -ne 0) {
-              throw "pluginval failed for $path (exit $($proc.ExitCode))"
+              throw "pluginval failed for $absPath (exit $($proc.ExitCode))"
             }
           }
           Validate-Plugin "build/SuperVelocityCurve_artefacts/Release/VST3/Super VelocityCurve.vst3"

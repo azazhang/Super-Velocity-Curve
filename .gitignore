@@ -1,6 +1,7 @@
 build/
 build-ci-test/
 Build/
+*_artefacts/
 cmake-build-*/
 *.xcodeproj
 *.xcworkspace

@@ -122,10 +122,8 @@ PadMutationResult ProfileStore::addPadToActive (const ProfilePad& pad)
     auto newPad = pad.label.isEmpty() ? activeProfile.makeDefaultPad() : pad;
     const auto result = activeProfile.addPad (std::move (newPad));
     if (result == PadMutationResult::ok)
-    {
         syncActiveUserProfileFromEdits();
-        notifyChanged();
-    }
+
     return result;
 }
 
@@ -133,10 +131,7 @@ PadMutationResult ProfileStore::removePadFromActive (int index)
 {
     const auto result = activeProfile.removePad (index);
     if (result == PadMutationResult::ok)
-    {
         syncActiveUserProfileFromEdits();
-        notifyChanged();
-    }
     return result;
 }
 

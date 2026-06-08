@@ -5,6 +5,7 @@ PadInspectorComponent::PadInspectorComponent()
     addAndMakeVisible (viewport);
     viewport.setViewedComponent (&content, false);
     viewport.setScrollBarsShown (true, false);
+    viewport.getVerticalScrollBar().setAutoHide (true);
 
     padNameEditor.setFont (svc::ui::Theme::bodyFont());
     padNameEditor.setTextToShowWhenEmpty ("Pad name", juce::Colour (svc::ui::Theme::textSecondary()));
@@ -114,6 +115,8 @@ PadInspectorComponent::PadInspectorComponent()
 
     for (auto* slider : { &velocityGateSlider, &retriggerSlider, &floorSlider, &ceilingSlider })
         content.addAndMakeVisible (slider);
+
+    applyTheme();
 }
 
 void PadInspectorComponent::setupSlider (juce::Slider& slider, const juce::String& suffix, bool midiScale)
@@ -127,8 +130,45 @@ void PadInspectorComponent::setupSlider (juce::Slider& slider, const juce::Strin
     }
 }
 
+svc::ProfilePad PadInspectorComponent::getPad() const
+{
+    auto pad = currentPad;
+    pad.label = padNameEditor.getText().trim();
+    if (pad.label.isEmpty())
+        pad.label = "Pad " + juce::String (currentPadIndex + 1);
+    return pad;
+}
+
+void PadInspectorComponent::commitEdits()
+{
+    if (suppressNotify)
+        return;
+
+    currentPad = getPad();
+    notifyChanged();
+}
+
+void PadInspectorComponent::applyTheme()
+{
+    const auto text = juce::Colour (svc::ui::Theme::textPrimary());
+    const auto bg = juce::Colour (svc::ui::Theme::panelRaised());
+    const auto border = juce::Colour (svc::ui::Theme::border());
+
+    for (auto* label : { &padNameLabel, &midiNoteLabel, &midiChannelLabel, &gateLabel, &gateModeLabel,
+                         &groupLabel, &retriggerLabel, &floorLabel, &ceilingLabel })
+        label->setColour (juce::Label::textColourId, text);
+
+    padNameEditor.setColour (juce::TextEditor::textColourId, text);
+    padNameEditor.setColour (juce::TextEditor::backgroundColourId, bg);
+    padNameEditor.setColour (juce::TextEditor::outlineColourId, border);
+    padNameEditor.setColour (juce::TextEditor::focusedOutlineColourId,
+                             juce::Colour (svc::ui::Theme::accent()).withAlpha (0.55f));
+    padNameEditor.setColour (juce::CaretComponent::caretColourId, juce::Colour (svc::ui::Theme::accentGold()));
+}
+
 void PadInspectorComponent::setPad (const svc::ProfilePad& pad, int padIndex)
 {
+    suppressNotify = true;
     currentPad = pad;
     currentPadIndex = padIndex;
 
@@ -143,12 +183,15 @@ void PadInspectorComponent::setPad (const svc::ProfilePad& pad, int padIndex)
     retriggerSlider.setValue (pad.retriggerGuardMs, juce::dontSendNotification);
     floorSlider.setValue (pad.curve.getFloor() * 127.0, juce::dontSendNotification);
     ceilingSlider.setValue (pad.curve.getCeiling() * 127.0, juce::dontSendNotification);
+    suppressNotify = false;
 }
 
 void PadInspectorComponent::notifyChanged()
 {
-    if (onPadChanged)
-        onPadChanged (currentPadIndex, currentPad);
+    if (suppressNotify || ! onPadChanged)
+        return;
+
+    onPadChanged (currentPadIndex, getPad());
 }
 
 void PadInspectorComponent::paint (juce::Graphics& g)
@@ -163,37 +206,42 @@ void PadInspectorComponent::resized()
 {
     auto area = getLocalBounds().reduced (8).withTrimmedTop (28);
     viewport.setBounds (area);
-    content.setSize (area.getWidth() - 8, 480);
+    layoutContent();
+}
 
-    auto bounds = content.getLocalBounds().reduced (8);
+void PadInspectorComponent::layoutContent()
+{
+    const int width = juce::jmax (220, viewport.getWidth() - 4);
+    int y = 8;
 
-    auto row = [&bounds] (juce::Label& label, juce::Component& comp, int h = 44)
+    auto row = [&y, width] (juce::Label& label, juce::Component& comp, int h = 44)
     {
-        auto r = bounds.removeFromTop (h);
-        label.setBounds (r.removeFromTop (14));
-        comp.setBounds (r);
-        bounds.removeFromTop (4);
+        label.setBounds (8, y, width - 16, 14);
+        comp.setBounds (8, y + 14, width - 16, h - 14);
+        y += h + 4;
     };
 
     row (padNameLabel, padNameEditor, 40);
     row (midiNoteLabel, midiNoteSlider);
     row (midiChannelLabel, midiChannelBox, 40);
-    bounds.removeFromTop (2);
-    enabledToggle.setBounds (bounds.removeFromTop (22));
-    aftertouchToggle.setBounds (bounds.removeFromTop (22));
-    editAftertouchButton.setBounds (bounds.removeFromTop (24));
-    bounds.removeFromTop (6);
+    enabledToggle.setBounds (8, y, width - 16, 22);
+    y += 24;
+    aftertouchToggle.setBounds (8, y, width - 16, 22);
+    y += 24;
+    editAftertouchButton.setBounds (8, y, width - 16, 24);
+    y += 30;
 
     row (groupLabel, groupBox, 40);
     row (gateLabel, velocityGateSlider);
     row (gateModeLabel, gateModeBox, 40);
     row (retriggerLabel, retriggerSlider);
 
-    auto pair = bounds.removeFromTop (54);
-    auto left = pair.removeFromLeft (pair.getWidth() / 2);
-    auto right = pair;
-    floorLabel.setBounds (left.removeFromTop (14));
-    floorSlider.setBounds (left);
-    ceilingLabel.setBounds (right.removeFromTop (14));
-    ceilingSlider.setBounds (right);
+    auto pairY = y;
+    floorLabel.setBounds (8, pairY, (width - 20) / 2, 14);
+    ceilingLabel.setBounds (8 + (width - 20) / 2 + 4, pairY, (width - 20) / 2, 14);
+    floorSlider.setBounds (8, pairY + 14, (width - 20) / 2, 40);
+    ceilingSlider.setBounds (8 + (width - 20) / 2 + 4, pairY + 14, (width - 20) / 2, 40);
+    y = pairY + 58;
+
+    content.setSize (width, y + 8);
 }

@@ -80,8 +80,10 @@ private:
     void rebuildProfileList();
     void onProfileSelected();
     void onPadSelected (int padIndex);
-    void refreshPadUI();
-    void updateSelectedPadFromUI (const svc::ProfilePad& pad);
+    void refreshPadUI (bool resetPadSelection = false);
+    void showPadAtIndex (int padIndex);
+    void commitInspectorEdits();
+    void updateSelectedPadFromUI (int padIndex, const svc::ProfilePad& pad);
     void applyProfileToEngine();
     void syncAbAuditionIfActive();
     void updateLiveHits();

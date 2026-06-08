@@ -70,12 +70,8 @@ void PadGridComponent::PadCanvas::paint (juce::Graphics& g)
 void PadGridComponent::PadCanvas::mouseDown (const juce::MouseEvent& event)
 {
     const auto index = owner.padIndexAt (event.getPosition());
-    if (index >= 0)
-    {
-        owner.setSelectedPadIndex (index);
-        if (owner.onPadSelected)
-            owner.onPadSelected (index);
-    }
+    if (index >= 0 && owner.onPadSelected)
+        owner.onPadSelected (index);
 }
 
 void PadGridComponent::PadCanvas::mouseMove (const juce::MouseEvent& event)
@@ -96,6 +92,7 @@ PadGridComponent::PadGridComponent()
     addAndMakeVisible (viewport);
     viewport.setViewedComponent (&padCanvas, false);
     viewport.setScrollBarsShown (true, false);
+    viewport.getVerticalScrollBar().setAutoHide (true);
 
     addPadButton.onClick = [this]
     {
@@ -110,15 +107,28 @@ PadGridComponent::PadGridComponent()
     };
 }
 
-void PadGridComponent::setProfile (const svc::ControllerProfile& profile)
+void PadGridComponent::setProfile (const svc::ControllerProfile& profile, bool resetSelection)
 {
     currentProfile = profile;
     displayGridColumns = profile.getDisplayGridColumns();
-    selectedPadIndex = juce::jlimit (0, juce::jmax (0, static_cast<int> (profile.getPads().size()) - 1), selectedPadIndex);
+
+    if (resetSelection)
+        selectedPadIndex = profile.getPads().empty() ? -1 : 0;
+    else
+        selectedPadIndex = juce::jlimit (-1, juce::jmax (0, static_cast<int> (profile.getPads().size()) - 1),
+                                       selectedPadIndex);
+
     hitByPadIndex.clear();
     updateCanvasSize();
     padCanvas.repaint();
     repaint();
+}
+
+void PadGridComponent::scrollPadIntoView (int index)
+{
+    const auto bounds = padBoundsForIndex (index);
+    if (! bounds.isEmpty())
+        viewport.setViewPosition (bounds.getX() - 8, bounds.getY() - 8);
 }
 
 void PadGridComponent::updatePad (int index, const svc::ProfilePad& pad)

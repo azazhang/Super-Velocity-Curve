@@ -1,0 +1,42 @@
+# ninja log v7
+12	197	1780962394800858344	/Users/friend/Library/Mobile Documents/com~apple~CloudDocs/Documents/Dev/Super_VelocityCurve/build-rwd/CMakeFiles/cmake.verify_globs	627e95d63fe6fd85
+119	402	1780957042784071183	CMakeFiles/svc_engine.dir/JUCE/modules/juce_core/juce_core_CompilationTime.cpp.o	630a877f976b0f65
+117	4451	1780957042781839632	CMakeFiles/svc_engine.dir/Source/Engine/VelocityCurve.cpp.o	8cba58bc3aeaf62
+123	10490	1780957042787961241	CMakeFiles/svc_engine.dir/JUCE/modules/juce_data_structures/juce_data_structures.mm.o	a821f9f965858ec6
+124	13283	1780957042789383372	CMakeFiles/svc_engine.dir/JUCE/modules/juce_events/juce_events.mm.o	c19665c67ea0ea8c
+121	22761	1780957042785889857	CMakeFiles/svc_engine.dir/JUCE/modules/juce_audio_basics/juce_audio_basics.mm.o	fdce2b9bd6449a93
+120	38179	1780957042784938020	CMakeFiles/svc_engine.dir/JUCE/modules/juce_core/juce_core.mm.o	c1f98bbb5ad2e082
+115	360	1780957115666038360	SuperVelocityCurveTests_artefacts/JuceLibraryCode/JuceHeader.h	37983ad1fd5fd23
+115	360	1780957115666038360	/Users/friend/Library/Mobile Documents/com~apple~CloudDocs/Documents/Dev/Super_VelocityCurve/build-rwd/SuperVelocityCurveTests_artefacts/JuceLibraryCode/JuceHeader.h	37983ad1fd5fd23
+369	598	1780957115677783122	CMakeFiles/SuperVelocityCurveTests.dir/JUCE/modules/juce_core/juce_core_CompilationTime.cpp.o	52bc0b832c66412a
+361	5842	1780957115670547297	CMakeFiles/SuperVelocityCurveTests.dir/Source/Engine/VelocityCurve.cpp.o	187176c5a648341f
+363	9716	1780957115671677886	CMakeFiles/SuperVelocityCurveTests.dir/Source/Engine/MidiUtilities.cpp.o	84a929be372d6a55
+360	10626	1780957115669571251	CMakeFiles/SuperVelocityCurveTests.dir/Tests/EngineTests.cpp.o	e012e5e5b9922d67
+366	10950	1780957115674892984	CMakeFiles/SuperVelocityCurveTests.dir/Source/Profiles/ProfileStore.cpp.o	35d01c0d94fb3db
+362	11079	1780957115671146300	CMakeFiles/SuperVelocityCurveTests.dir/Source/Engine/VelocityEngine.cpp.o	a2231d1361cc2afb
+364	11586	1780957115673215310	CMakeFiles/SuperVelocityCurveTests.dir/Source/Profiles/ControllerProfile.cpp.o	580969067fd537ae
+376	13365	1780957115685302782	CMakeFiles/SuperVelocityCurveTests.dir/JUCE/modules/juce_data_structures/juce_data_structures.mm.o	c1620eb914706a52
+598	16836	1780957115906842475	CMakeFiles/SuperVelocityCurveTests.dir/JUCE/modules/juce_events/juce_events.mm.o	85e1ec60791c3144
+374	26368	1780957115682780521	CMakeFiles/SuperVelocityCurveTests.dir/JUCE/modules/juce_audio_basics/juce_audio_basics.mm.o	649f5d46b5f272c7
+370	42286	1780957115679335838	CMakeFiles/SuperVelocityCurveTests.dir/JUCE/modules/juce_core/juce_core.mm.o	defeb4e00d0ffcab
+42288	42954	1780957157597475162	SuperVelocityCurveTests_artefacts/RelWithDebInfo/SuperVelocityCurveTests	41dd40473ad7c92d
+198	9829	1780962404602949517	build.ninja	9fe387293264e3f4
+198	9829	1780962404602949517	/Users/friend/Library/Mobile Documents/com~apple~CloudDocs/Documents/Dev/Super_VelocityCurve/build-rwd/cmake_install.cmake	9fe387293264e3f4
+198	9829	1780962404602949517	/Users/friend/Library/Mobile Documents/com~apple~CloudDocs/Documents/Dev/Super_VelocityCurve/build-rwd/JUCE/cmake_install.cmake	9fe387293264e3f4
+198	9829	1780962404602949517	/Users/friend/Library/Mobile Documents/com~apple~CloudDocs/Documents/Dev/Super_VelocityCurve/build-rwd/JUCE/modules/cmake_install.cmake	9fe387293264e3f4
+198	9829	1780962404602949517	/Users/friend/Library/Mobile Documents/com~apple~CloudDocs/Documents/Dev/Super_VelocityCurve/build-rwd/JUCE/extras/Build/cmake_install.cmake	9fe387293264e3f4
+198	9829	1780962404602949517	/Users/friend/Library/Mobile Documents/com~apple~CloudDocs/Documents/Dev/Super_VelocityCurve/build-rwd/JUCE/extras/Build/juceaide/cmake_install.cmake	9fe387293264e3f4
+198	9829	1780962404602949517	/Users/friend/Library/Mobile Documents/com~apple~CloudDocs/Documents/Dev/Super_VelocityCurve/build-rwd/third_party/clap-juce-extensions/cmake_install.cmake	9fe387293264e3f4
+198	9829	1780962404602949517	/Users/friend/Library/Mobile Documents/com~apple~CloudDocs/Documents/Dev/Super_VelocityCurve/build-rwd/third_party/clap-juce-extensions/clapjuceext_clap/cmake_install.cmake	9fe387293264e3f4
+198	9829	1780962404602949517	/Users/friend/Library/Mobile Documents/com~apple~CloudDocs/Documents/Dev/Super_VelocityCurve/build-rwd/third_party/clap-juce-extensions/clapjuceext_claphelpers/cmake_install.cmake	9fe387293264e3f4
+198	9829	1780962404602949517	/Users/friend/Library/Mobile Documents/com~apple~CloudDocs/Documents/Dev/Super_VelocityCurve/build-rwd/CTestTestfile.cmake	9fe387293264e3f4
+198	9829	1780962404602949517	/Users/friend/Library/Mobile Documents/com~apple~CloudDocs/Documents/Dev/Super_VelocityCurve/build-rwd/third_party/clap-juce-extensions/clapjuceext_clap/CTestTestfile.cmake	9fe387293264e3f4
+11	179	1780962404629778905	/Users/friend/Library/Mobile Documents/com~apple~CloudDocs/Documents/Dev/Super_VelocityCurve/build-rwd/CMakeFiles/cmake.verify_globs	627e95d63fe6fd85
+215	647	1780962405262681974	SuperVelocityCurveTests_artefacts/JuceLibraryCode/JuceHeader.h	37983ad1fd5fd23
+215	647	1780962405262681974	/Users/friend/Library/Mobile Documents/com~apple~CloudDocs/Documents/Dev/Super_VelocityCurve/build-rwd/SuperVelocityCurveTests_artefacts/JuceLibraryCode/JuceHeader.h	37983ad1fd5fd23
+651	7249	1780962405269761936	CMakeFiles/SuperVelocityCurveTests.dir/Source/Engine/MidiUtilities.cpp.o	84a929be372d6a55
+650	7325	1780962405268317726	CMakeFiles/SuperVelocityCurveTests.dir/Source/Engine/VelocityEngine.cpp.o	a2231d1361cc2afb
+647	7398	1780962405266225330	CMakeFiles/SuperVelocityCurveTests.dir/Tests/EngineTests.cpp.o	e012e5e5b9922d67
+653	7677	1780962405272182092	CMakeFiles/SuperVelocityCurveTests.dir/Source/Profiles/ProfileStore.cpp.o	35d01c0d94fb3db
+651	8331	1780962405270122572	CMakeFiles/SuperVelocityCurveTests.dir/Source/Profiles/ControllerProfile.cpp.o	580969067fd537ae
+8331	9204	1780962412950354717	SuperVelocityCurveTests_artefacts/RelWithDebInfo/SuperVelocityCurveTests	41dd40473ad7c92d

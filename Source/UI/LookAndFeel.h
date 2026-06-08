@@ -110,6 +110,47 @@ private:
         setColour (juce::Slider::trackColourId, juce::Colour (Theme::border()));
         setColour (juce::Slider::backgroundColourId, juce::Colour (Theme::panelRaised()));
         setColour (juce::Label::textColourId, juce::Colour (Theme::textPrimary()));
+        setColour (juce::ScrollBar::backgroundColourId, juce::Colours::transparentBlack);
+        setColour (juce::ScrollBar::thumbColourId, juce::Colour (Theme::border()).withAlpha (0.55f));
+        setColour (juce::ScrollBar::trackColourId, juce::Colours::transparentBlack);
+    }
+
+    void drawScrollbar (juce::Graphics& g,
+                        juce::ScrollBar& scrollbar,
+                        int x,
+                        int y,
+                        int width,
+                        int height,
+                        bool isScrollbarVertical,
+                        int thumbStartPosition,
+                        int thumbSize,
+                        bool isMouseOver,
+                        bool isMouseDown) override
+    {
+        juce::ignoreUnused (scrollbar, isMouseOver, isMouseDown);
+
+        if (thumbSize <= 0)
+            return;
+
+        const int trackLength = isScrollbarVertical ? height : width;
+        if (thumbSize >= trackLength - 2)
+            return;
+
+        g.setColour (juce::Colour (Theme::border()).withAlpha (0.45f));
+        const int thickness = juce::jmin (isScrollbarVertical ? width : height, 6);
+
+        if (isScrollbarVertical)
+            g.fillRoundedRectangle (static_cast<float> (x + (width - thickness) / 2),
+                                    static_cast<float> (thumbStartPosition),
+                                    static_cast<float> (thickness),
+                                    static_cast<float> (thumbSize),
+                                    3.0f);
+        else
+            g.fillRoundedRectangle (static_cast<float> (thumbStartPosition),
+                                    static_cast<float> (y + (height - thickness) / 2),
+                                    static_cast<float> (thumbSize),
+                                    static_cast<float> (thickness),
+                                    3.0f);
     }
 };
 

@@ -1,0 +1,18 @@
+# ninja log v7
+4	97	1780957111197979467	/Users/friend/Library/Mobile Documents/com~apple~CloudDocs/Documents/Dev/Super_VelocityCurve/build-rwd/JUCE/tools/CMakeFiles/cmake.verify_globs	6cfa3d022f7d5588
+262	1402	1780956987114636792	extras/Build/juceaide/CMakeFiles/juceaide.dir/__/__/__/modules/juce_graphics/juce_graphics_Sheenbidi.c.o	8717fea80521edcd
+248	11307	1780956987100386108	extras/Build/juceaide/CMakeFiles/juceaide.dir/Main.cpp.o	1f3548e4ae404956
+11312	11401	1780956998164471370	extras/Build/juceaide/CMakeFiles/juceaide.dir/__/__/__/modules/juce_core/juce_core_CompilationTime.cpp.o	fc1ca7e88fe47471
+249	11582	1780956987100977527	extras/Build/juceaide/CMakeFiles/juceaide.dir/__/juce_build_tools/juce_build_tools.cpp.o	1753b2e9e9ed9fae
+1406	16290	1780956988258368270	extras/Build/juceaide/CMakeFiles/juceaide.dir/__/__/__/modules/juce_events/juce_events.mm.o	2e5221ae88a91102
+249	16335	1780956987101370570	extras/Build/juceaide/CMakeFiles/juceaide.dir/__/__/__/modules/juce_gui_basics/juce_gui_basics_2.cpp.o	f85bd896a2f56226
+252	18711	1780956987104875335	extras/Build/juceaide/CMakeFiles/juceaide.dir/__/__/__/modules/juce_gui_basics/juce_gui_basics_5.cpp.o	c6e78b2b578cf7d8
+11582	19190	1780956998434830789	extras/Build/juceaide/CMakeFiles/juceaide.dir/__/__/__/modules/juce_data_structures/juce_data_structures.mm.o	de11f1e7371b6bd4
+251	19281	1780956987103908622	extras/Build/juceaide/CMakeFiles/juceaide.dir/__/__/__/modules/juce_gui_basics/juce_gui_basics_4.cpp.o	c2016f1a38d57d3e
+251	22930	1780956987103174411	extras/Build/juceaide/CMakeFiles/juceaide.dir/__/__/__/modules/juce_gui_basics/juce_gui_basics_3.cpp.o	b0f875e5d388f6a6
+11401	28016	1780956998253806576	extras/Build/juceaide/CMakeFiles/juceaide.dir/__/__/__/modules/juce_core/juce_core.mm.o	efbf883a50687be7
+258	28907	1780956987110321774	extras/Build/juceaide/CMakeFiles/juceaide.dir/__/__/__/modules/juce_gui_basics/juce_gui_basics.mm.o	3c6cedc8ad1a48dd
+264	32518	1780956987116883385	extras/Build/juceaide/CMakeFiles/juceaide.dir/__/__/__/modules/juce_graphics/juce_graphics.mm.o	4a321202917d6cb4
+261	32960	1780956987113818205	extras/Build/juceaide/CMakeFiles/juceaide.dir/__/__/__/modules/juce_graphics/juce_graphics_Harfbuzz.cpp.o	b70bb6a97da7ac9c
+32961	33684	1780957019813279145	extras/Build/juceaide/juceaide_artefacts/Custom/juceaide	384f7416c8d927e8
+9	228	1780962399310116740	/Users/friend/Library/Mobile Documents/com~apple~CloudDocs/Documents/Dev/Super_VelocityCurve/build-rwd/JUCE/tools/CMakeFiles/cmake.verify_globs	6cfa3d022f7d5588

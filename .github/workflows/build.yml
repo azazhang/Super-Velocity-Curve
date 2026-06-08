@@ -20,7 +20,7 @@ env:
 jobs:
   build-macos:
     runs-on: macos-14
-    timeout-minutes: 45
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
@@ -69,8 +69,8 @@ jobs:
       - name: Validate plugins (pluginval strictness 5)
         run: |
           mkdir -p pluginval-logs
-          PV="./pluginval"
-          if [ -d pluginval.app ]; then PV="./pluginval.app/Contents/MacOS/pluginval"; fi
+          PV="./pluginval.app/Contents/MacOS/pluginval"
+          PLUGIN_TIMEOUT_SEC=180
           validate() {
             local target="$1"
             echo "=== pluginval: $target ==="
@@ -86,7 +86,9 @@ jobs:
               killall -9 AudioComponentRegistrar 2>/dev/null || true
               sleep 2
             fi
-            "$PV" --validate-in-process --strictness-level 5 --timeout-ms 120000 --output-dir pluginval-logs "$target"
+            perl -e 'alarm shift; exec @ARGV' "$PLUGIN_TIMEOUT_SEC" \
+              "$PV" --validate-in-process --strictness-level 5 --timeout-ms 120000 \
+              --output-dir pluginval-logs "$target"
           }
           validate "build/SuperVelocityCurve_artefacts/${CMAKE_BUILD_TYPE}/VST3/Super VelocityCurve.vst3"
           validate "build/SuperVelocityCurveMidiFx_artefacts/${CMAKE_BUILD_TYPE}/VST3/Super VelocityCurve MIDI FX.vst3"

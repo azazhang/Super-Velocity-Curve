@@ -29,6 +29,8 @@ From test pyramid: `ctest` pass (12 engine tests), pluginval local skip (binary 
 |----|----------|---------|--------|
 | BUG-001 | major | A/B audition overwritten when editing during “Hearing A/B” | **fixed** — `syncAbAuditionIfActive()` after engine sync |
 | BUG-002 | major | Pad inspector edits cleared live hit flashes | **fixed** — `updatePad` + `setPad(..., false)` |
+| BUG-007 | major | Pad switch/add/delete: selection stuck, overlapping grid cells, inspector wrote wrong pad | **fixed** v0.6.4 |
+| BUG-008 | major | UI: scrollbar artifacts, unreadable pad name field, clipped inspector | **fixed** v0.6.4 |
 | BUG-003 | major | Duplicate MIDI note+channel on multiple pads — engine last-wins, UI first-match | **partial** — blocked on add/edit; import still unvalidated |
 | BUG-004 | minor | Preset toolbar cramped at min width 1100×760 | open |
 | BUG-005 | minor | Title/subtitle painted in `paint()` but labels not laid out | open |
@@ -72,6 +74,7 @@ See [docs/developer/CI.md](docs/developer/CI.md) for full analysis.
 | CI-1 | macOS timeout: disable LTO + Ninja + ccache + RelWithDebInfo in `build.yml` | **done** (~4m Build on run 27170647769) |
 | CI-1b | pluginval zip is `pluginval.app` only (no top-level binary); Windows: VS x64 not Ninja | **done** |
 | CI-1c | AU pluginval: install to `~/Library/Audio/Plug-Ins/Components/` + codesign + registrar kick | **done** |
+| CI-1d | Per-plugin pluginval timeout (180s) — AU hung 42m on run 27171968644 | **done** |
 | CI-2 | `concurrency: cancel-in-progress` — stop stacked 90m macOS jobs | **done** |
 | CI-3 | Release universal binary via parallel matrix + `lipo` (not one 90m fat job) | open |
 | CI-4 | Shared static lib for engine/profile (needs JUCE header target — blocked) | open |

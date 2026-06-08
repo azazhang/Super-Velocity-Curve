@@ -1,6 +1,7 @@
 #include "ControllerProfile.h"
 #include "../Engine/VelocityEngine.h"
 #include "GMDrumMap.h"
+#include <array>
 
 namespace svc
 {
@@ -434,13 +435,25 @@ bool ControllerProfile::hasDuplicateMidiKey (int midiNote, int midiChannel, int 
 std::pair<int, int> ControllerProfile::suggestNextGridCell() const
 {
     const auto cols = getDisplayGridColumns();
-    int maxDisplayRow = 0;
+    constexpr int kMaxCells = 256;
+    std::array<bool, kMaxCells> occupied {};
 
     for (const auto& pad : pads)
-        maxDisplayRow = std::max (maxDisplayRow, pad.gridRow + (pad.gridCol / cols));
+    {
+        const int displayCol = pad.gridCol % cols;
+        const int displayRow = pad.gridRow + (pad.gridCol / cols);
+        const int cell = displayRow * cols + displayCol;
+        if (cell >= 0 && cell < kMaxCells)
+            occupied[static_cast<size_t> (cell)] = true;
+    }
 
-    const auto nextIndex = static_cast<int> (pads.size());
-    return { maxDisplayRow + (nextIndex / cols), nextIndex % cols };
+    for (int cell = 0; cell < kMaxCells; ++cell)
+    {
+        if (! occupied[static_cast<size_t> (cell)])
+            return { cell / cols, cell % cols };
+    }
+
+    return { 0, 0 };
 }
 
 ProfilePad ControllerProfile::makeDefaultPad() const

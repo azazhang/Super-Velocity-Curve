@@ -11,6 +11,9 @@ public:
     PadInspectorComponent();
 
     void setPad (const svc::ProfilePad& pad, int padIndex);
+    svc::ProfilePad getPad() const;
+    void commitEdits();
+    void applyTheme();
     int getPadIndex() const noexcept { return currentPadIndex; }
 
     std::function<void (int padIndex, const svc::ProfilePad&)> onPadChanged;
@@ -50,4 +53,7 @@ private:
 
     void notifyChanged();
     void setupSlider (juce::Slider& slider, const juce::String& suffix, bool midiScale);
+    void layoutContent();
+
+    bool suppressNotify = false;
 };

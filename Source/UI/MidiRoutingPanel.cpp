@@ -12,6 +12,7 @@ MidiRoutingPanel::MidiRoutingPanel()
     addAndMakeVisible (viewport);
     viewport.setViewedComponent (&content, false);
     viewport.setScrollBarsShown (true, false);
+    viewport.getVerticalScrollBar().setAutoHide (true);
 
     content.addAndMakeVisible (inputLabel);
     content.addAndMakeVisible (outputLabel);

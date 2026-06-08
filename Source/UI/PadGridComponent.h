@@ -11,9 +11,10 @@ class PadGridComponent : public juce::Component
 public:
     PadGridComponent();
 
-    void setProfile (const svc::ControllerProfile& profile);
+    void setProfile (const svc::ControllerProfile& profile, bool resetSelection = false);
     void updatePad (int index, const svc::ProfilePad& pad);
     void setSelectedPadIndex (int index);
+    void scrollPadIntoView (int index);
     int getDisplayGridColumns() const noexcept { return displayGridColumns; }
     int getSelectedPadIndex() const noexcept { return selectedPadIndex; }
 

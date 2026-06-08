@@ -238,6 +238,19 @@ static int testPadAddRemoveAndDuplicateKey()
     EXPECT_TRUE (profile.removePad (1) == svc::PadMutationResult::ok);
     EXPECT_TRUE (profile.getPads().size() == 1);
     EXPECT_TRUE (profile.removePad (0) == svc::PadMutationResult::wouldEmptyProfile);
+
+    svc::ControllerProfile gm = svc::ControllerProfile::createGMStandard();
+    const auto occupied = gm.suggestNextGridCell();
+    bool cellTaken = false;
+    for (const auto& pad : gm.getPads())
+    {
+        const int cols = gm.getDisplayGridColumns();
+        const int displayCol = pad.gridCol % cols;
+        const int displayRow = pad.gridRow + (pad.gridCol / cols);
+        if (displayRow == occupied.first && displayCol == occupied.second)
+            cellTaken = true;
+    }
+    EXPECT_TRUE (! cellTaken);
     return 0;
 }
 

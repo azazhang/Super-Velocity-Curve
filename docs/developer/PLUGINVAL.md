@@ -7,7 +7,7 @@ Super VelocityCurve is validated with [pluginval](https://github.com/Tracktion/p
 | Platform | Formats |
 |----------|---------|
 | macOS | VST3 Instrument, VST3 MIDI FX, AU `aumf`, AU `aumi`, CLAP (when built) |
-| Windows | VST3 Instrument, VST3 MIDI FX, CLAP (when built) |
+| Windows | VST3 Instrument, VST3 MIDI FX; CLAP is built and packaged but not pluginval-tested (flat `.clap` DLL — pluginval/lilv only scans bundle-style CLAP with `manifest.ttl`, which is macOS-only in our toolchain) |
 
 CI runs pluginval **in process** (`--validate-in-process`) at strictness 5 with `--output-dir pluginval-logs` so log files are retained and exit codes are reliable on Windows per the [Adding pluginval to CI](https://github.com/Tracktion/pluginval/blob/develop/docs/Adding%20pluginval%20to%20CI.md) guide.
 

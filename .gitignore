@@ -1,4 +1,5 @@
 build/
+build-rwd/
 build-ci-test/
 Build/
 *_artefacts/

@@ -13,6 +13,7 @@ env:
 jobs:
   build-macos:
     runs-on: macos-14
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
         with:
@@ -43,7 +44,7 @@ jobs:
           if [ -d pluginval.app ]; then PV="./pluginval.app/Contents/MacOS/pluginval"; fi
           validate() {
             echo "=== pluginval: $1 ==="
-            "$PV" --strictness-level 5 --timeout-ms 120000 --output-dir pluginval-logs "$1"
+            "$PV" --validate-in-process --strictness-level 5 --timeout-ms 120000 --output-dir pluginval-logs "$1"
           }
           validate "build/SuperVelocityCurve_artefacts/Release/VST3/Super VelocityCurve.vst3"
           validate "build/SuperVelocityCurveMidiFx_artefacts/Release/VST3/Super VelocityCurve MIDI FX.vst3"
@@ -84,6 +85,7 @@ jobs:
 
   build-windows:
     runs-on: windows-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
         with:
@@ -112,8 +114,9 @@ jobs:
           New-Item -ItemType Directory -Force -Path pluginval-logs | Out-Null
           function Validate-Plugin($path) {
             Write-Host "=== pluginval: $path ==="
-            & $pv.FullName --strictness-level 5 --timeout-ms 120000 --output-dir pluginval-logs $path
-            if ($LASTEXITCODE -ne 0) { throw "pluginval failed for $path" }
+            & $pv.FullName --validate-in-process --strictness-level 5 --timeout-ms 120000 --output-dir pluginval-logs $path
+            $exitCode = $LASTEXITCODE
+            if ($exitCode -ne 0) { throw "pluginval failed for $path (exit $exitCode)" }
           }
           Validate-Plugin "build/SuperVelocityCurve_artefacts/Release/VST3/Super VelocityCurve.vst3"
           Validate-Plugin "build/SuperVelocityCurveMidiFx_artefacts/Release/VST3/Super VelocityCurve MIDI FX.vst3"

@@ -28,6 +28,6 @@ All E/P/M/U/S/T items done (see git history v0.4.0).
 
 ## Validation
 
-- Version: **0.5.0**
+- Version: **0.5.1**
 - Engine tests: **10**
 - pluginval: strictness 5, all shipped formats, logs uploaded in CI

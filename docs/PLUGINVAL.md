@@ -9,19 +9,17 @@ Super VelocityCurve is validated with [pluginval](https://github.com/Tracktion/p
 | macOS | VST3 Instrument, VST3 MIDI FX, AU `aumf`, AU `aumi`, CLAP (when built) |
 | Windows | VST3 Instrument, VST3 MIDI FX, CLAP (when built) |
 
-CI runs pluginval **out of process** (default) with `--output-dir pluginval-logs` so log files are retained per the [Adding pluginval to CI](https://github.com/Tracktion/pluginval/blob/develop/docs/Adding%20pluginval%20to%20CI.md) guide.
+CI runs pluginval **in process** (`--validate-in-process`) at strictness 5 with `--output-dir pluginval-logs` so log files are retained and exit codes are reliable on Windows per the [Adding pluginval to CI](https://github.com/Tracktion/pluginval/blob/develop/docs/Adding%20pluginval%20to%20CI.md) guide.
 
 ## Local validation
 
-After a Release build:
+After a Release build, use the bounded helper (hard 5-minute cap per plugin, in-process):
 
 ```bash
-# macOS — download pluginval v1.0.4, then:
-pluginval --strictness-level 5 --timeout-ms 120000 --output-dir ./pluginval-logs \
-  "build/SuperVelocityCurve_artefacts/Release/VST3/Super VelocityCurve.vst3"
+./scripts/validate-plugins-local.sh
 ```
 
-Repeat for each `.vst3`, `.component`, and `.clap` you ship.
+Do **not** run unbounded `lldb` or out-of-process pluginval in agent/automation shells — editor tests can hang indefinitely.
 
 ## Verified by pluginval badge
 

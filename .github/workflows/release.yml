@@ -75,17 +75,19 @@ jobs:
           submodules: recursive
 
       - name: Configure
+        shell: pwsh
         run: |
-          cmake -B build -G Ninja ^
-            -DCMAKE_BUILD_TYPE=%CMAKE_BUILD_TYPE% ^
-            -DSVC_ENABLE_LTO=OFF ^
+          cmake -B build `
+            -DSVC_ENABLE_LTO=OFF `
             -DSVC_COPY_PLUGIN_AFTER_BUILD=OFF
 
       - name: Build
-        run: cmake --build build --parallel
+        shell: pwsh
+        run: cmake --build build --config $env:CMAKE_BUILD_TYPE --parallel
 
       - name: Test
-        run: ctest --test-dir build --output-on-failure
+        shell: pwsh
+        run: ctest --test-dir build -C $env:CMAKE_BUILD_TYPE --output-on-failure
 
       - name: Package
         shell: pwsh

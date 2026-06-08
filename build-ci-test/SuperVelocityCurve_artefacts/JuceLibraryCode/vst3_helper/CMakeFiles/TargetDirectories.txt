@@ -1,3 +1,0 @@
-/Users/friend/Library/Mobile Documents/com~apple~CloudDocs/Documents/Dev/Super_VelocityCurve/build-ci-test/SuperVelocityCurve_artefacts/JuceLibraryCode/vst3_helper/CMakeFiles/vst3_helper.dir
-/Users/friend/Library/Mobile Documents/com~apple~CloudDocs/Documents/Dev/Super_VelocityCurve/build-ci-test/SuperVelocityCurve_artefacts/JuceLibraryCode/vst3_helper/CMakeFiles/edit_cache.dir
-/Users/friend/Library/Mobile Documents/com~apple~CloudDocs/Documents/Dev/Super_VelocityCurve/build-ci-test/SuperVelocityCurve_artefacts/JuceLibraryCode/vst3_helper/CMakeFiles/rebuild_cache.dir

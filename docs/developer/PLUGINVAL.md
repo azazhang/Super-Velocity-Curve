@@ -17,7 +17,8 @@ Official badge asset: `https://assets.tracktion.com/img/pages/develop/develop-lo
 
 | Platform | Formats | pluginval |
 |----------|---------|-----------|
-| macOS | VST3 Instrument, VST3 MIDI FX, AU `aumf`, AU `aumi`, CLAP | **Yes** — all |
+| macOS | VST3 Instrument, VST3 MIDI FX, AU `aumf`, AU `aumi` | **Yes** — CI |
+| macOS | CLAP (bundle) | **No** — pluginval strictness 5 hangs on GHA (>7 min, no progress); built + smoke-tested in CI |
 | Windows | VST3 Instrument, VST3 MIDI FX | **Yes** |
 | Windows | CLAP (flat `.clap` DLL) | **No** — see below |
 

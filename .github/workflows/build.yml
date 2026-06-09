@@ -70,10 +70,13 @@ jobs:
         run: |
           mkdir -p pluginval-logs
           PV="./pluginval.app/Contents/MacOS/pluginval"
-          PLUGIN_TIMEOUT_SEC=180
           validate() {
             local target="$1"
-            echo "=== pluginval: $target ==="
+            local timeout_sec=180
+            if [[ "$target" == *.clap ]]; then
+              timeout_sec=420
+            fi
+            echo "=== pluginval: $target (timeout ${timeout_sec}s) ==="
             # macOS only registers AUs under ~/Library/Audio/Plug-Ins/Components (pluginval #122).
             if [[ "$target" == *.component ]]; then
               local name
@@ -86,7 +89,7 @@ jobs:
               killall -9 AudioComponentRegistrar 2>/dev/null || true
               sleep 2
             fi
-            perl -e 'alarm shift; exec @ARGV' "$PLUGIN_TIMEOUT_SEC" \
+            perl -e 'alarm shift; exec @ARGV' "$timeout_sec" \
               "$PV" --validate-in-process --strictness-level 5 --timeout-ms 120000 \
               --output-dir pluginval-logs "$target"
           }

@@ -50,6 +50,8 @@ Two builds ship in each release: **Instrument** (Ableton) and **MIDI FX** (most 
 | CLAP | — | ✓ | macOS, Windows |
 | Standalone | ✓ | — | macOS app, Windows exe |
 
+**Why no CLAP Instrument?** By design, not omission. CLAP hosts expose MIDI FX as `note-effect` plugins in the chain — that matches how Reaper, Bitwig, and Logic work. Ableton needs an **Instrument** slot and does not load CLAP, so the Instrument build is VST3/AU only. One MIDI FX CLAP covers every CLAP-capable host.
+
 | DAW | Plugin name | Formats | Where to load |
 |-----|-------------|---------|---------------|
 | Ableton Live | Super VelocityCurve | VST3 Instrument | MIDI track (instrument slot — not MIDI FX) |
@@ -80,7 +82,6 @@ This is honest beta software — not a finished 1.0 product.
 | **Quality** | v0.2.x — UI and edge cases still improving; report issues on GitHub |
 | **macOS installs** | Release zips are **unsigned**; you may need a one-time security allow or `xattr -cr` (see [install](docs/user/install.md)) |
 | **Ableton** | No third-party MIDI FX slot — use the **VST3 Instrument** build and route MIDI to your drum track |
-| **CLAP Instrument** | Not shipped — CLAP is **MIDI FX only** (`note-effect`). Ableton (the main reason for the Instrument build) does not load CLAP; use VST3 Instrument there |
 | **MIDI 2.0** | High-res output LUT is built in; **host UMP I/O** is not wired yet — most setups still use MIDI 1.0 |
 | **Host coverage** | pluginval checks load/stability; **full DAW smoke** on every host is not complete — try your setup and open an issue if something fails |
 

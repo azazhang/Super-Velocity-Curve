@@ -31,7 +31,7 @@ Double-click the zip file. You should see folders like:
 | `Super VelocityCurve MIDI FX.clap` | `~/Library/Audio/Plug-Ins/CLAP/` (Bitwig, Reaper 7+, etc.) |
 | `Super VelocityCurve.app` | Applications folder (optional — runs without a DAW) |
 
-> **CLAP is MIDI FX only** — there is no Instrument CLAP build. Use VST3/AU for Ableton’s instrument workflow.
+> **CLAP = MIDI FX only (intentional).** CLAP hosts load it in the note/MIDI FX chain. Ableton’s instrument slot needs VST3 — see [Which plugin do I need?](../../README.md#which-plugin-do-i-need).
 
 **Finder shortcut:** In Finder, press **Cmd+Shift+G** and paste `~/Library/Audio/Plug-Ins/VST3/`.
 

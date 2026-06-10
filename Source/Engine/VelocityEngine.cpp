@@ -4,7 +4,10 @@
 namespace svc
 {
 
-VelocityEngine::VelocityEngine() = default;
+VelocityEngine::VelocityEngine()
+{
+    clearVoiceState();
+}
 
 void VelocityEngine::setSampleRate (double rate) noexcept
 {
@@ -20,8 +23,8 @@ void VelocityEngine::clearAllPads()
 {
     const std::unique_lock lock (padMutex);
     pads.clear();
-    retriggerStates.clear();
     midiRouting.clearAftertouchSettings();
+    clearVoiceState();
 }
 
 void VelocityEngine::setPadSettings (int note, int channel, const PadSettings& settings)
@@ -81,6 +84,34 @@ const PadSettings* VelocityEngine::findPad (int note, int channel) const
     return it != pads.end() ? &it->second : nullptr;
 }
 
+PadSettings VelocityEngine::resolvePadSettings (int note, int channel) const
+{
+    if (const auto* pad = findPad (note, channel))
+        return *pad;
+
+    PadSettings defaults;
+    defaults.midiNote = note;
+    defaults.midiChannel = channel;
+    defaults.name = "Note " + juce::String (note);
+    return defaults;
+}
+
+void VelocityEngine::clearVoiceState() noexcept
+{
+    for (auto& voice : activeVoices)
+        voice = {};
+
+    for (auto& timestamp : retriggerLastTimeUs)
+        timestamp.store (-1, std::memory_order_relaxed);
+}
+
+void VelocityEngine::markRetriggerTime (int note, int channel, double eventTimeSeconds) noexcept
+{
+    const auto index = midiNoteChannelIndex (note, channel);
+    retriggerLastTimeUs[index].store (static_cast<int64_t> (eventTimeSeconds * 1'000'000.0),
+                                      std::memory_order_relaxed);
+}
+
 bool VelocityEngine::shouldDropRetrigger (const PadSettings& pad,
                                           int note,
                                           int channel,
@@ -89,12 +120,13 @@ bool VelocityEngine::shouldDropRetrigger (const PadSettings& pad,
     if (pad.retriggerGuardMs <= 0.0)
         return false;
 
-    const NoteKey key { note, channel };
-    const auto it = retriggerStates.find (key);
-    if (it == retriggerStates.end() || it->second.lastNoteOnTime < 0.0)
+    const auto index = midiNoteChannelIndex (note, channel);
+    const auto lastUs = retriggerLastTimeUs[index].load (std::memory_order_relaxed);
+    if (lastUs < 0)
         return false;
 
-    return (eventTimeSeconds - it->second.lastNoteOnTime) < (pad.retriggerGuardMs * 0.001);
+    const auto eventUs = static_cast<int64_t> (eventTimeSeconds * 1'000'000.0);
+    return (eventUs - lastUs) < static_cast<int64_t> (pad.retriggerGuardMs * 1000.0);
 }
 
 float VelocityEngine::processNoteVelocity (const PadSettings& pad, float inputNormalized) const
@@ -140,27 +172,18 @@ int VelocityEngine::resolveOutputChannel (PadGroup group, int incomingChannel) c
     return overrideChannel > 0 ? overrideChannel : incomingChannel;
 }
 
-void VelocityEngine::applyOutputVelocity (juce::MidiMessage& message,
-                                          float outputNormalized,
-                                          bool inputIsMidi2) const
+VelocityEncoding VelocityEngine::encodeAndApplyOutput (juce::MidiMessage& message,
+                                                         float outputNormalized,
+                                                         bool inputIsMidi2) const
 {
-    const auto forceMidi1 = outputMode == VelocityOutputMode::midi1;
-    const auto forceMidi2 = outputMode == VelocityOutputMode::midi2;
-    const auto useMidi1 = forceMidi1 || (! forceMidi2 && ! inputIsMidi2);
-
-    if (useMidi1)
-    {
-        const auto midi1 = normalizedToMidi1 (outputNormalized);
-        message.setVelocity (midi1ToNormalized (midi1));
-    }
-    else
-    {
-        message.setVelocity (outputNormalized);
-    }
+    const auto encoding = encodeOutputVelocity (outputMode, outputNormalized, inputIsMidi2);
+    applyEncodingToMidiMessage (message, encoding);
+    return encoding;
 }
 
 void VelocityEngine::processMidiBuffer (juce::MidiBuffer& buffer, int numSamples)
 {
+    midi2OutputWords.clear();
     juce::MidiBuffer processed;
     const auto blockDurationSeconds = static_cast<double> (numSamples) / sampleRate;
 
@@ -175,38 +198,49 @@ void VelocityEngine::processMidiBuffer (juce::MidiBuffer& buffer, int numSamples
         if (! midiRouting.processMessage (message))
             continue;
 
+        const auto note = message.getNoteNumber();
+        const auto channel = message.getChannel();
+        const auto slot = midiNoteChannelIndex (note, channel);
+
         if (message.isNoteOn())
         {
-            const auto note = message.getNoteNumber();
-            const auto channel = message.getChannel();
-            const auto inputNormalized = message.getFloatVelocity();
-
-            const auto midi1Quantized = midi1ToNormalized (message.getVelocity());
-            const bool inputIsMidi2 = std::abs (inputNormalized - midi1Quantized) > (1.0f / 254.0f);
-
-            PadSettings settings;
-            if (const auto* pad = findPad (note, channel))
-                settings = *pad;
-            else
-            {
-                settings.midiNote = note;
-                settings.midiChannel = channel;
-            }
+            const auto inputNormalized = decodeInputFromMidi1 (message.getVelocity());
+            const bool inputIsMidi2 = false;
+            const auto settings = resolvePadSettings (note, channel);
 
             if (shouldDropRetrigger (settings, note, channel, eventTime))
                 continue;
 
             const auto outputNormalized = processNoteVelocity (settings, inputNormalized);
             if (outputNormalized < 0.0f)
+            {
+                if (! activeVoices[slot].sounding)
+                    activeVoices[slot].suppressNextNoteOff = true;
                 continue;
+            }
 
-            applyOutputVelocity (message, outputNormalized, inputIsMidi2);
+            const auto encoding = encodeAndApplyOutput (message, outputNormalized, inputIsMidi2);
+
+            if (encoding.emitMidi2Ump)
+            {
+                appendMidi2NoteOnUmp (midi2OutputWords,
+                                      message.getChannel(),
+                                      message.getNoteNumber(),
+                                      encoding.midi2);
+            }
+
+            auto& voice = activeVoices[slot];
+            voice.outputNote = note;
+            voice.outputChannel = channel;
 
             if (processingSettings.zoneRouting.enabled)
             {
-                const auto outChannel = resolveOutputChannel (settings.group, message.getChannel());
-                message.setChannel (outChannel);
+                voice.outputChannel = resolveOutputChannel (settings.group, channel);
+                message.setChannel (voice.outputChannel);
             }
+
+            voice.sounding = true;
+            voice.suppressNextNoteOff = false;
 
             histogramBank.record (note, channel, inputNormalized, outputNormalized);
 
@@ -215,16 +249,55 @@ void VelocityEngine::processMidiBuffer (juce::MidiBuffer& buffer, int numSamples
             hit.channel = channel;
             hit.inputVelocity = inputNormalized;
             hit.outputVelocity = outputNormalized;
-            hit.isMidi2 = inputIsMidi2;
+            hit.outputMidi2 = encoding.emitMidi2Ump ? encoding.midi2 : -1;
+            hit.isMidi2 = encoding.emitMidi2Ump;
             hit.timestamp = static_cast<std::uint64_t> (eventTime * 1000.0);
             hitFifo.push (hit);
 
-            lock.unlock();
+            markRetriggerTime (note, channel, eventTime);
+            processed.addEvent (message, sampleOffset);
+            continue;
+        }
+
+        if (message.isNoteOff())
+        {
+            auto& voice = activeVoices[slot];
+
+            if (voice.suppressNextNoteOff && ! voice.sounding)
             {
-                const std::unique_lock writeLock (padMutex);
-                retriggerStates[{ note, channel }].lastNoteOnTime = eventTime;
+                voice.suppressNextNoteOff = false;
+                continue;
             }
-            lock.lock();
+
+            if (voice.sounding)
+            {
+                message.setChannel (voice.outputChannel);
+                message.setNoteNumber (voice.outputNote);
+                voice.sounding = false;
+            }
+            else if (processingSettings.zoneRouting.enabled)
+            {
+                const auto settings = resolvePadSettings (note, channel);
+                message.setChannel (resolveOutputChannel (settings.group, channel));
+            }
+
+            if (voice.suppressNextNoteOff)
+                voice.suppressNextNoteOff = false;
+
+            processed.addEvent (message, sampleOffset);
+            continue;
+        }
+
+        if (message.isAftertouch() && processingSettings.zoneRouting.enabled)
+        {
+            auto& voice = activeVoices[slot];
+            if (voice.sounding)
+                message.setChannel (voice.outputChannel);
+            else
+            {
+                const auto settings = resolvePadSettings (note, channel);
+                message.setChannel (resolveOutputChannel (settings.group, channel));
+            }
         }
 
         processed.addEvent (message, sampleOffset);

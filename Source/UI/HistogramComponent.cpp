@@ -54,4 +54,7 @@ void HistogramComponent::paint (juce::Graphics& g)
     g.setFont (svc::ui::Theme::smallFont());
     g.setColour (juce::Colour (svc::ui::Theme::textSecondary()));
     g.drawText ("60-90", static_cast<int> (bandLeft), static_cast<int> (plot.getY()) - 12, 40, 12, juce::Justification::centred);
+    g.drawText ("In (warm) / Out (blue)  |  band = typical touch range (vel 60-90)",
+                getLocalBounds().removeFromBottom (14).reduced (10, 0),
+                juce::Justification::centredLeft);
 }

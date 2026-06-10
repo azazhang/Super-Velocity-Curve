@@ -1,6 +1,7 @@
 #include "MidiRoutingPanel.h"
 #include "../Engine/EngineSettings.h"
 #include "../Profiles/PadTypes.h"
+#include "ScrollHelpers.h"
 
 namespace
 {
@@ -11,8 +12,7 @@ MidiRoutingPanel::MidiRoutingPanel()
 {
     addAndMakeVisible (viewport);
     viewport.setViewedComponent (&content, false);
-    viewport.setScrollBarsShown (true, false);
-    viewport.getVerticalScrollBar().setAutoHide (true);
+    svc::ui::configureVerticalViewport (viewport);
 
     content.addAndMakeVisible (inputLabel);
     content.addAndMakeVisible (outputLabel);
@@ -22,6 +22,7 @@ MidiRoutingPanel::MidiRoutingPanel()
     content.addAndMakeVisible (humanizeLabel);
     content.addAndMakeVisible (humanizeSlider);
     content.addAndMakeVisible (libraryLabel);
+    content.addAndMakeVisible (libraryBlendLabel);
     content.addAndMakeVisible (libraryPresetBox);
     content.addAndMakeVisible (libraryBlendSlider);
     content.addAndMakeVisible (zoneRoutingToggle);
@@ -127,41 +128,46 @@ void MidiRoutingPanel::notifyChanged()
 
 void MidiRoutingPanel::layoutContent()
 {
-    auto bounds = juce::Rectangle<int> (0, 0, juce::jmax (viewport.getWidth(), 280), 520).reduced (4);
+    const int width = juce::jmax (viewport.getWidth() - 8, 272);
+    int y = 8;
 
-    auto row = [&bounds] (juce::Component& comp, int h)
+    auto labelRow = [&y, width] (juce::Label& label, juce::Component& comp, int h = 40)
     {
-        comp.setBounds (bounds.removeFromTop (h));
-        bounds.removeFromTop (4);
+        label.setBounds (8, y, width - 16, 14);
+        comp.setBounds (8, y + 14, width - 16, h - 14);
+        y += h + 4;
     };
 
-    auto labelRow = [&bounds] (juce::Label& label, juce::Component& comp, int h = 40)
+    auto row = [&y, width] (juce::Component& comp, int h)
     {
-        auto r = bounds.removeFromTop (h);
-        label.setBounds (r.removeFromTop (14));
-        comp.setBounds (r);
-        bounds.removeFromTop (4);
+        comp.setBounds (8, y, width - 16, h);
+        y += h + 4;
     };
 
     labelRow (inputLabel, inputChannelBox);
     labelRow (outputLabel, outputChannelBox);
     row (remapToggle, 22);
-    bounds.removeFromTop (4);
     labelRow (humanizeLabel, humanizeSlider);
     labelRow (libraryLabel, libraryPresetBox);
-    row (libraryBlendSlider, 22);
+    labelRow (libraryBlendLabel, libraryBlendSlider);
     row (zoneRoutingToggle, 22);
     row (zoneChannelsLabel, 16);
 
+    const int colW = (width - 20) / 2;
     for (int i = 0; i < 7; ++i)
     {
-        auto r = bounds.removeFromTop (40);
-        zoneGroupLabels[static_cast<size_t> (i)].setBounds (r.removeFromTop (14));
-        zoneGroupChannelBoxes[static_cast<size_t> (i)].setBounds (r);
-        bounds.removeFromTop (2);
+        const int col = i % 2;
+        const int rowIdx = i / 2;
+        const int x = 8 + col * (colW + 4);
+        const int rowY = y + rowIdx * 36;
+
+        zoneGroupLabels[static_cast<size_t> (i)].setBounds (x, rowY, colW, 12);
+        zoneGroupChannelBoxes[static_cast<size_t> (i)].setBounds (x, rowY + 12, colW, 22);
     }
 
-    content.setSize (bounds.getWidth() + 8, bounds.getY() + 8);
+    y += 4 * 36;
+
+    content.setSize (width, y + 8);
 }
 
 void MidiRoutingPanel::paint (juce::Graphics& g)
@@ -173,4 +179,5 @@ void MidiRoutingPanel::resized()
 {
     viewport.setBounds (getLocalBounds());
     layoutContent();
+    svc::ui::updateVerticalScrollbarVisibility (viewport, content);
 }

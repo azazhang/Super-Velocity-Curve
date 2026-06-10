@@ -17,11 +17,23 @@ AboutPanelComponent::AboutPanelComponent()
     versionLabel.setColour (juce::Label::textColourId, juce::Colour (svc::ui::Theme::textSecondary()));
     versionLabel.setJustificationType (juce::Justification::centred);
 
+    developerKickerLabel.setText ("Developer", juce::dontSendNotification);
+    developerKickerLabel.setFont (svc::ui::Theme::smallFont());
+    developerKickerLabel.setColour (juce::Label::textColourId, juce::Colour (svc::ui::Theme::textSecondary()));
+    developerKickerLabel.setJustificationType (juce::Justification::centredLeft);
+
+    developerNameLabel.setText ("azazhang / Studio J", juce::dontSendNotification);
+    developerNameLabel.setFont (svc::ui::Theme::bodyFont().withHeight (17.0f));
+    developerNameLabel.setJustificationType (juce::Justification::centredLeft);
+
     blurbLabel.setText ("Free, open-source MIDI velocity curves for finger drummers.\n"
                         "Validated with pluginval strictness 5 (tap badge for details).",
                         juce::dontSendNotification);
     blurbLabel.setFont (svc::ui::Theme::smallFont());
     blurbLabel.setJustificationType (juce::Justification::centred);
+
+    portraitImage = juce::ImageCache::getFromMemory (BinaryData::developer_portrait_png,
+                                                     BinaryData::developer_portrait_pngSize);
 
     const auto badge = juce::ImageCache::getFromMemory (BinaryData::pluginval_badge_png,
                                                         BinaryData::pluginval_badge_pngSize);
@@ -33,7 +45,9 @@ AboutPanelComponent::AboutPanelComponent()
 
     githubButton.onClick = [this] { openUrl (svc::urls::kGitHubRepo); };
     homeButton.onClick = [this] { openUrl (svc::urls::kHomepage); };
+    homeButton.setTooltip ("azhang.eu.org");
     youtubeButton.onClick = [this] { openUrl (svc::urls::kYouTube); };
+    youtubeButton.setTooltip ("Studio J on YouTube");
     supportButton.onClick = [this] { openUrl (svc::urls::kSupport); };
 
     closeButton.onClick = [this]
@@ -42,7 +56,7 @@ AboutPanelComponent::AboutPanelComponent()
             onDismiss();
     };
 
-    for (auto* c : { &titleLabel, &versionLabel, &blurbLabel })
+    for (auto* c : { &titleLabel, &versionLabel, &developerKickerLabel, &developerNameLabel, &blurbLabel })
         addAndMakeVisible (c);
 
     for (auto* b : { &closeButton, &githubButton, &homeButton, &youtubeButton, &supportButton })
@@ -64,16 +78,39 @@ void AboutPanelComponent::paint (juce::Graphics& g)
 {
     g.fillAll (juce::Colours::black.withAlpha (0.55f));
     svc::ui::Theme::fillPanel (g, cardBounds.toFloat(), 12.0f);
+
+    if (portraitImage.isValid() && ! portraitBounds.isEmpty())
+    {
+        juce::Path circle;
+        circle.addEllipse (portraitBounds.toFloat());
+
+        g.saveState();
+        g.reduceClipRegion (circle);
+        g.drawImage (portraitImage, portraitBounds.toFloat(),
+                     juce::RectanglePlacement::centred | juce::RectanglePlacement::onlyReduceInSize);
+        g.restoreState();
+
+        g.setColour (juce::Colour (svc::ui::Theme::border()).withAlpha (0.85f));
+        g.strokePath (circle, juce::PathStrokeType (2.0f));
+    }
 }
 
 void AboutPanelComponent::resized()
 {
-    cardBounds = getLocalBounds().withSizeKeepingCentre (420, 400);
+    cardBounds = getLocalBounds().withSizeKeepingCentre (480, 448);
     auto content = cardBounds.reduced (24, 20);
 
     titleLabel.setBounds (content.removeFromTop (28));
     versionLabel.setBounds (content.removeFromTop (20));
-    content.removeFromTop (8);
+    content.removeFromTop (10);
+
+    auto developerRow = content.removeFromTop (88);
+    portraitBounds = developerRow.removeFromLeft (88);
+    developerRow.removeFromLeft (14);
+    developerKickerLabel.setBounds (developerRow.removeFromTop (18));
+    developerNameLabel.setBounds (developerRow.removeFromTop (24));
+
+    content.removeFromTop (10);
     blurbLabel.setBounds (content.removeFromTop (44));
     content.removeFromTop (12);
 

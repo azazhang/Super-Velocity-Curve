@@ -15,31 +15,22 @@ Official badge asset: `https://assets.tracktion.com/img/pages/develop/develop-lo
 
 ## What we validate
 
-| Platform | Formats | pluginval |
-|----------|---------|-----------|
-| macOS | VST3 Instrument, VST3 MIDI FX, AU `aumf`, AU `aumi` | **Yes** — CI |
-| macOS | CLAP (bundle) | **No** — pluginval strictness 5 hangs on GHA (>7 min, no progress); built + smoke-tested in CI |
-| Windows | VST3 Instrument, VST3 MIDI FX | **Yes** |
-| Windows | CLAP (flat `.clap` DLL) | **No** — see below |
+| Platform | Formats | Tool |
+|----------|---------|------|
+| macOS | VST3 Instrument, VST3 MIDI FX, AU `aumf`, AU `aumi` | **pluginval** strictness 5 |
+| Windows | VST3 Instrument, VST3 MIDI FX | **pluginval** strictness 5 |
+| macOS | CLAP (bundle) | **[clap-validator](https://github.com/free-audio/clap-validator)** |
+| Windows | CLAP (flat `.clap` DLL) | **clap-validator** |
+
+**pluginval does not support CLAP.** Earlier CI failures on Windows CLAP were from passing a flat `.clap` DLL to pluginval (its scanner expects LV2-style bundles). The fix is **clap-validator**, which accepts the standard Windows CLAP layout directly.
 
 CI runs pluginval **in process** (`--validate-in-process`) at strictness 5 with `--output-dir pluginval-logs`. Log artifacts: `pluginval-logs-macos`, `pluginval-logs-windows`.
-
-## Windows CLAP exception
-
-**Why skipped:** On Windows, `clap-juce-extensions` emits CLAP as a **single `.clap` DLL**. pluginval’s scanner uses **lilv**, which expects a **macOS-style bundle** containing `manifest.ttl`. Staging the path without spaces does not fix this — the file layout is wrong for lilv, not the path.
-
-**Do we still meet “Verified by pluginval”?** Strictly speaking, the program asks for validation of **shipped formats per platform**. We:
-
-- Validate **every format pluginval can load** on each OS (all VST3/AU on macOS; both VST3 on Windows).
-- Validate **CLAP on macOS** (bundle layout).
-- **Build and ship** Windows CLAP but do not claim pluginval coverage for it.
-
-We display the badge because we meet the process for all testable binaries, retain CI logs, and document this gap honestly. **Optional follow-up (P1):** add `clap-info` smoke test on Windows CLAP in CI for load/scan coverage without lilv.
 
 ## Local validation
 
 ```bash
-./scripts/validate-plugins-local.sh
+./scripts/validate-plugins-local.sh   # VST3 + AU via pluginval
+./scripts/validate-clap.sh            # CLAP via clap-validator
 ```
 
 Do **not** run unbounded `lldb` or out-of-process pluginval in agent shells.
@@ -49,3 +40,5 @@ Do **not** run unbounded `lldb` or out-of-process pluginval in agent shells.
 ```markdown
 [![Verified by pluginval](https://assets.tracktion.com/img/pages/develop/develop-logo-pluginval.png)](https://www.tracktion.com/develop/pluginval)
 ```
+
+CLAP coverage is documented here and in CI; the badge applies to VST3/AU where pluginval runs.

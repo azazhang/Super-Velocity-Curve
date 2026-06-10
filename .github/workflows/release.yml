@@ -4,6 +4,16 @@ on:
   push:
     tags:
       - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version (e.g. 0.2.3)"
+        required: true
+        default: "0.2.3"
+      prerelease:
+        description: "Mark as pre-release"
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -13,8 +23,12 @@ env:
 
 jobs:
   build-macos:
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [arm64, x86_64]
     runs-on: macos-14
-    timeout-minutes: 60
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
         with:
@@ -27,16 +41,15 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/ccache
-          key: ccache-release-macos-${{ hashFiles('CMakeLists.txt', 'Source/**') }}
+          key: ccache-release-macos-${{ matrix.arch }}-${{ hashFiles('CMakeLists.txt', 'Source/**') }}
           restore-keys: |
-            ccache-release-macos-
+            ccache-release-macos-${{ matrix.arch }}-
 
       - name: Configure
-        # arm64-only until matrix+lipo (CI-3): universal in one job exceeded 90m with LTO.
         run: |
           cmake -B build -G Ninja \
             -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} \
-            -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }} \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DCMAKE_C_COMPILER_LAUNCHER=ccache \
             -DSVC_ENABLE_LTO=OFF \
@@ -59,7 +72,32 @@ jobs:
           if [ -d "build/SuperVelocityCurveMidiFx_artefacts/Release/CLAP" ]; then
             cp -R build/SuperVelocityCurveMidiFx_artefacts/Release/CLAP/*.clap dist/ 2>/dev/null || true
           fi
-          cd dist && zip -r ../SuperVelocityCurve-macOS-unsigned.zip .
+          cd dist && zip -r ../SuperVelocityCurve-macOS-${{ matrix.arch }}-unsigned.zip .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SuperVelocityCurve-macOS-${{ matrix.arch }}
+          path: SuperVelocityCurve-macOS-${{ matrix.arch }}-unsigned.zip
+
+  merge-macos-universal:
+    needs: build-macos
+    runs-on: macos-14
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download arch artefacts
+        uses: actions/download-artifact@v4
+        with:
+          path: arch-zips
+
+      - name: Extract and lipo
+        run: |
+          mkdir -p arch/arm64 arch/x86_64 dist-universal
+          unzip -q arch-zips/SuperVelocityCurve-macOS-arm64/SuperVelocityCurve-macOS-arm64-unsigned.zip -d arch/arm64
+          unzip -q arch-zips/SuperVelocityCurve-macOS-x86_64/SuperVelocityCurve-macOS-x86_64-unsigned.zip -d arch/x86_64
+          bash scripts/lipo-macos-universal.sh arch/arm64 arch/x86_64 dist-universal
+          cd dist-universal && zip -r ../SuperVelocityCurve-macOS-unsigned.zip .
 
       - uses: actions/upload-artifact@v4
         with:
@@ -107,7 +145,7 @@ jobs:
           path: SuperVelocityCurve-Windows-unsigned.zip
 
   publish:
-    needs: [build-macos, build-windows]
+    needs: [merge-macos-universal, build-windows]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -120,6 +158,9 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ github.event_name == 'workflow_dispatch' && format('v{0}', github.event.inputs.version) || github.ref_name }}
+          name: Super VelocityCurve ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version || github.ref_name }}
+          prerelease: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.prerelease == 'true' || false }}
           files: |
             artifacts/SuperVelocityCurve-macOS/SuperVelocityCurve-macOS-unsigned.zip
             artifacts/SuperVelocityCurve-Windows/SuperVelocityCurve-Windows-unsigned.zip

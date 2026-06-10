@@ -14,9 +14,11 @@ public:
     svc::ProfilePad getPad() const;
     void commitEdits();
     void applyTheme();
+    void setAftertouchEditMode (bool editingAftertouch);
     int getPadIndex() const noexcept { return currentPadIndex; }
 
     std::function<void (int padIndex, const svc::ProfilePad&)> onPadChanged;
+    std::function<void()> onPadEditFinished;
     std::function<void()> onEditAftertouchRequested;
 
     void paint (juce::Graphics& g) override;
@@ -52,8 +54,10 @@ private:
     juce::Label ceilingLabel { {}, "Output ceiling" };
 
     void notifyChanged();
+    void finishPadEdit();
     void setupSlider (juce::Slider& slider, const juce::String& suffix, bool midiScale);
     void layoutContent();
+    void refreshScrollbar();
 
     bool suppressNotify = false;
 };

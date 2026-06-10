@@ -87,6 +87,14 @@ public:
             g.setColour (juce::Colour (Theme::accent()).withAlpha (0.35f));
             g.drawRoundedRectangle (bounds.expanded (0.5f), 5.5f, 1.0f);
         }
+
+        const auto arrowZone = bounds.removeFromRight (18.0f).reduced (4.0f, 6.0f);
+        juce::Path arrow;
+        arrow.addTriangle (arrowZone.getCentreX() - 4.0f, arrowZone.getCentreY() - 2.0f,
+                           arrowZone.getCentreX() + 4.0f, arrowZone.getCentreY() - 2.0f,
+                           arrowZone.getCentreX(), arrowZone.getCentreY() + 3.0f);
+        g.setColour (box.findColour (juce::ComboBox::arrowColourId));
+        g.fillPath (arrow);
     }
 
 private:

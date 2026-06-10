@@ -20,11 +20,15 @@ private:
 
     juce::Label titleLabel;
     juce::Label versionLabel;
+    juce::Label developerKickerLabel;
+    juce::Label developerNameLabel;
     juce::Label blurbLabel;
+    juce::Image portraitImage;
+    juce::Rectangle<int> portraitBounds;
     juce::TextButton closeButton { "Close" };
     juce::TextButton githubButton { "GitHub" };
     juce::TextButton homeButton { "Homepage" };
-    juce::TextButton youtubeButton { "YouTube" };
+    juce::TextButton youtubeButton { "Studio J" };
     juce::TextButton supportButton { "Buy me a coffee" };
     juce::ImageButton pluginvalBadgeButton;
 

@@ -49,6 +49,7 @@ public:
     void syncOutputModeToEngine();
     void injectStandaloneMidi (const juce::MidiMessage& message);
     void setStandaloneMidiOutput (juce::MidiOutput* output) noexcept;
+    void flushStandaloneMidiOutput();
 
 private:
     static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
@@ -61,6 +62,8 @@ private:
 
     juce::CriticalSection standaloneMidiLock;
     juce::MidiBuffer standaloneMidiQueue;
+    juce::CriticalSection standaloneOutputLock;
+    juce::MidiBuffer standaloneMidiOutputQueue;
     juce::MidiOutput* standaloneMidiOutput = nullptr;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SuperVelocityCurveAudioProcessor)

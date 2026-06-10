@@ -1,4 +1,6 @@
 #include "PadGridComponent.h"
+#include "MidiNoteNames.h"
+#include "ScrollHelpers.h"
 
 PadGridComponent::PadCanvas::PadCanvas (PadGridComponent& o) : owner (o) {}
 
@@ -52,9 +54,23 @@ void PadGridComponent::PadCanvas::paint (juce::Graphics& g)
 
         g.setFont (svc::ui::Theme::smallFont());
         g.setColour (juce::Colour (svc::ui::Theme::textSecondary()));
-        g.drawText ("N" + juce::String (pad.midiNote) + "  Ch" + juce::String (pad.midiChannel),
-                    textArea,
-                    juce::Justification::centred);
+        if (owner.displayGridColumns >= 8)
+        {
+            g.drawFittedText (svc::ui::formatMidiNoteShort (pad.midiNote),
+                            textArea.removeFromTop (textArea.getHeight() / 2),
+                            juce::Justification::centred,
+                            1);
+            g.drawFittedText ("Ch " + juce::String (pad.midiChannel),
+                            textArea,
+                            juce::Justification::centred,
+                            1);
+        }
+        else
+        {
+            g.drawText (svc::ui::formatMidiNote (pad.midiNote) + "  Ch" + juce::String (pad.midiChannel),
+                        textArea,
+                        juce::Justification::centred);
+        }
 
         if (pad.retriggerGuardMs > 0.0)
         {
@@ -91,8 +107,7 @@ PadGridComponent::PadGridComponent()
     addAndMakeVisible (deletePadButton);
     addAndMakeVisible (viewport);
     viewport.setViewedComponent (&padCanvas, false);
-    viewport.setScrollBarsShown (true, false);
-    viewport.getVerticalScrollBar().setAutoHide (true);
+    svc::ui::configurePadGridViewport (viewport);
 
     addPadButton.onClick = [this]
     {
@@ -120,6 +135,7 @@ void PadGridComponent::setProfile (const svc::ControllerProfile& profile, bool r
 
     hitByPadIndex.clear();
     updateCanvasSize();
+    svc::ui::updatePadGridScrollbars (viewport, padCanvas);
     padCanvas.repaint();
     repaint();
 }
@@ -251,4 +267,5 @@ void PadGridComponent::resized()
     deletePadButton.setBounds (buttonRow.reduced (1));
     viewport.setBounds (area);
     updateCanvasSize();
+    svc::ui::updatePadGridScrollbars (viewport, padCanvas);
 }

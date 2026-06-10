@@ -13,13 +13,17 @@ public:
 
     void setPad (const svc::ProfilePad& pad, bool clearHitMarkers = true);
     const svc::ProfilePad& getPad() const noexcept { return currentPad; }
+    bool isDraggingPoint() const noexcept { return draggedPointIndex >= 0; }
 
     enum class EditTarget { velocity, aftertouch };
 
     void setEditTarget (EditTarget target);
+    EditTarget getEditTarget() const noexcept { return editTarget; }
     void addHitMarker (int note, int channel, float inputNormalized, float outputNormalized, bool isMidi2);
+    bool needsHitVisualRepaint() const noexcept;
 
     std::function<void (const svc::ProfilePad&)> onPadChanged;
+    std::function<void()> onPadEditFinished;
 
     void paint (juce::Graphics& g) override;
     void mouseDown (const juce::MouseEvent& event) override;
@@ -43,7 +47,8 @@ private:
     struct HitMarker
     {
         float input = 0.0f;
-        float output = 0.0f;
+        float curveOutput = 0.0f;
+        float engineOutput = 0.0f;
         double createdMs = 0.0;
     };
 
@@ -53,12 +58,15 @@ private:
 
     juce::Rectangle<float> plotArea() const;
     juce::Point<float> normalizedToPoint (float input, float output) const;
+    float controlOutputToPlot (float controlOutput) const noexcept;
+    float plotOutputToControl (float plotOutput) const noexcept;
     juce::Point<float> eventToNormalized (juce::Point<float> pos) const;
     int findNearestControlPoint (juce::Point<float> pos) const;
     void notifyChanged();
     void drawGrid (juce::Graphics& g) const;
     void drawGateZones (juce::Graphics& g) const;
     void drawCurve (juce::Graphics& g) const;
+    void drawLiveHits (juce::Graphics& g) const;
     void drawCurvePath (juce::Graphics& g, const svc::VelocityCurve& curve, juce::Colour colour, float strokeWidth) const;
     svc::VelocityCurve& activeCurve() noexcept;
     const svc::VelocityCurve& activeCurve() const noexcept;

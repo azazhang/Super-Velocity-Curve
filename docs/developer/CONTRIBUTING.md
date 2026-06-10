@@ -4,10 +4,26 @@
 
 ```bash
 git submodule update --init --recursive
-cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
-cmake --build build --config Release
+cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo
+cmake --build build
 ctest --test-dir build --output-on-failure
 ```
+
+### Build output folders (why so many?)
+
+JUCE emits **one artefacts folder per CMake target**, not one folder for the whole repo:
+
+| Folder | Target |
+|--------|--------|
+| `build/SuperVelocityCurve_artefacts/` | Instrument plugin (VST3, AU, Standalone) |
+| `build/SuperVelocityCurveMidiFx_artefacts/` | MIDI FX plugin (+ CLAP) |
+| `build/SuperVelocityCurveTests_artefacts/` | `ctest` console binary |
+
+Inside each, **`RelWithDebInfo/` vs `Release/`** is the CMake build type. They coexist if you reconfigure between types. **Use one type consistently** — CI uses `RelWithDebInfo`; local dev can match with `-DCMAKE_BUILD_TYPE=RelWithDebInfo`.
+
+**Run the app:** `build/SuperVelocityCurve_artefacts/RelWithDebInfo/Standalone/Super VelocityCurve.app`
+
+To avoid stale duplicates: `rm -rf build && cmake -B build ...` when switching build types.
 
 macOS universal CI build:
 
@@ -30,7 +46,9 @@ cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="arm64;x86_6
 
 ## CI
 
-Push to `main` runs `.github/workflows/build.yml` (macOS + Windows, pluginval strictness 5).
+Push to `main` runs `.github/workflows/build.yml` (macOS + Windows, pluginval strictness 5 on VST3/AU, clap-validator on CLAP).
+
+No Windows machine? See [WINDOWS_TESTING.md](WINDOWS_TESTING.md) — download CI artifacts or use a VM.
 
 Tag `v*.*.*` runs `.github/workflows/release.yml` and publishes GitHub Release artifacts.
 

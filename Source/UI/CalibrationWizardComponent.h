@@ -29,8 +29,11 @@ private:
     juce::TextButton resetButton { "Reset" };
     juce::TextButton applyButton { "Apply Curve" };
     juce::Label instructionLabel;
+    juce::Label readoutLabel;
+    juce::Rectangle<int> previewBounds;
 
-    void advanceStep();
+    bool hasValidHits() const noexcept;
+    void updateReadout();
     svc::VelocityCurve buildCurve() const;
     juce::String instructionText() const;
     void drawPreviewCurve (juce::Graphics& g, juce::Rectangle<float> area) const;

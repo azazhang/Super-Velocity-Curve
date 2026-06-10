@@ -1,5 +1,163 @@
 # Changelog
 
+## v0.2.7 (2026-06-10)
+
+### Changed
+- User-facing README: consistent DAW table (Reaper AU on macOS), known limitations, support links; versioning/changelog at footer only
+- `docs/README.md` doc map; agent docs (`AGENTS.md`) separated from musician path
+
+### Fixed
+- Launchpad pad cells: note name and channel on separate lines (no truncation)
+- Live hits label persists ~4 s after last hit (readable in→out)
+- Edit AT curve button toggles back to velocity curve
+- About developer line encoding (`azazhang / Studio J`); Ko-fi support link
+- Calibration wizard resets on expand; validates hit separation; proper preview layout
+- Histogram legend explains 60–90 velocity band
+
+### Added
+- [docs/developer/AGENTIC_QA.md](docs/developer/AGENTIC_QA.md) — agent scenario packs for UI regression
+
+## v0.2.6 (2026-06-10)
+
+### Fixed
+- Pad grid vertical scrollbar appears immediately after profile load (not only after window resize)
+- Idle editor CPU/GPU: meter repaints only when active; histograms refresh on hits (not every timer tick)
+- MIDI note shows value and name (e.g. `36 (C1)`) in pad grid and inspector
+- Spurious “Unsaved profile changes” dialog from `profileBox.clear()` during list rebuild; template profile-name field no longer marks template dirty
+- MIDI channel changes apply without full engine rebuild on every intermediate slider tick
+- Profile switch no longer double-refreshes UI (suppressed redundant `onProfileChanged` during programmatic switch)
+
+### Added
+- Layout tests: vertical scrollbar after `setProfile`, MIDI note display format
+
+## v0.2.5 (2026-06-10)
+
+### Fixed
+- **Zone routing:** `NoteOff` and polyphonic aftertouch use the same output channel as the matching `NoteOn` (fixes hanging notes)
+- **Velocity gate:** Suppress orphan `NoteOff` when the paired `NoteOn` was dropped by the gate
+- **HistogramBank:** Replace per-pad `unordered_map` with fixed `[16×128]` slots (audio/UI thread safety)
+- **Retrigger guard:** Lock-free per-note timestamps on the audio thread (no `unique_lock` on `padMutex`)
+
+### Added
+- Engine regression tests: zone-routing note-off channel, gated note-off suppression, retrigger note-off passthrough
+
+## v0.2.4 (2026-06-10)
+
+### Fixed
+- **pluginval state crash:** Editor destructor now clears `onProfileChanged`; `setStateInformation` no longer notifies UI from a possibly-destroyed editor (async `syncFromProcessorState` when editor is open)
+- **iCloud builds:** `validate-plugins-local.sh` strips extended attributes before pluginval on macOS bundles
+
+### Added
+- Layout test: state restore after editor destroyed (pluginval regression)
+
+## v0.2.3 (2026-06-10)
+
+### Added
+- **Layout/UI automated tests** (`LayoutTests`): min-window curve bounds, collapsible sections, pad curve/inspector merge, Launchpad horizontal scroll, headless editor layout
+- `EditorLayout` / `PadUiMerge` — testable layout and pad-state merge logic
+- **CI-3:** Release workflow builds `arm64` + `x86_64` in parallel, merges with `scripts/lipo-macos-universal.sh`
+
+### Changed
+- `PluginEditor::resized()` uses shared `EditorLayout` computation
+- `qa-iterate.sh` runs layout tests via ctest; `--pluginval` also runs clap-validator
+
+## v0.2.2 (2026-06-10)
+
+### Fixed
+- **MIDI 2 architecture:** `MidiVelocityTransport` — normalized curve mapping, explicit MIDI 1 wire encoding, parallel UMP `PacketX2` note-on output in MIDI 2 mode
+- **CLAP CI:** `clap-validator` replaces pluginval for CLAP (macOS bundle + Windows flat DLL); pluginval does not support CLAP
+- **Docs:** BACKLOG/README version sync after 0.6.x → 0.2.x reversion; Intel universal build root-cause in `CI.md`; [WINDOWS_TESTING.md](docs/developer/WINDOWS_TESTING.md)
+
+### Added
+- Engine tests: MIDI 2 UMP encoding, MIDI 1 wire quantize, `scripts/validate-clap.sh`
+
+### Known limitation
+- JUCE `processBlock` / `MidiBuffer` remains MIDI 1 bytestream; UMP packets are produced for MIDI 2 mode and await host/CLAP MIDI-2 I/O wiring
+
+## v0.2.1 (2026-06-10)
+
+### Fixed (QA audit — 13 items)
+- Gate leakage / right-gate discontinuity: analytical `evaluateMappedOutput` (no LUT interpolation bleed)
+- Polyphonic aftertouch note remap; channel pressure no longer hijacked by MIDI note 0 pad
+- Note remap table row recycling (`rowIndex` updated on reuse)
+- ComboBox dropdown arrows in custom LookAndFeel
+- Floor/ceiling inspector sliders stay in sync
+- Curve control handles align with floor/ceiling-scaled plot
+- Library blend slider label in MIDI routing panel
+- Calibration wizard only captures hits when section expanded + selected pad
+- DAW state restore notifies editor (`fromValueTree(..., true)`)
+- Standalone MIDI output queued off audio thread (no `sendMessageNow` in `processBlock`)
+
+### Known limitation (unchanged)
+- JUCE `MidiMessage` output velocity remains 7-bit; MIDI 2 mode shapes float path but host wire format may quantize
+
+## v0.2.0 (2026-06-09)
+
+### Versioning
+- Reset from 0.6.x → **0.2.0** to reflect beta quality ([VERSIONING.md](docs/developer/VERSIONING.md)).
+
+### Fixed
+- Profile switch dialog: replaced native `AlertWindow` (stuck/crash in hosts) with in-plugin modal
+- Live hit marker plots on **current curve** after edits (engine label still shows actual MIDI out)
+- Curve preset change syncs engine immediately
+
+### Docs
+- README / getting-started: Logic **AU only**; expanded DAW table (Reaper, Bitwig, FL, Cubase, Studio One)
+- [RELEASE.md](docs/developer/RELEASE.md): why GitHub Releases was empty; manual workflow_dispatch
+
+## v0.6.8
+
+### Fixed
+- Inspector floor/ceiling sliders no longer overwritten by curve-editor merge on live edit
+- Profile switch / save / export now commit active pad UI; discard on dirty switch reloads saved snapshot
+- Profile MIDI duplicate validation on save, export, and session restore (skips invalid user profiles)
+- Calibration section height + histogram panel uses full strip height
+- Collapsible section header height consistency (26px)
+
+### Added
+- **U4:** Unsaved profile dialog on profile switch (Save / Discard / Cancel)
+- **U2:** Drag bottom grip on collapsible sections to resize height
+- `scripts/qa-iterate.sh` — build + ctest + smoke checklist gate
+- `scripts/validate-plugins-local.sh` — RelWithDebInfo artefact paths
+- CI-7: PR jobs skip pluginval; `nightly.yml` full pluginval schedule
+- Engine tests: floor/ceiling mapping, profile MIDI key validation
+- About panel: developer portrait + azazhang · Studio J
+- Curve live-hit crosshair, linear reference, in→out label
+
+## v0.6.7
+
+### Fixed
+- **P0:** Curve edits lost when switching pads — `commitInspectorEdits()` saved inspector's stale curve over curve-editor state
+- **P0:** Pad switching / curve reset cascade from the same bug + per-drag full engine rebuild
+- Pad grid horizontal scrollbar restored (Launchpad 8-column layouts)
+- Performance: removed 20Hz unconditional curve repaint; decimate LUT draw to 256 steps; defer engine sync until drag ends
+- Buy Me a Coffee URL → `https://buymeacoffee.com/azhang`
+
+### Docs
+- `CONTRIBUTING.md`: explains multiple `*_artefacts` folders and RelWithDebInfo vs Release
+
+## v0.6.6
+
+### Fixed
+- **Critical:** Curve editor was invisible at default size — layout gave ~0px to the curve after fixed tabs/histogram/inspector heights
+- Collapsible sections: histograms, MIDI routing/remap, calibration (collapsed by default); pad settings on the right
+
+### Added
+- App icon (`Resources/AppIcon.png`) for Standalone and plugin bundles
+- `clap-info` CI smoke for macOS/Windows CLAP (when available)
+- Engine test: deterministic MIDI velocity replay
+
+## v0.6.5
+
+### Fixed
+- UI: scrollbar track artifacts (transparent background + overflow-only scrollbars)
+- UI: clipped curve editor header, pad name field padding, taller Pad Settings panel
+- UI: zone routing two-column layout (fixes stray “Keep” text at tab bottom)
+- Title/subtitle header labels laid out correctly (BUG-005)
+- Curve preset toolbar wraps at min window size (BUG-004)
+- Import rejects profiles with duplicate MIDI note+channel (BUG-003)
+- Local builds auto-install CLAP to `~/Library/Audio/Plug-Ins/CLAP/`
+
 ## v0.6.3 (unreleased)
 
 ### Fixed

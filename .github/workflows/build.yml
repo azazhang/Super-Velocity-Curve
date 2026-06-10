@@ -14,6 +14,7 @@ concurrency:
 
 env:
   PLUGINVAL_VERSION: v1.0.4
+  CLAP_VALIDATOR_VERSION: "0.3.2"
   # RelWithDebInfo + no LTO: see docs/developer/CI.md (Release+LTO exceeded 90m on macOS).
   CMAKE_BUILD_TYPE: RelWithDebInfo
 
@@ -67,6 +68,7 @@ jobs:
           test -x pluginval.app/Contents/MacOS/pluginval
 
       - name: Validate plugins (pluginval strictness 5)
+        if: github.event_name != 'pull_request'
         run: |
           mkdir -p pluginval-logs
           PV="./pluginval.app/Contents/MacOS/pluginval"
@@ -97,13 +99,16 @@ jobs:
           validate "build/SuperVelocityCurveMidiFx_artefacts/${CMAKE_BUILD_TYPE}/VST3/Super VelocityCurve MIDI FX.vst3"
           validate "build/SuperVelocityCurve_artefacts/${CMAKE_BUILD_TYPE}/AU/Super VelocityCurve.component"
           validate "build/SuperVelocityCurveMidiFx_artefacts/${CMAKE_BUILD_TYPE}/AU/Super VelocityCurve MIDI FX.component"
-          # macOS CLAP bundle: pluginval strictness 5 hangs >7min on GHA (no failure log — alarm only).
-          # CLAP is built and shipped; VST3+AU are pluginval-tested. See docs/developer/PLUGINVAL.md.
           if [ -d "build/SuperVelocityCurveMidiFx_artefacts/${CMAKE_BUILD_TYPE}/CLAP" ]; then
             clap="$(find build/SuperVelocityCurveMidiFx_artefacts/${CMAKE_BUILD_TYPE}/CLAP -name '*.clap' | head -1)"
             if [ -n "$clap" ]; then
-              echo "=== CLAP built: $clap (pluginval skipped on macOS CI — headless hang) ==="
-              test -d "$clap/Contents/MacOS" || test -f "$clap/Contents/Info.plist"
+              echo "=== clap-validator: $clap ==="
+              curl -fsSL -o cv.tgz "https://github.com/free-audio/clap-validator/releases/download/${CLAP_VALIDATOR_VERSION}/clap-validator-${CLAP_VALIDATOR_VERSION}-macos-universal.tar.gz"
+              tar -xzf cv.tgz
+              find "$clap/Contents/MacOS" -type f -perm +111 -exec codesign --force --sign - --timestamp=none {} \;
+              codesign --force --sign - --timestamp=none --deep "$clap"
+              chmod +x binaries/clap-validator
+              ./binaries/clap-validator validate "$clap"
             fi
           fi
 
@@ -164,6 +169,7 @@ jobs:
         run: cmake --build build --config $env:CMAKE_BUILD_TYPE --target export-factory-profiles
 
       - name: Validate plugins (pluginval strictness 5)
+        if: github.event_name != 'pull_request'
         shell: pwsh
         run: |
           $release = "https://github.com/Tracktion/pluginval/releases/download/$env:PLUGINVAL_VERSION"
@@ -189,11 +195,16 @@ jobs:
           }
           Validate-Plugin "build/SuperVelocityCurve_artefacts/$env:CMAKE_BUILD_TYPE/VST3/Super VelocityCurve.vst3"
           Validate-Plugin "build/SuperVelocityCurveMidiFx_artefacts/$env:CMAKE_BUILD_TYPE/VST3/Super VelocityCurve MIDI FX.vst3"
-          # Windows CLAP is a flat .clap DLL; pluginval's lilv scanner expects a macOS-style bundle.
           if (Test-Path "build/SuperVelocityCurveMidiFx_artefacts/$env:CMAKE_BUILD_TYPE/CLAP") {
             $clap = Get-ChildItem "build/SuperVelocityCurveMidiFx_artefacts/$env:CMAKE_BUILD_TYPE/CLAP" -Filter *.clap | Select-Object -First 1
             if ($clap) {
-              Write-Host "=== CLAP built: $($clap.FullName) (pluginval skipped on Windows — flat DLL) ==="
+              Write-Host "=== clap-validator: $($clap.FullName) ==="
+              $cvUrl = "https://github.com/free-audio/clap-validator/releases/download/$env:CLAP_VALIDATOR_VERSION/clap-validator-$($env:CLAP_VALIDATOR_VERSION)-windows.zip"
+              Invoke-WebRequest -Uri $cvUrl -OutFile clap-validator.zip
+              Expand-Archive -Path clap-validator.zip -DestinationPath clap-validator_dir -Force
+              $cv = Get-ChildItem -Path clap-validator_dir -Recurse -Filter clap-validator.exe | Select-Object -First 1
+              if (-not $cv) { throw "clap-validator.exe not found" }
+              & $cv.FullName validate $clap.FullName
             }
           }
 

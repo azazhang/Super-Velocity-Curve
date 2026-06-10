@@ -12,11 +12,15 @@ void MidiActivityMeterComponent::pushOutputLevel (float velocityNormalized)
 
 void MidiActivityMeterComponent::decay()
 {
+    const bool hadActivity = inputLevel > 0.01f || outputLevel > 0.01f;
+
     inputLevel *= 0.85f;
     outputLevel *= 0.85f;
     if (inputLevel < 0.01f) inputLevel = 0.0f;
     if (outputLevel < 0.01f) outputLevel = 0.0f;
-    repaint();
+
+    if (hadActivity)
+        repaint();
 }
 
 void MidiActivityMeterComponent::paint (juce::Graphics& g)

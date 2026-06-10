@@ -103,9 +103,28 @@ void SuperVelocityCurveAudioProcessor::processBlock (juce::AudioBuffer<float>& b
 
     if (wrapperType == wrapperType_Standalone && standaloneMidiOutput != nullptr)
     {
+        const juce::ScopedLock lock (standaloneOutputLock);
         for (const auto metadata : midiMessages)
-            standaloneMidiOutput->sendMessageNow (metadata.getMessage());
+            standaloneMidiOutputQueue.addEvent (metadata.getMessage(), metadata.samplePosition);
     }
+}
+
+void SuperVelocityCurveAudioProcessor::flushStandaloneMidiOutput()
+{
+    if (wrapperType != wrapperType_Standalone || standaloneMidiOutput == nullptr)
+        return;
+
+    juce::MidiBuffer toSend;
+    {
+        const juce::ScopedLock lock (standaloneOutputLock);
+        if (standaloneMidiOutputQueue.getNumEvents() == 0)
+            return;
+
+        toSend.swapWith (standaloneMidiOutputQueue);
+    }
+
+    for (const auto metadata : toSend)
+        standaloneMidiOutput->sendMessageNow (metadata.getMessage());
 }
 
 juce::AudioProcessorEditor* SuperVelocityCurveAudioProcessor::createEditor()
@@ -138,7 +157,11 @@ void SuperVelocityCurveAudioProcessor::setStateInformation (const void* data, in
                 const auto child = state.getChild (i);
                 if (child.hasType ("SuperVelocityCurveProfileStore")
                     || child.hasType ("SuperVelocityCurveProfile"))
+                {
+                    // Never notify UI from host state restore — editor may be destroyed
+                    // (pluginval state tests) or on a non-message thread.
                     profileStore.fromValueTree (child, false);
+                }
                 else if (child.hasType ("Parameters"))
                     apvts.replaceState (child);
             }
@@ -146,6 +169,16 @@ void SuperVelocityCurveAudioProcessor::setStateInformation (const void* data, in
             apvts.addParameterListener ("outputMode", this);
             syncOutputModeToEngine();
             applyProfileToEngine();
+
+            if (auto* editor = getActiveEditor())
+            {
+                juce::Component::SafePointer<juce::AudioProcessorEditor> safeEditor (editor);
+                juce::MessageManager::callAsync ([safeEditor]
+                {
+                    if (auto* svcEditor = dynamic_cast<SuperVelocityCurveAudioProcessorEditor*> (safeEditor.getComponent()))
+                        svcEditor->syncFromProcessorState();
+                });
+            }
         }
     }
 }

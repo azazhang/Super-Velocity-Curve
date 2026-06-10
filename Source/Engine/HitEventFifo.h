@@ -13,6 +13,7 @@ struct HitEvent
     int channel = 1;
     float inputVelocity = 0.0f;
     float outputVelocity = 0.0f;
+    int outputMidi2 = -1;
     bool isMidi2 = false;
     std::uint64_t timestamp = 0;
 };

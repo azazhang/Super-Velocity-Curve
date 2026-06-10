@@ -31,6 +31,7 @@ private:
     juce::Label humanizeLabel;
     juce::Slider humanizeSlider { juce::Slider::LinearHorizontal, juce::Slider::TextBoxLeft };
     juce::Label libraryLabel;
+    juce::Label libraryBlendLabel { {}, "Library blend amount" };
     juce::ComboBox libraryPresetBox;
     juce::Slider libraryBlendSlider { juce::Slider::LinearHorizontal, juce::Slider::TextBoxLeft };
     juce::ToggleButton zoneRoutingToggle { "Zone routing (per pad group)" };

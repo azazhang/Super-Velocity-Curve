@@ -84,9 +84,35 @@ void ProfileStore::loadUserProfile (int index)
     setActiveFromEntry (ProfileEntryType::userProfile, index);
 }
 
-bool ProfileStore::saveActiveAsUserProfile (const juce::String& name)
+bool ProfileStore::validateProfileMidiKeys (const ControllerProfile& profile, juce::String* errorMessage)
+{
+    for (int i = 0; i < static_cast<int> (profile.getPads().size()); ++i)
+    {
+        const auto& pad = profile.getPads()[static_cast<size_t> (i)];
+        if (profile.hasDuplicateMidiKey (pad.midiNote, pad.midiChannel, i))
+        {
+            if (errorMessage != nullptr)
+            {
+                *errorMessage = "Pads cannot share the same MIDI note and channel (conflict on note "
+                                + juce::String (pad.midiNote) + ", channel " + juce::String (pad.midiChannel) + ").";
+            }
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool ProfileStore::saveActiveAsUserProfile (const juce::String& name, juce::String* errorMessage)
 {
     if (name.trim().isEmpty())
+    {
+        if (errorMessage != nullptr)
+            *errorMessage = "Enter a profile name to save.";
+        return false;
+    }
+
+    if (! validateProfileMidiKeys (activeProfile, errorMessage))
         return false;
 
     auto profile = activeProfile.copy();
@@ -97,9 +123,16 @@ bool ProfileStore::saveActiveAsUserProfile (const juce::String& name)
     return true;
 }
 
-bool ProfileStore::updateActiveUserProfile (const juce::String& name)
+bool ProfileStore::updateActiveUserProfile (const juce::String& name, juce::String* errorMessage)
 {
     if (name.trim().isEmpty())
+    {
+        if (errorMessage != nullptr)
+            *errorMessage = "Enter a profile name to save.";
+        return false;
+    }
+
+    if (! validateProfileMidiKeys (activeProfile, errorMessage))
         return false;
 
     activeProfile.setName (name.trim());
@@ -114,7 +147,7 @@ bool ProfileStore::updateActiveUserProfile (const juce::String& name)
         return true;
     }
 
-    return saveActiveAsUserProfile (name);
+    return saveActiveAsUserProfile (name, errorMessage);
 }
 
 PadMutationResult ProfileStore::addPadToActive (const ProfilePad& pad)
@@ -156,7 +189,11 @@ bool ProfileStore::deleteUserProfile (int index)
 
 bool ProfileStore::duplicateActiveAsUserProfile (const juce::String& name)
 {
-    return saveActiveAsUserProfile (name.isEmpty() ? activeProfile.getName() + " Copy" : name);
+    juce::String error;
+    if (! validateProfileMidiKeys (activeProfile, &error))
+        return false;
+
+    return saveActiveAsUserProfile (name.isEmpty() ? activeProfile.getName() + " Copy" : name, &error);
 }
 
 void ProfileStore::applyActiveToEngine (VelocityEngine& engine) const
@@ -216,7 +253,11 @@ void ProfileStore::fromValueTree (const juce::ValueTree& tree, bool notifyUpdate
             {
                 const auto profileTree = child.getChild (u);
                 if (profileTree.hasType ("ControllerProfile"))
-                    userProfiles.push_back (ControllerProfile::fromValueTree (profileTree));
+                {
+                    auto profile = ControllerProfile::fromValueTree (profileTree);
+                    if (validateProfileMidiKeys (profile))
+                        userProfiles.push_back (std::move (profile));
+                }
             }
         }
         else if (child.hasType ("ControllerProfile"))
@@ -228,12 +269,22 @@ void ProfileStore::fromValueTree (const juce::ValueTree& tree, bool notifyUpdate
     activeEntryType = static_cast<ProfileEntryType> (static_cast<int> (tree.getProperty ("activeEntryType", 0)));
     activeEntryIndex = tree.getProperty ("activeEntryIndex", 0);
 
+    if (! validateProfileMidiKeys (activeProfile))
+    {
+        activeProfile = factoryTemplates.front().copy();
+        activeEntryType = ProfileEntryType::factoryTemplate;
+        activeEntryIndex = 0;
+    }
+
     if (notifyUpdates)
         notifyChanged();
 }
 
-bool ProfileStore::exportActiveProfileToFile (const juce::File& file) const
+bool ProfileStore::exportActiveProfileToFile (const juce::File& file, juce::String* errorMessage) const
 {
+    if (! validateProfileMidiKeys (activeProfile, errorMessage))
+        return false;
+
     const auto xml = activeProfile.toValueTree().createXml();
     if (xml == nullptr)
         return false;
@@ -241,13 +292,32 @@ bool ProfileStore::exportActiveProfileToFile (const juce::File& file) const
     return xml->writeTo (file);
 }
 
-bool ProfileStore::importProfileFromFile (const juce::File& file)
+bool ProfileStore::importProfileFromFile (const juce::File& file, juce::String* errorMessage)
 {
     const auto xml = juce::XmlDocument::parse (file);
     if (xml == nullptr)
+    {
+        if (errorMessage != nullptr)
+            *errorMessage = "Import failed: file is not valid XML.";
         return false;
+    }
 
     auto profile = ControllerProfile::fromValueTree (juce::ValueTree::fromXml (*xml));
+
+    for (int i = 0; i < static_cast<int> (profile.getPads().size()); ++i)
+    {
+        const auto& pad = profile.getPads()[static_cast<size_t> (i)];
+        if (profile.hasDuplicateMidiKey (pad.midiNote, pad.midiChannel, i))
+        {
+            if (errorMessage != nullptr)
+            {
+                *errorMessage = "Import rejected: pads \"" + pad.label + "\" and another pad share MIDI note "
+                                + juce::String (pad.midiNote) + " on channel " + juce::String (pad.midiChannel) + ".";
+            }
+            return false;
+        }
+    }
+
     profile.setLayout (ProfileLayout::custom);
     userProfiles.push_back (profile);
     loadUserProfile (static_cast<int> (userProfiles.size()) - 1);

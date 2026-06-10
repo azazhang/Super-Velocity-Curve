@@ -10,6 +10,17 @@
 namespace svc
 {
 
+inline constexpr std::size_t kMidiChannels = 16;
+inline constexpr std::size_t kMidiNotes = 128;
+inline constexpr std::size_t kMidiNoteChannelSlots = kMidiChannels * kMidiNotes;
+
+inline std::size_t midiNoteChannelIndex (int note, int channel) noexcept
+{
+    const auto clampedNote = juce::jlimit (0, static_cast<int> (kMidiNotes) - 1, note);
+    const auto clampedChannel = juce::jlimit (1, static_cast<int> (kMidiChannels), channel);
+    return static_cast<std::size_t> (clampedNote + (clampedChannel - 1) * static_cast<int> (kMidiNotes));
+}
+
 struct NoteRemapEntry
 {
     int sourceNote = 0;
@@ -54,7 +65,10 @@ private:
     struct AtHash { std::size_t operator() (const AtKey& k) const noexcept { return static_cast<std::size_t> (k.note) * 17u + static_cast<std::size_t> (k.channel); } };
     std::unordered_map<AtKey, AftertouchPadSettings, AtHash> aftertouchPads;
 
+    static constexpr int kChannelPressureNote = -1;
+
     float processAftertouch (int note, int channel, float pressure) const;
+    float processChannelPressure (int channel, float pressure) const;
 };
 
 struct HistogramSnapshot
@@ -73,21 +87,6 @@ struct VelocityHistogram
     HistogramSnapshot snapshot() const;
 };
 
-struct PadHistogramKey
-{
-    int note = 0;
-    int channel = 0;
-    bool operator== (const PadHistogramKey& o) const noexcept { return note == o.note && channel == o.channel; }
-};
-
-struct PadHistogramKeyHash
-{
-    std::size_t operator() (const PadHistogramKey& k) const noexcept
-    {
-        return static_cast<std::size_t> (k.note) * 17u + static_cast<std::size_t> (k.channel);
-    }
-};
-
 class HistogramBank
 {
 public:
@@ -99,7 +98,7 @@ public:
 
 private:
     VelocityHistogram global;
-    std::unordered_map<PadHistogramKey, VelocityHistogram, PadHistogramKeyHash> perPad;
+    std::array<VelocityHistogram, kMidiNoteChannelSlots> perPad {};
 };
 
 } // namespace svc

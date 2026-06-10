@@ -5,8 +5,11 @@
 #include "HitEventFifo.h"
 #include "MidiUtilities.h"
 #include "MidiVelocity.h"
+#include "MidiVelocityTransport.h"
 #include "VelocityCurve.h"
 #include <JuceHeader.h>
+#include <array>
+#include <atomic>
 #include <shared_mutex>
 #include <unordered_map>
 
@@ -47,6 +50,8 @@ public:
     const EngineProcessingSettings& getProcessingSettings() const noexcept { return processingSettings; }
 
     void processMidiBuffer (juce::MidiBuffer& buffer, int numSamples);
+    const std::vector<std::uint32_t>& getMidi2OutputWords() const noexcept { return midi2OutputWords; }
+    void clearMidi2OutputWords() noexcept { midi2OutputWords.clear(); }
     HitEventFifo& getHitFifo() noexcept { return hitFifo; }
     HistogramBank& getHistogramBank() noexcept { return histogramBank; }
     const HistogramBank& getHistogramBank() const noexcept { return histogramBank; }
@@ -71,13 +76,19 @@ private:
         }
     };
 
-    struct RetriggerState { double lastNoteOnTime = -1.0; };
+    struct ActiveVoice
+    {
+        bool sounding = false;
+        bool suppressNextNoteOff = false;
+        int outputNote = 0;
+        int outputChannel = 1;
+    };
 
     using PadMap = std::unordered_map<NoteKey, PadSettings, NoteKeyHash>;
-    using RetriggerMap = std::unordered_map<NoteKey, RetriggerState, NoteKeyHash>;
 
     PadMap pads;
-    RetriggerMap retriggerStates;
+    std::array<ActiveVoice, kMidiNoteChannelSlots> activeVoices {};
+    std::array<std::atomic<int64_t>, kMidiNoteChannelSlots> retriggerLastTimeUs {};
     MidiRoutingProcessor midiRouting;
     EngineProcessingSettings processingSettings;
     mutable std::shared_mutex padMutex;
@@ -85,6 +96,7 @@ private:
     VelocityOutputMode outputMode = VelocityOutputMode::autoDetect;
     HitEventFifo hitFifo;
     HistogramBank histogramBank;
+    std::vector<std::uint32_t> midi2OutputWords;
     double sampleRate = 44100.0;
     double runningTimeSeconds = 0.0;
 
@@ -92,8 +104,13 @@ private:
     float processNoteVelocity (const PadSettings& pad, float inputNormalized) const;
     float applyHumanize (float normalized) const;
     int resolveOutputChannel (PadGroup group, int incomingChannel) const;
-    void applyOutputVelocity (juce::MidiMessage& message, float outputNormalized, bool inputIsMidi2) const;
+    VelocityEncoding encodeAndApplyOutput (juce::MidiMessage& message,
+                                           float outputNormalized,
+                                           bool inputIsMidi2) const;
     bool shouldDropRetrigger (const PadSettings& pad, int note, int channel, double eventTimeSeconds) noexcept;
+    PadSettings resolvePadSettings (int note, int channel) const;
+    void clearVoiceState() noexcept;
+    void markRetriggerTime (int note, int channel, double eventTimeSeconds) noexcept;
 };
 
 } // namespace svc

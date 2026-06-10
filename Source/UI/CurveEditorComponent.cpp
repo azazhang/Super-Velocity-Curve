@@ -31,15 +31,39 @@ void CurveEditorComponent::addHitMarker (int note, int channel, float inputNorma
     if (note != currentPad.midiNote || channel != currentPad.midiChannel)
         return;
 
-    hitMarkers.push_back ({ inputNormalized, outputNormalized, juce::Time::getMillisecondCounterHiRes() });
+    const auto curveOutput = activeCurve().mapNormalized (inputNormalized);
+    hitMarkers.push_back ({ inputNormalized, curveOutput, outputNormalized,
+                            juce::Time::getMillisecondCounterHiRes() });
     if (hitMarkers.size() > 48)
         hitMarkers.erase (hitMarkers.begin());
     repaint();
 }
 
+bool CurveEditorComponent::needsHitVisualRepaint() const noexcept
+{
+    if (hitMarkers.empty())
+        return false;
+
+    const auto now = juce::Time::getMillisecondCounterHiRes();
+    for (const auto& hit : hitMarkers)
+        if (now - hit.createdMs < 1200.0)
+            return true;
+
+    return false;
+}
+
+namespace
+{
+constexpr int kCurveHeaderHeight = 36;
+constexpr int kCurveFooterHeight = 22;
+}
+
 juce::Rectangle<float> CurveEditorComponent::plotArea() const
 {
-    return getLocalBounds().reduced (44, 36).withTrimmedTop (10).withTrimmedBottom (28).toFloat();
+    return getLocalBounds().reduced (44, 10)
+        .withTrimmedTop (kCurveHeaderHeight)
+        .withTrimmedBottom (kCurveFooterHeight)
+        .toFloat();
 }
 
 juce::Point<float> CurveEditorComponent::normalizedToPoint (float input, float output) const
@@ -47,6 +71,22 @@ juce::Point<float> CurveEditorComponent::normalizedToPoint (float input, float o
     const auto plot = plotArea();
     return { plot.getX() + input * plot.getWidth(),
              plot.getBottom() - output * plot.getHeight() };
+}
+
+float CurveEditorComponent::controlOutputToPlot (float controlOutput) const noexcept
+{
+    const auto& curve = activeCurve();
+    return curve.getFloor() + controlOutput * (curve.getCeiling() - curve.getFloor());
+}
+
+float CurveEditorComponent::plotOutputToControl (float plotOutput) const noexcept
+{
+    const auto& curve = activeCurve();
+    const auto span = curve.getCeiling() - curve.getFloor();
+    if (span <= 0.0001f)
+        return plotOutput;
+
+    return (plotOutput - curve.getFloor()) / span;
 }
 
 juce::Point<float> CurveEditorComponent::eventToNormalized (juce::Point<float> pos) const
@@ -66,7 +106,7 @@ int CurveEditorComponent::findNearestControlPoint (juce::Point<float> pos) const
     for (int i = 0; i < static_cast<int> (points.size()); ++i)
     {
         const auto screen = normalizedToPoint (points[static_cast<size_t> (i)].input,
-                                               points[static_cast<size_t> (i)].output);
+                                               controlOutputToPlot (points[static_cast<size_t> (i)].output));
         const auto distance = screen.getDistanceFrom (pos);
         if (distance < bestDistance)
         {
@@ -176,11 +216,12 @@ void CurveEditorComponent::drawGateZones (juce::Graphics& g) const
 void CurveEditorComponent::drawCurvePath (juce::Graphics& g, const svc::VelocityCurve& curve,
                                           juce::Colour colour, float strokeWidth) const
 {
-    const auto plot = plotArea();
     const auto& lut = curve.getLut();
     juce::Path curvePath;
+    constexpr int displaySteps = 256;
+    const int step = juce::jmax (1, svc::VelocityCurve::lutSize / displaySteps);
 
-    for (int i = 0; i < svc::VelocityCurve::lutSize; ++i)
+    for (int i = 0; i < svc::VelocityCurve::lutSize; i += step)
     {
         const auto input = static_cast<float> (i) / static_cast<float> (svc::VelocityCurve::lutSize - 1);
         const auto point = normalizedToPoint (input, lut[static_cast<size_t> (i)]);
@@ -190,6 +231,9 @@ void CurveEditorComponent::drawCurvePath (juce::Graphics& g, const svc::Velocity
         else
             curvePath.lineTo (point);
     }
+
+    const auto lastInput = 1.0f;
+    curvePath.lineTo (normalizedToPoint (lastInput, lut.back()));
 
     g.setColour (colour);
     g.strokePath (curvePath, juce::PathStrokeType (strokeWidth));
@@ -206,7 +250,10 @@ void CurveEditorComponent::drawCurve (juce::Graphics& g) const
     juce::Path curvePath;
     juce::Path fillPath;
 
-    for (int i = 0; i < svc::VelocityCurve::lutSize; ++i)
+    constexpr int displaySteps = 256;
+    const int step = juce::jmax (1, svc::VelocityCurve::lutSize / displaySteps);
+
+    for (int i = 0; i < svc::VelocityCurve::lutSize; i += step)
     {
         const auto input = static_cast<float> (i) / static_cast<float> (svc::VelocityCurve::lutSize - 1);
         const auto output = lut[static_cast<size_t> (i)];
@@ -223,6 +270,12 @@ void CurveEditorComponent::drawCurve (juce::Graphics& g) const
             curvePath.lineTo (point);
             fillPath.lineTo (point);
         }
+    }
+
+    {
+        const auto point = normalizedToPoint (1.0f, lut.back());
+        curvePath.lineTo (point);
+        fillPath.lineTo (point);
     }
 
     fillPath.lineTo (normalizedToPoint (1.0f, lut.back()).x, plot.getBottom());
@@ -245,23 +298,11 @@ void CurveEditorComponent::drawCurve (juce::Graphics& g) const
     g.setGradientFill (strokeGrad);
     g.strokePath (curvePath, juce::PathStrokeType (2.8f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
 
-    const auto now = juce::Time::getMillisecondCounterHiRes();
-    for (const auto& hit : hitMarkers)
-    {
-        const auto age = now - hit.createdMs;
-        const auto alpha = juce::jlimit (0.0f, 1.0f, 1.0f - static_cast<float> (age / 1200.0));
-        const auto p = normalizedToPoint (hit.input, hit.output);
-        g.setColour (juce::Colour (svc::ui::Theme::curveHit()).withAlpha (alpha * 0.35f));
-        g.fillEllipse (p.x - 7.0f, p.y - 7.0f, 14.0f, 14.0f);
-        g.setColour (juce::Colour (svc::ui::Theme::curveHit()).withAlpha (alpha));
-        g.fillEllipse (p.x - 4.0f, p.y - 4.0f, 8.0f, 8.0f);
-    }
-
     const auto& points = activeCurve().getControlPoints();
     for (int i = 0; i < static_cast<int> (points.size()); ++i)
     {
         const auto& point = points[static_cast<size_t> (i)];
-        const auto p = normalizedToPoint (point.input, point.output);
+        const auto p = normalizedToPoint (point.input, controlOutputToPlot (point.output));
         const auto isLeftGate = i == 0;
         const auto isRightGate = i == static_cast<int> (points.size()) - 1;
         const auto isEndpoint = isLeftGate || isRightGate;
@@ -291,6 +332,81 @@ void CurveEditorComponent::drawCurve (juce::Graphics& g) const
     juce::ignoreUnused (plot);
 }
 
+void CurveEditorComponent::drawLiveHits (juce::Graphics& g) const
+{
+    if (hitMarkers.empty())
+        return;
+
+    const auto plot = plotArea();
+    const auto now = juce::Time::getMillisecondCounterHiRes();
+
+    for (size_t i = 0; i < hitMarkers.size(); ++i)
+    {
+        const auto& hit = hitMarkers[i];
+        const auto age = now - hit.createdMs;
+        const auto alpha = juce::jlimit (0.0f, 1.0f, 1.0f - static_cast<float> (age / 1200.0));
+        if (alpha <= 0.01f)
+            continue;
+
+        const auto isLatest = i + 1 == hitMarkers.size();
+        const auto p = normalizedToPoint (hit.input, hit.curveOutput);
+
+        if (isLatest)
+        {
+            const auto linear = normalizedToPoint (hit.input, hit.input);
+            const float dash[] = { 4.0f, 4.0f };
+
+            g.setColour (juce::Colour (svc::ui::Theme::textSecondary()).withAlpha (0.45f * alpha));
+            g.drawDashedLine ({ plot.getX(), p.y, p.x, p.y }, dash, 2, 1.0f);
+            g.drawDashedLine ({ p.x, p.y, p.x, plot.getBottom() }, dash, 2, 1.0f);
+
+            g.setColour (juce::Colour (svc::ui::Theme::textSecondary()).withAlpha (0.55f * alpha));
+            g.drawEllipse (linear.x - 4.0f, linear.y - 4.0f, 8.0f, 8.0f, 1.2f);
+
+            g.setColour (juce::Colour (svc::ui::Theme::accentGold()).withAlpha (0.75f * alpha));
+            g.drawLine (linear.x, linear.y, p.x, p.y, 1.8f);
+
+            g.setColour (juce::Colour (svc::ui::Theme::curveHit()).withAlpha (alpha * 0.35f));
+            g.fillEllipse (p.x - 10.0f, p.y - 10.0f, 20.0f, 20.0f);
+            g.setColour (juce::Colour (svc::ui::Theme::curveHit()).withAlpha (alpha));
+            g.fillEllipse (p.x - 5.5f, p.y - 5.5f, 11.0f, 11.0f);
+            g.setColour (juce::Colours::white.withAlpha (0.9f * alpha));
+            g.drawEllipse (p.x - 5.5f, p.y - 5.5f, 11.0f, 11.0f, 1.4f);
+
+            const auto inVel = juce::String (static_cast<int> (std::lround (hit.input * 127.0f)));
+            const auto outVel = juce::String (static_cast<int> (std::lround (hit.engineOutput * 127.0f)));
+            const auto label = inVel + juce::String::charToString (0x2192) + outVel;
+
+            g.setFont (svc::ui::Theme::smallFont().boldened());
+            g.setColour (juce::Colours::black.withAlpha (0.55f * alpha));
+            const auto labelW = 52.0f;
+            const auto labelH = 16.0f;
+            auto labelX = p.x + 10.0f;
+            if (labelX + labelW > plot.getRight())
+                labelX = p.x - labelW - 10.0f;
+            auto labelY = p.y - labelH - 8.0f;
+            if (labelY < plot.getY())
+                labelY = p.y + 10.0f;
+            g.fillRoundedRectangle (labelX, labelY, labelW, labelH, 4.0f);
+            g.setColour (juce::Colour (svc::ui::Theme::curveHit()).withAlpha (alpha));
+            g.drawRoundedRectangle (labelX, labelY, labelW, labelH, 4.0f, 1.0f);
+            g.setColour (juce::Colours::white.withAlpha (alpha));
+            g.drawText (label, static_cast<int> (labelX), static_cast<int> (labelY),
+                        static_cast<int> (labelW), static_cast<int> (labelH),
+                        juce::Justification::centred);
+        }
+        else
+        {
+            g.setColour (juce::Colour (svc::ui::Theme::curveHit()).withAlpha (alpha * 0.25f));
+            g.fillEllipse (p.x - 5.0f, p.y - 5.0f, 10.0f, 10.0f);
+            g.setColour (juce::Colour (svc::ui::Theme::curveHit()).withAlpha (alpha * 0.7f));
+            g.fillEllipse (p.x - 3.0f, p.y - 3.0f, 6.0f, 6.0f);
+        }
+    }
+
+    juce::ignoreUnused (plot);
+}
+
 void CurveEditorComponent::paint (juce::Graphics& g)
 {
     svc::ui::Theme::fillPanel (g, getLocalBounds().toFloat(), 12.0f);
@@ -298,8 +414,8 @@ void CurveEditorComponent::paint (juce::Graphics& g)
     g.setColour (juce::Colour (svc::ui::Theme::textPrimary()));
     g.setFont (svc::ui::Theme::sectionFont());
     const juce::String mode = editTarget == EditTarget::aftertouch ? "Aftertouch" : "Velocity";
-    g.drawText (mode + " curve - " + currentPad.label,
-                getLocalBounds().removeFromTop (30).reduced (14, 0),
+    g.drawText (mode + " curve — " + currentPad.label,
+                getLocalBounds().removeFromTop (kCurveHeaderHeight).reduced (14, 6),
                 juce::Justification::centredLeft);
 
     const auto plot = plotArea();
@@ -308,11 +424,12 @@ void CurveEditorComponent::paint (juce::Graphics& g)
     drawGrid (g);
     drawGateZones (g);
     drawCurve (g);
+    drawLiveHits (g);
 
     g.setFont (svc::ui::Theme::smallFont());
     g.setColour (juce::Colour (svc::ui::Theme::textSecondary()).withAlpha (0.85f));
     g.drawText ("Gate handles: left/right = input range, up/down = output at gate | dbl-click add | right-click remove",
-                getLocalBounds().removeFromBottom (18).reduced (12, 0),
+                getLocalBounds().removeFromBottom (kCurveFooterHeight).reduced (12, 2),
                 juce::Justification::centred);
 }
 
@@ -345,6 +462,7 @@ void CurveEditorComponent::mouseDrag (const juce::MouseEvent& event)
         return;
 
     const auto normalized = eventToNormalized (event.position);
+    const auto plotOutput = plotOutputToControl (normalized.y);
     auto& point = points[static_cast<size_t> (draggedPointIndex)];
     const auto lastIndex = static_cast<int> (points.size()) - 1;
 
@@ -352,7 +470,7 @@ void CurveEditorComponent::mouseDrag (const juce::MouseEvent& event)
     {
         // Left gate: X = input threshold (below → 0); Y = output at gate entry.
         point.input = juce::jlimit (0.0f, points[1].input - 0.02f, normalized.x);
-        point.output = juce::jlimit (0.0f, points[1].output - 0.001f, normalized.y);
+        point.output = juce::jlimit (0.0f, points[1].output - 0.001f, plotOutput);
     }
     else if (draggedPointIndex == lastIndex)
     {
@@ -360,7 +478,7 @@ void CurveEditorComponent::mouseDrag (const juce::MouseEvent& event)
         point.input = juce::jlimit (points[static_cast<size_t> (lastIndex - 1)].input + 0.02f,
                                     1.0f, normalized.x);
         point.output = juce::jlimit (points[static_cast<size_t> (lastIndex - 1)].output + 0.001f,
-                                     1.0f, normalized.y);
+                                     1.0f, plotOutput);
     }
     else
     {
@@ -370,7 +488,7 @@ void CurveEditorComponent::mouseDrag (const juce::MouseEvent& event)
 
         const auto minOut = points[static_cast<size_t> (draggedPointIndex - 1)].output + 0.001f;
         const auto maxOut = points[static_cast<size_t> (draggedPointIndex + 1)].output - 0.001f;
-        point.output = juce::jlimit (minOut, maxOut, normalized.y);
+        point.output = juce::jlimit (minOut, maxOut, plotOutput);
     }
 
     activeCurve().setControlPoints (points);
@@ -380,7 +498,11 @@ void CurveEditorComponent::mouseDrag (const juce::MouseEvent& event)
 
 void CurveEditorComponent::mouseUp (const juce::MouseEvent&)
 {
+    const bool wasDragging = draggedPointIndex >= 0;
     draggedPointIndex = -1;
+
+    if (wasDragging && onPadEditFinished)
+        onPadEditFinished();
 }
 
 void CurveEditorComponent::mouseDoubleClick (const juce::MouseEvent& event)
@@ -396,7 +518,7 @@ void CurveEditorComponent::mouseDoubleClick (const juce::MouseEvent& event)
     if (normalized.x <= inputGate + 0.01f || normalized.x >= inputCeil - 0.01f)
         return;
 
-    points.push_back ({ normalized.x, normalized.y });
+    points.push_back ({ normalized.x, plotOutputToControl (normalized.y) });
     activeCurve().setControlPoints (points);
     notifyChanged();
     repaint();

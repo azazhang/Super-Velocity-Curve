@@ -1,0 +1,77 @@
+name: Nightly full validation
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: nightly-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PLUGINVAL_VERSION: v1.0.4
+  CMAKE_BUILD_TYPE: RelWithDebInfo
+
+jobs:
+  full-macos:
+    runs-on: macos-14
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Ninja
+        run: brew install ninja ccache
+
+      - name: Configure and build
+        run: |
+          cmake -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DSVC_ENABLE_LTO=OFF \
+            -DSVC_COPY_PLUGIN_AFTER_BUILD=OFF
+          cmake --build build --parallel
+
+      - name: Engine tests
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Install pluginval
+        run: |
+          curl -fsSL -o pluginval.zip "https://github.com/Tracktion/pluginval/releases/download/${PLUGINVAL_VERSION}/pluginval_macOS.zip"
+          unzip -q pluginval.zip
+
+      - name: pluginval strictness 5 (all formats)
+        run: |
+          mkdir -p pluginval-logs
+          PV="./pluginval.app/Contents/MacOS/pluginval"
+          validate() {
+            local target="$1"
+            local timeout_sec=180
+            [[ "$target" == *.clap ]] && timeout_sec=420
+            echo "=== pluginval: $target ==="
+            if [[ "$target" == *.component ]]; then
+              local name
+              name=$(basename "$target")
+              mkdir -p "$HOME/Library/Audio/Plug-Ins/Components"
+              rm -rf "$HOME/Library/Audio/Plug-Ins/Components/$name"
+              cp -R "$target" "$HOME/Library/Audio/Plug-Ins/Components/"
+              target="$HOME/Library/Audio/Plug-Ins/Components/$name"
+              codesign --force --sign - --timestamp=none --deep "$target"
+              killall -9 AudioComponentRegistrar 2>/dev/null || true
+              sleep 2
+            fi
+            perl -e 'alarm shift; exec @ARGV' "$timeout_sec" \
+              "$PV" --validate-in-process --strictness-level 5 --timeout-ms 120000 \
+              --output-dir pluginval-logs "$target"
+          }
+          validate "build/SuperVelocityCurve_artefacts/${CMAKE_BUILD_TYPE}/VST3/Super VelocityCurve.vst3"
+          validate "build/SuperVelocityCurveMidiFx_artefacts/${CMAKE_BUILD_TYPE}/VST3/Super VelocityCurve MIDI FX.vst3"
+          validate "build/SuperVelocityCurve_artefacts/${CMAKE_BUILD_TYPE}/AU/Super VelocityCurve.component"
+          validate "build/SuperVelocityCurveMidiFx_artefacts/${CMAKE_BUILD_TYPE}/AU/Super VelocityCurve MIDI FX.component"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pluginval-logs-nightly
+          path: pluginval-logs/

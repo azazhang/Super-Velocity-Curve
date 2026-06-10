@@ -1,9 +1,11 @@
 #include "../Source/Engine/MidiUtilities.h"
 #include "../Source/Engine/EngineSettings.h"
 #include "../Source/Engine/VelocityCurve.h"
+#include "../Source/Engine/MidiVelocityTransport.h"
 #include "../Source/Engine/VelocityEngine.h"
 #include "../Source/Profiles/ControllerProfile.h"
 #include "../Source/Profiles/PadTypes.h"
+#include "../Source/Profiles/ProfileStore.h"
 #include <cmath>
 #include <iostream>
 
@@ -189,9 +191,40 @@ static int testInputGateThresholds()
     svc::VelocityCurve curve;
     curve.setControlPoints ({ { 0.25f, 0.0f }, { 0.75f, 1.0f } });
 
+    EXPECT_NEAR (curve.mapNormalized (0.199f), 0.0f, 0.0001f);
     EXPECT_NEAR (curve.mapNormalized (0.1f), 0.0f, 0.001f);
-    EXPECT_NEAR (curve.mapNormalized (0.9f), 1.0f, 0.001f);
+    const auto atInputCeil = curve.mapNormalized (0.75f);
+    EXPECT_NEAR (curve.mapNormalized (0.9f), atInputCeil, 0.0001f);
     EXPECT_TRUE (curve.mapNormalized (0.5f) > 0.2f && curve.mapNormalized (0.5f) < 0.8f);
+    return 0;
+}
+
+static int testPolyAftertouchRemap()
+{
+    svc::MidiRoutingSettings routing;
+    routing.setRemap (60, 10, 36, 10);
+
+    svc::MidiRoutingProcessor processor;
+    processor.setSettings (routing);
+
+    auto message = juce::MidiMessage::aftertouchChange (10, 60, 80);
+    EXPECT_TRUE (processor.processMessage (message));
+    EXPECT_TRUE (message.getNoteNumber() == 36);
+    EXPECT_TRUE (message.getChannel() == 10);
+    return 0;
+}
+
+static int testChannelPressureNoNoteZeroCollision()
+{
+    svc::MidiRoutingProcessor processor;
+    svc::AftertouchPadSettings noteZeroPad;
+    noteZeroPad.enabled = true;
+    noteZeroPad.curve.setControlPoints ({ { 0.0f, 0.0f }, { 1.0f, 0.5f } });
+    processor.setAftertouchSettings (0, 10, noteZeroPad);
+
+    auto message = juce::MidiMessage::channelPressureChange (10, 80);
+    EXPECT_TRUE (processor.processMessage (message));
+    EXPECT_TRUE (message.getChannelPressureValue() == 80);
     return 0;
 }
 
@@ -254,6 +287,222 @@ static int testPadAddRemoveAndDuplicateKey()
     return 0;
 }
 
+static int testCurveFloorCeilingMapping()
+{
+    svc::VelocityCurve curve;
+    curve.setIdentity();
+    curve.setFloor (0.2f);
+    curve.setCeiling (0.8f);
+
+    EXPECT_NEAR (curve.mapNormalized (0.0f), 0.2f, 0.02f);
+    EXPECT_NEAR (curve.mapNormalized (1.0f), 0.8f, 0.02f);
+    return 0;
+}
+
+static int testProfileMidiKeyValidation()
+{
+    EXPECT_TRUE (svc::ProfileStore::validateProfileMidiKeys (svc::ControllerProfile::createBlank()));
+    EXPECT_TRUE (svc::ProfileStore::validateProfileMidiKeys (svc::ControllerProfile::createGMStandard()));
+
+    auto tree = svc::ControllerProfile::createBlank().toValueTree();
+    for (int i = 0; i < tree.getNumChildren(); ++i)
+    {
+        const auto child = tree.getChild (i);
+        if (child.hasType ("Pad"))
+        {
+            tree.appendChild (child.createCopy(), nullptr);
+            break;
+        }
+    }
+
+    const auto broken = svc::ControllerProfile::fromValueTree (tree);
+    juce::String error;
+    EXPECT_TRUE (! svc::ProfileStore::validateProfileMidiKeys (broken, &error));
+    EXPECT_TRUE (error.isNotEmpty());
+    return 0;
+}
+
+static int testDeterministicVelocityReplay()
+{
+    svc::VelocityEngine engine;
+    engine.setSampleRate (48000.0);
+    engine.setOutputMode (svc::VelocityOutputMode::midi1);
+
+    svc::PadSettings pad;
+    pad.enabled = true;
+    pad.curve.setIdentity();
+    engine.setPadSettings (36, 10, pad);
+
+    auto runOnce = [&engine] (float inputVel)
+    {
+        juce::MidiBuffer buffer;
+        buffer.addEvent (juce::MidiMessage::noteOn (10, 36, inputVel), 0);
+        engine.processMidiBuffer (buffer, 128);
+        if (buffer.getNumEvents() != 1)
+            return -1;
+
+        for (const auto metadata : buffer)
+            return static_cast<int> (metadata.getMessage().getVelocity());
+
+        return -1;
+    };
+
+    const auto first = runOnce (0.5f);
+    const auto second = runOnce (0.5f);
+    EXPECT_TRUE (first == second);
+    EXPECT_TRUE (first >= 0);
+    return 0;
+}
+
+static int testMidi2OutputEncoding()
+{
+    const auto encoding = svc::encodeOutputVelocity (svc::VelocityOutputMode::midi2, 0.5f, false);
+    EXPECT_TRUE (encoding.emitMidi2Ump);
+    EXPECT_TRUE (encoding.midi2 == svc::normalizedToMidi2 (0.5f));
+    EXPECT_TRUE (encoding.midi1 == svc::downgradeToMidi1 (encoding.midi2));
+
+    std::vector<std::uint32_t> words;
+    svc::appendMidi2NoteOnUmp (words, 10, 36, encoding.midi2);
+    EXPECT_TRUE (svc::readMidi2VelocityFromUmpWords (words) == encoding.midi2);
+    return 0;
+}
+
+static int testMidi2EngineUmpPackets()
+{
+    svc::VelocityEngine engine;
+    engine.setSampleRate (48000.0);
+    engine.setOutputMode (svc::VelocityOutputMode::midi2);
+
+    svc::PadSettings pad;
+    pad.enabled = true;
+    pad.curve.setIdentity();
+    engine.setPadSettings (36, 10, pad);
+
+    juce::MidiBuffer buffer;
+    buffer.addEvent (juce::MidiMessage::noteOn (10, 36, 0.5f), 0);
+    engine.processMidiBuffer (buffer, 128);
+
+    EXPECT_TRUE (engine.getMidi2OutputWords().size() >= 2);
+    const auto wireMidi2 = svc::readMidi2VelocityFromUmpWords (engine.getMidi2OutputWords());
+    EXPECT_TRUE (wireMidi2 > 0 && wireMidi2 <= svc::midi2Max);
+
+    svc::HitEvent hit;
+    EXPECT_TRUE (engine.getHitFifo().pop (hit));
+    EXPECT_TRUE (hit.outputMidi2 == wireMidi2);
+    EXPECT_TRUE (hit.isMidi2);
+    return 0;
+}
+
+static int testZoneRoutingNoteOffChannel()
+{
+    svc::VelocityEngine engine;
+    engine.setSampleRate (48000.0);
+
+    svc::EngineProcessingSettings processing;
+    processing.zoneRouting.enabled = true;
+    processing.zoneRouting.groupOutputChannel[static_cast<size_t> (svc::PadGroup::kick)] = 2;
+    engine.setProcessingSettings (processing);
+
+    svc::PadSettings pad;
+    pad.enabled = true;
+    pad.group = svc::PadGroup::kick;
+    pad.curve.setIdentity();
+    engine.setPadSettings (36, 10, pad);
+
+    juce::MidiBuffer buffer;
+    buffer.addEvent (juce::MidiMessage::noteOn (10, 36, 0.8f), 0);
+    engine.processMidiBuffer (buffer, 128);
+
+    EXPECT_TRUE (buffer.getNumEvents() == 1);
+    for (const auto metadata : buffer)
+        EXPECT_TRUE (metadata.getMessage().getChannel() == 2);
+
+    buffer.clear();
+    buffer.addEvent (juce::MidiMessage::noteOff (10, 36, 0.0f), 0);
+    engine.processMidiBuffer (buffer, 128);
+
+    EXPECT_TRUE (buffer.getNumEvents() == 1);
+    for (const auto metadata : buffer)
+    {
+        const auto& message = metadata.getMessage();
+        EXPECT_TRUE (message.isNoteOff());
+        EXPECT_TRUE (message.getChannel() == 2);
+        EXPECT_TRUE (message.getNoteNumber() == 36);
+    }
+
+    return 0;
+}
+
+static int testGatedNoteOffSuppressed()
+{
+    svc::VelocityEngine engine;
+    engine.setSampleRate (48000.0);
+
+    svc::PadSettings pad;
+    pad.enabled = true;
+    pad.velocityGate = 0.5f;
+    pad.gateMode = svc::VelocityGateMode::drop;
+    engine.setPadSettings (36, 10, pad);
+
+    juce::MidiBuffer buffer;
+    buffer.addEvent (juce::MidiMessage::noteOn (10, 36, 0.2f), 0);
+    buffer.addEvent (juce::MidiMessage::noteOff (10, 36, 0.0f), 64);
+    engine.processMidiBuffer (buffer, 128);
+
+    EXPECT_TRUE (buffer.getNumEvents() == 0);
+    return 0;
+}
+
+static int testRetriggerDroppedNoteOffStillPasses()
+{
+    svc::VelocityEngine engine;
+    engine.setSampleRate (48000.0);
+
+    svc::PadSettings pad;
+    pad.enabled = true;
+    pad.retriggerGuardMs = 50.0;
+    pad.curve.setIdentity();
+    engine.setPadSettings (36, 10, pad);
+
+    juce::MidiBuffer buffer;
+    buffer.addEvent (juce::MidiMessage::noteOn (10, 36, 0.8f), 0);
+    engine.processMidiBuffer (buffer, 128);
+
+    buffer.clear();
+    buffer.addEvent (juce::MidiMessage::noteOn (10, 36, 0.9f), 0);
+    buffer.addEvent (juce::MidiMessage::noteOff (10, 36, 0.0f), 0);
+    engine.processMidiBuffer (buffer, 128);
+
+    EXPECT_TRUE (buffer.getNumEvents() == 1);
+    for (const auto metadata : buffer)
+        EXPECT_TRUE (metadata.getMessage().isNoteOff());
+
+    return 0;
+}
+
+static int testMidi1WireQuantize()
+{
+    svc::VelocityEngine engine;
+    engine.setSampleRate (48000.0);
+    engine.setOutputMode (svc::VelocityOutputMode::midi1);
+
+    svc::PadSettings pad;
+    pad.enabled = true;
+    pad.curve.setIdentity();
+    engine.setPadSettings (36, 10, pad);
+
+    juce::MidiBuffer buffer;
+    buffer.addEvent (juce::MidiMessage::noteOn (10, 36, 0.5f), 0);
+    engine.processMidiBuffer (buffer, 128);
+
+    EXPECT_TRUE (engine.getMidi2OutputWords().size() == 0);
+
+    for (const auto metadata : buffer)
+        EXPECT_TRUE (metadata.getMessage().getVelocity() == 64);
+
+    return 0;
+}
+
 int main()
 {
     if (testVelocityCurveMonotonic() != 0) return 1;
@@ -266,8 +515,19 @@ int main()
     if (testLaunchpadProfileSize() != 0) return 1;
     if (testMidi2LutMonotonic() != 0) return 1;
     if (testInputGateThresholds() != 0) return 1;
+    if (testPolyAftertouchRemap() != 0) return 1;
+    if (testChannelPressureNoNoteZeroCollision() != 0) return 1;
     if (testHumanizeWithinBounds() != 0) return 1;
     if (testPadAddRemoveAndDuplicateKey() != 0) return 1;
+    if (testCurveFloorCeilingMapping() != 0) return 1;
+    if (testProfileMidiKeyValidation() != 0) return 1;
+    if (testDeterministicVelocityReplay() != 0) return 1;
+    if (testMidi2OutputEncoding() != 0) return 1;
+    if (testMidi2EngineUmpPackets() != 0) return 1;
+    if (testMidi1WireQuantize() != 0) return 1;
+    if (testZoneRoutingNoteOffChannel() != 0) return 1;
+    if (testGatedNoteOffSuppressed() != 0) return 1;
+    if (testRetriggerDroppedNoteOffStillPasses() != 0) return 1;
     std::cout << "All engine tests passed.\n";
     return 0;
 }

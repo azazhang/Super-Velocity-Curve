@@ -63,6 +63,7 @@ private:
 
     static void sortControlPoints (std::vector<CurveControlPoint>& points);
     static float interpolateControlPoints (const std::vector<CurveControlPoint>& points, float input);
+    float evaluateMappedOutput (float input) const noexcept;
 };
 
 } // namespace svc

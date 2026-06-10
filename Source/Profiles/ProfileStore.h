@@ -38,8 +38,8 @@ public:
     std::vector<ProfileListEntry> getProfileList() const;
     void loadFactoryTemplate (int index);
     void loadUserProfile (int index);
-    bool saveActiveAsUserProfile (const juce::String& name);
-    bool updateActiveUserProfile (const juce::String& name);
+    bool saveActiveAsUserProfile (const juce::String& name, juce::String* errorMessage = nullptr);
+    bool updateActiveUserProfile (const juce::String& name, juce::String* errorMessage = nullptr);
     PadMutationResult addPadToActive (const ProfilePad& pad = {});
     PadMutationResult removePadFromActive (int index);
     bool deleteUserProfile (int index);
@@ -49,9 +49,11 @@ public:
     juce::ValueTree toValueTree() const;
     void fromValueTree (const juce::ValueTree& tree, bool notifyUpdates = true);
 
-    bool exportActiveProfileToFile (const juce::File& file) const;
-    bool importProfileFromFile (const juce::File& file);
+    bool exportActiveProfileToFile (const juce::File& file, juce::String* errorMessage = nullptr) const;
+    bool importProfileFromFile (const juce::File& file, juce::String* errorMessage = nullptr);
     void syncActiveUserProfileFromEdits();
+
+    static bool validateProfileMidiKeys (const ControllerProfile& profile, juce::String* errorMessage = nullptr);
 
     std::function<void()> onProfileChanged;
 

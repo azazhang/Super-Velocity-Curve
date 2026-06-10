@@ -74,6 +74,16 @@ float MidiRoutingProcessor::processAftertouch (int note, int channel, float pres
     return it->second.curve.mapNormalized (pressure);
 }
 
+float MidiRoutingProcessor::processChannelPressure (int channel, float pressure) const
+{
+    const AtKey key { kChannelPressureNote, channel };
+    const auto it = aftertouchPads.find (key);
+    if (it == aftertouchPads.end() || ! it->second.enabled)
+        return pressure;
+
+    return it->second.curve.mapNormalized (pressure);
+}
+
 bool MidiRoutingProcessor::processMessage (juce::MidiMessage& message) const
 {
     auto channel = message.getChannel();
@@ -96,16 +106,18 @@ bool MidiRoutingProcessor::processMessage (juce::MidiMessage& message) const
 
     if (message.isAftertouch())
     {
-        const auto shaped = processAftertouch (message.getNoteNumber(), channel, message.getAfterTouchValue() / 127.0f);
+        auto note = message.getNoteNumber();
+        routing.remapNote (note, channel);
+        const auto shaped = processAftertouch (note, channel, message.getAfterTouchValue() / 127.0f);
         message = juce::MidiMessage::aftertouchChange (routing.transformOutputChannel (channel),
-                                                       message.getNoteNumber(),
+                                                       note,
                                                        static_cast<int> (shaped * 127.0f));
         return true;
     }
 
     if (message.isChannelPressure())
     {
-        const auto shaped = processAftertouch (0, channel, message.getChannelPressureValue() / 127.0f);
+        const auto shaped = processChannelPressure (channel, message.getChannelPressureValue() / 127.0f);
         message = juce::MidiMessage::channelPressureChange (routing.transformOutputChannel (channel),
                                                             static_cast<int> (shaped * 127.0f));
         return true;
@@ -147,18 +159,19 @@ HistogramSnapshot VelocityHistogram::snapshot() const
 void HistogramBank::record (int note, int channel, float inputNormalized, float outputNormalized) noexcept
 {
     global.record (inputNormalized, outputNormalized);
-    perPad[{ note, channel }].record (inputNormalized, outputNormalized);
+    perPad[midiNoteChannelIndex (note, channel)].record (inputNormalized, outputNormalized);
 }
 
 void HistogramBank::clear() noexcept
 {
     global.clear();
-    perPad.clear();
+    for (auto& histogram : perPad)
+        histogram.clear();
 }
 
 void HistogramBank::clearPad (int note, int channel) noexcept
 {
-    perPad.erase ({ note, channel });
+    perPad[midiNoteChannelIndex (note, channel)].clear();
 }
 
 HistogramSnapshot HistogramBank::getGlobalSnapshot() const
@@ -168,9 +181,7 @@ HistogramSnapshot HistogramBank::getGlobalSnapshot() const
 
 HistogramSnapshot HistogramBank::getPadSnapshot (int note, int channel) const
 {
-    const PadHistogramKey key { note, channel };
-    const auto it = perPad.find (key);
-    return it != perPad.end() ? it->second.snapshot() : HistogramSnapshot {};
+    return perPad[midiNoteChannelIndex (note, channel)].snapshot();
 }
 
 } // namespace svc

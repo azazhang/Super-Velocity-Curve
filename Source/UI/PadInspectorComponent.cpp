@@ -1,13 +1,16 @@
 #include "PadInspectorComponent.h"
+#include "MidiNoteNames.h"
+#include "ScrollHelpers.h"
 
 PadInspectorComponent::PadInspectorComponent()
 {
     addAndMakeVisible (viewport);
     viewport.setViewedComponent (&content, false);
-    viewport.setScrollBarsShown (true, false);
-    viewport.getVerticalScrollBar().setAutoHide (true);
+    svc::ui::configureVerticalViewport (viewport);
 
     padNameEditor.setFont (svc::ui::Theme::bodyFont());
+    padNameEditor.setIndents (8, 4);
+    padNameEditor.setMultiLine (false);
     padNameEditor.setTextToShowWhenEmpty ("Pad name", juce::Colour (svc::ui::Theme::textSecondary()));
     padNameEditor.onFocusLost = padNameEditor.onReturnKey = [this]
     {
@@ -15,18 +18,23 @@ PadInspectorComponent::PadInspectorComponent()
         if (currentPad.label.isEmpty())
             currentPad.label = "Pad " + juce::String (currentPadIndex + 1);
         notifyChanged();
+        finishPadEdit();
     };
     content.addAndMakeVisible (padNameLabel);
     content.addAndMakeVisible (padNameEditor);
 
     midiNoteSlider.setRange (0.0, 127.0, 1.0);
-    midiNoteSlider.setTextBoxStyle (juce::Slider::TextBoxBelow, false, 52, 16);
-    midiNoteSlider.textFromValueFunction = [] (double v) { return juce::String (static_cast<int> (v)); };
+    midiNoteSlider.setTextBoxStyle (juce::Slider::TextBoxBelow, false, 72, 16);
+    midiNoteSlider.textFromValueFunction = [] (double v)
+    {
+        return svc::ui::formatMidiNote (static_cast<int> (v));
+    };
     midiNoteSlider.onValueChange = [this]
     {
         currentPad.midiNote = static_cast<int> (midiNoteSlider.getValue());
         notifyChanged();
     };
+    midiNoteSlider.onDragEnd = [this] { finishPadEdit(); };
     content.addAndMakeVisible (midiNoteLabel);
     content.addAndMakeVisible (midiNoteSlider);
 
@@ -34,21 +42,22 @@ PadInspectorComponent::PadInspectorComponent()
         midiChannelBox.addItem ("Ch " + juce::String (ch), ch);
     midiChannelBox.onChange = [this]
     {
-        currentPad.midiChannel = midiChannelBox.getSelectedId();
+        if (suppressNotify)
+            return;
+
+        const auto channel = midiChannelBox.getSelectedId();
+        if (channel < 1 || channel > 16)
+            return;
+
+        currentPad.midiChannel = channel;
         notifyChanged();
+        finishPadEdit();
     };
     content.addAndMakeVisible (midiChannelLabel);
     content.addAndMakeVisible (midiChannelBox);
 
     content.addAndMakeVisible (enabledToggle);
-    enabledToggle.onClick = [this] { currentPad.enabled = enabledToggle.getToggleState(); notifyChanged(); };
-
     content.addAndMakeVisible (aftertouchToggle);
-    aftertouchToggle.onClick = [this]
-    {
-        currentPad.aftertouch.enabled = aftertouchToggle.getToggleState();
-        notifyChanged();
-    };
 
     content.addAndMakeVisible (editAftertouchButton);
     editAftertouchButton.onClick = [this]
@@ -63,21 +72,10 @@ PadInspectorComponent::PadInspectorComponent()
     content.addAndMakeVisible (groupBox);
     for (int i = 0; i < 7; ++i)
         groupBox.addItem (svc::padGroupToString (static_cast<svc::PadGroup> (i)), i + 1);
-    groupBox.onChange = [this]
-    {
-        currentPad.group = static_cast<svc::PadGroup> (groupBox.getSelectedItemIndex());
-        notifyChanged();
-    };
 
     content.addAndMakeVisible (gateModeBox);
     gateModeBox.addItem ("Drop notes", 1);
     gateModeBox.addItem ("Clamp to floor", 2);
-    gateModeBox.onChange = [this]
-    {
-        currentPad.gateMode = gateModeBox.getSelectedId() == 2 ? svc::VelocityGateMode::clampToFloor
-                                                               : svc::VelocityGateMode::drop;
-        notifyChanged();
-    };
 
     setupSlider (velocityGateSlider, "", true);
     setupSlider (retriggerSlider, " ms", false);
@@ -103,18 +101,64 @@ PadInspectorComponent::PadInspectorComponent()
 
     floorSlider.onValueChange = [this]
     {
+        if (suppressNotify)
+            return;
+
         currentPad.curve.setFloor (static_cast<float> (floorSlider.getValue() / 127.0));
+        ceilingSlider.setValue (currentPad.curve.getCeiling() * 127.0, juce::dontSendNotification);
         notifyChanged();
     };
 
     ceilingSlider.onValueChange = [this]
     {
+        if (suppressNotify)
+            return;
+
         currentPad.curve.setCeiling (static_cast<float> (ceilingSlider.getValue() / 127.0));
+        floorSlider.setValue (currentPad.curve.getFloor() * 127.0, juce::dontSendNotification);
         notifyChanged();
     };
 
     for (auto* slider : { &velocityGateSlider, &retriggerSlider, &floorSlider, &ceilingSlider })
+    {
         content.addAndMakeVisible (slider);
+        slider->onDragEnd = [this] { finishPadEdit(); };
+    }
+
+    enabledToggle.onClick = [this]
+    {
+        currentPad.enabled = enabledToggle.getToggleState();
+        notifyChanged();
+        finishPadEdit();
+    };
+
+    aftertouchToggle.onClick = [this]
+    {
+        currentPad.aftertouch.enabled = aftertouchToggle.getToggleState();
+        notifyChanged();
+        finishPadEdit();
+    };
+
+    groupBox.onChange = [this]
+    {
+        if (suppressNotify)
+            return;
+
+        currentPad.group = static_cast<svc::PadGroup> (groupBox.getSelectedItemIndex());
+        notifyChanged();
+        finishPadEdit();
+    };
+
+    gateModeBox.onChange = [this]
+    {
+        if (suppressNotify)
+            return;
+
+        currentPad.gateMode = gateModeBox.getSelectedId() == 2 ? svc::VelocityGateMode::clampToFloor
+                                                               : svc::VelocityGateMode::drop;
+        notifyChanged();
+        finishPadEdit();
+    };
 
     applyTheme();
 }
@@ -146,6 +190,12 @@ void PadInspectorComponent::commitEdits()
 
     currentPad = getPad();
     notifyChanged();
+    finishPadEdit();
+}
+
+void PadInspectorComponent::setAftertouchEditMode (bool editingAftertouch)
+{
+    editAftertouchButton.setButtonText (editingAftertouch ? "Edit velocity curve" : "Edit AT curve");
 }
 
 void PadInspectorComponent::applyTheme()
@@ -184,6 +234,7 @@ void PadInspectorComponent::setPad (const svc::ProfilePad& pad, int padIndex)
     floorSlider.setValue (pad.curve.getFloor() * 127.0, juce::dontSendNotification);
     ceilingSlider.setValue (pad.curve.getCeiling() * 127.0, juce::dontSendNotification);
     suppressNotify = false;
+    refreshScrollbar();
 }
 
 void PadInspectorComponent::notifyChanged()
@@ -194,19 +245,30 @@ void PadInspectorComponent::notifyChanged()
     onPadChanged (currentPadIndex, getPad());
 }
 
+void PadInspectorComponent::finishPadEdit()
+{
+    if (suppressNotify || ! onPadEditFinished)
+        return;
+
+    onPadEditFinished();
+}
+
+void PadInspectorComponent::refreshScrollbar()
+{
+    svc::ui::updateVerticalScrollbarVisibility (viewport, content);
+}
+
 void PadInspectorComponent::paint (juce::Graphics& g)
 {
-    svc::ui::Theme::fillPanel (g, getLocalBounds().toFloat(), 10.0f);
-    g.setColour (juce::Colour (svc::ui::Theme::textPrimary()));
-    g.setFont (svc::ui::Theme::sectionFont());
-    g.drawText ("Pad Settings", getLocalBounds().removeFromTop (28).reduced (12, 0), juce::Justification::centredLeft);
+    juce::ignoreUnused (g);
 }
 
 void PadInspectorComponent::resized()
 {
-    auto area = getLocalBounds().reduced (8).withTrimmedTop (28);
+    auto area = getLocalBounds().reduced (4);
     viewport.setBounds (area);
     layoutContent();
+    svc::ui::updateVerticalScrollbarVisibility (viewport, content);
 }
 
 void PadInspectorComponent::layoutContent()
@@ -221,7 +283,7 @@ void PadInspectorComponent::layoutContent()
         y += h + 4;
     };
 
-    row (padNameLabel, padNameEditor, 40);
+    row (padNameLabel, padNameEditor, 46);
     row (midiNoteLabel, midiNoteSlider);
     row (midiChannelLabel, midiChannelBox, 40);
     enabledToggle.setBounds (8, y, width - 16, 22);
@@ -244,4 +306,5 @@ void PadInspectorComponent::layoutContent()
     y = pairY + 58;
 
     content.setSize (width, y + 8);
+    refreshScrollbar();
 }

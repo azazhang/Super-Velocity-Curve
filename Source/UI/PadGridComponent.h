@@ -17,6 +17,13 @@ public:
     void scrollPadIntoView (int index);
     int getDisplayGridColumns() const noexcept { return displayGridColumns; }
     int getSelectedPadIndex() const noexcept { return selectedPadIndex; }
+    int getPadCanvasWidth() const noexcept { return padCanvas.getWidth(); }
+    int getViewportClientWidth() const noexcept { return viewport.getWidth(); }
+    bool needsHorizontalScroll() const noexcept { return getPadCanvasWidth() > getViewportClientWidth(); }
+    int getPadCanvasHeight() const noexcept { return padCanvas.getHeight(); }
+    int getViewportClientHeight() const noexcept { return viewport.getHeight(); }
+    bool needsVerticalScroll() const noexcept { return getPadCanvasHeight() > getViewportClientHeight(); }
+    bool isVerticalScrollbarShown() const noexcept { return viewport.isVerticalScrollBarShown(); }
 
     void flashPadHit (int note, int channel, float outputVelocity);
     void decayHitVisuals();

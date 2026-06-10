@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(SuperVelocityCurve VERSION 0.6.4)
+project(SuperVelocityCurve VERSION 0.2.7)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -20,11 +20,15 @@ endif()
 
 add_subdirectory(JUCE)
 
-juce_add_binary_data(SuperVelocityCurveBinaryData SOURCES Resources/pluginval_badge.png)
+juce_add_binary_data(SuperVelocityCurveBinaryData
+    SOURCES
+        Resources/pluginval_badge.png
+        Resources/developer_portrait.png)
 
 set(SVC_PLUGIN_SOURCES
     Source/Engine/VelocityCurve.cpp
     Source/Engine/VelocityEngine.cpp
+    Source/Engine/MidiVelocityTransport.cpp
     Source/Engine/MidiUtilities.cpp
     Source/Profiles/ControllerProfile.cpp
     Source/Profiles/ProfileStore.cpp
@@ -39,7 +43,11 @@ set(SVC_PLUGIN_SOURCES
     Source/UI/MidiRoutingPanel.cpp
     Source/UI/NoteRemapEditorComponent.cpp
     Source/UI/MidiActivityMeterComponent.cpp
-    Source/UI/AboutPanelComponent.cpp)
+    Source/UI/AboutPanelComponent.cpp
+    Source/UI/UnsavedProfileDialogComponent.cpp
+    Source/UI/CollapsibleSection.cpp
+    Source/UI/HistogramPairPanel.cpp
+    Source/UI/EditorLayout.cpp)
 
 function(svc_configure_plugin_target target)
     juce_generate_juce_header(${target})
@@ -79,6 +87,7 @@ juce_add_plugin(SuperVelocityCurve
     PLUGIN_MANUFACTURER_CODE Svvc
     PLUGIN_CODE Svcv
     BUNDLE_ID com.supervelocitycurve.instrument
+    ICON_BIG ${CMAKE_CURRENT_SOURCE_DIR}/Resources/AppIcon.png
     FORMATS AU VST3 Standalone
     PRODUCT_NAME "Super VelocityCurve"
     IS_SYNTH FALSE
@@ -103,6 +112,7 @@ juce_add_plugin(SuperVelocityCurveMidiFx
     PLUGIN_MANUFACTURER_CODE Svvc
     PLUGIN_CODE Svc2
     BUNDLE_ID com.supervelocitycurve.midifx
+    ICON_BIG ${CMAKE_CURRENT_SOURCE_DIR}/Resources/AppIcon.png
     FORMATS AU VST3
     PRODUCT_NAME "Super VelocityCurve MIDI FX"
     IS_SYNTH FALSE
@@ -123,6 +133,16 @@ if(SVC_BUILD_CLAP AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/third_party/clap-juce-
     clap_juce_extensions_plugin(TARGET SuperVelocityCurveMidiFx
         CLAP_ID "com.supervelocitycurve.midifx"
         CLAP_FEATURES note-effect)
+
+    if(SVC_COPY_PLUGIN_AFTER_BUILD AND APPLE)
+        add_custom_command(TARGET SuperVelocityCurveMidiFx_CLAP POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E make_directory "$ENV{HOME}/Library/Audio/Plug-Ins/CLAP"
+            COMMAND ${CMAKE_COMMAND} -E rm -rf "$ENV{HOME}/Library/Audio/Plug-Ins/CLAP/Super VelocityCurve MIDI FX.clap"
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+                "$<TARGET_BUNDLE_DIR:SuperVelocityCurveMidiFx_CLAP>"
+                "$ENV{HOME}/Library/Audio/Plug-Ins/CLAP/Super VelocityCurve MIDI FX.clap"
+            COMMENT "Install CLAP to ~/Library/Audio/Plug-Ins/CLAP/")
+    endif()
 endif()
 
 option(SVC_BUILD_TESTS "Build engine unit tests" ON)
@@ -140,6 +160,7 @@ if(SVC_BUILD_TESTS)
             Tests/EngineTests.cpp
             Source/Engine/VelocityCurve.cpp
             Source/Engine/VelocityEngine.cpp
+    Source/Engine/MidiVelocityTransport.cpp
             Source/Engine/MidiUtilities.cpp
             Source/Profiles/ControllerProfile.cpp
             Source/Profiles/ProfileStore.cpp)
@@ -153,6 +174,40 @@ if(SVC_BUILD_TESTS)
         juce::juce_recommended_warning_flags)
 
     add_test(NAME EngineTests COMMAND SuperVelocityCurveTests)
+
+    juce_add_console_app(SuperVelocityCurveLayoutTests
+        PRODUCT_NAME "SuperVelocityCurveLayoutTests")
+
+    juce_generate_juce_header(SuperVelocityCurveLayoutTests)
+
+    target_sources(SuperVelocityCurveLayoutTests
+        PRIVATE
+            Tests/LayoutTests.cpp
+            ${SVC_PLUGIN_SOURCES})
+
+    target_include_directories(SuperVelocityCurveLayoutTests PRIVATE Source)
+
+    target_compile_definitions(SuperVelocityCurveLayoutTests
+        PRIVATE
+            JUCE_WEB_BROWSER=0
+            JUCE_USE_CURL=0
+            JucePlugin_Name="Super VelocityCurve"
+            JucePlugin_Manufacturer="SuperVelocityCurve"
+            JucePlugin_ManufacturerCode=0x53767663
+            JucePlugin_PluginCode=0x53766376
+            JucePlugin_IsSynth=0
+            JucePlugin_IsMidiEffect=0
+            JucePlugin_WantsMidiInput=1
+            JucePlugin_ProducesMidiOutput=1)
+
+    target_link_libraries(SuperVelocityCurveLayoutTests PRIVATE
+        juce::juce_audio_utils
+        juce::juce_gui_basics
+        juce::juce_gui_extra
+        SuperVelocityCurveBinaryData
+        juce::juce_recommended_warning_flags)
+
+    add_test(NAME LayoutTests COMMAND SuperVelocityCurveLayoutTests)
 endif()
 
 option(SVC_EXPORT_FACTORY_PROFILES "Build factory profile export tool" ON)
@@ -169,6 +224,7 @@ if(SVC_EXPORT_FACTORY_PROFILES)
             Source/Profiles/ControllerProfile.cpp
             Source/Engine/VelocityCurve.cpp
             Source/Engine/VelocityEngine.cpp
+    Source/Engine/MidiVelocityTransport.cpp
             Source/Engine/MidiUtilities.cpp)
 
     target_include_directories(ExportFactoryProfiles PRIVATE Source)

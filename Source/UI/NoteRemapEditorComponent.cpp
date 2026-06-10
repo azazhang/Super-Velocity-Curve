@@ -13,8 +13,14 @@ public:
     }
 
     NoteRemapEditorComponent& ownerRef;
-    int rowIndex;
-    int columnIndex;
+    int rowIndex = -1;
+    int columnIndex = -1;
+
+    void assignCell (int row, int col)
+    {
+        rowIndex = row;
+        columnIndex = col;
+    }
 };
 
 class ChannelCellEditor : public juce::ComboBox
@@ -32,8 +38,14 @@ public:
     }
 
     NoteRemapEditorComponent& ownerRef;
-    int rowIndex;
-    int columnIndex;
+    int rowIndex = -1;
+    int columnIndex = -1;
+
+    void assignCell (int row, int col)
+    {
+        rowIndex = row;
+        columnIndex = col;
+    }
 };
 } // namespace
 
@@ -169,6 +181,8 @@ juce::Component* NoteRemapEditorComponent::refreshComponentForCell (int rowNumbe
         auto* box = dynamic_cast<ChannelCellEditor*> (existing);
         if (box == nullptr)
             box = new ChannelCellEditor (*this, rowNumber, columnId);
+        else
+            box->assignCell (rowNumber, columnId);
 
         const int ch = columnId == 2 ? entry.sourceChannel : entry.targetChannel;
         box->setSelectedId (ch + 1, juce::dontSendNotification);
@@ -178,6 +192,8 @@ juce::Component* NoteRemapEditorComponent::refreshComponentForCell (int rowNumbe
     auto* editor = dynamic_cast<NoteCellEditor*> (existing);
     if (editor == nullptr)
         editor = new NoteCellEditor (*this, rowNumber, columnId);
+    else
+        editor->assignCell (rowNumber, columnId);
 
     switch (columnId)
     {

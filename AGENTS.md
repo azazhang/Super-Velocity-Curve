@@ -1,6 +1,6 @@
 # Agent instructions (Super VelocityCurve)
 
-This file is for **AI coding agents** and contributors. End users should read [README.md](README.md) and [docs/user/](docs/user/).
+This file is for **AI coding agents** and contributors only — not linked from the top of [README.md](README.md). End users: [README.md](README.md) → [docs/user/](docs/user/). Doc map: [docs/README.md](docs/README.md).
 
 ## Repository map
 
@@ -13,10 +13,22 @@ This file is for **AI coding agents** and contributors. End users should read [R
 ## Build & test
 
 ```bash
-cmake -B build -DCMAKE_BUILD_TYPE=Release -DSVC_COPY_PLUGIN_AFTER_BUILD=OFF
+cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo
 cmake --build build --parallel
 ctest --test-dir build --output-on-failure
 ```
+
+### Mandatory: rebuild after every code change
+
+**After any edit to `Source/`, `Tests/`, or `CMakeLists.txt`, you MUST:**
+
+1. Run `cmake --build build` (full plugin targets, not tests-only).
+2. Run `ctest --test-dir build --output-on-failure`.
+3. Tell the user the **exact path and binary timestamp** to open, e.g.  
+   `build/SuperVelocityCurve_artefacts/RelWithDebInfo/Standalone/Super VelocityCurve.app`  
+   Do not end a fix session with “rebuild yourself” or only `open` instructions without having built first.
+
+Local `COPY_PLUGIN_AFTER_BUILD` also installs VST3/AU/CLAP to `~/Library/Audio/Plug-Ins/` — mention that if relevant.
 
 Never `git add build/` or `build-ci-test/`. Never commit without explicit user request.
 
@@ -45,6 +57,16 @@ Ableton requires **Instrument** VST3 with audio bus. MIDI-FX-capable DAWs use th
 ## QA
 
 Follow [docs/developer/TESTING.md](docs/developer/TESTING.md). Add engine tests for deterministic bugs; update `BACKLOG.md` with P0/P1/P2 items.
+
+**Iterative QA loop:** `./scripts/qa-iterate.sh [--pluginval]` → fix failures → re-run until green → manual smoke checklist.
+
+**Never mark a bug fixed without:**
+
+1. Rebuilding (`cmake --build build`) and running `ctest`.
+2. Running the **pre-ship gate** rows in TESTING.md that apply to your change (layout / pad-switch / live hits for UI work).
+3. Reporting the Standalone `.app` path and binary timestamp to the user.
+
+Engine-only fixes need (1) + engine test when feasible. UI/layout/state fixes need (1)–(3) including manual smoke, not just code review.
 
 ## Current version
 

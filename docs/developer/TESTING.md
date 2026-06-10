@@ -27,7 +27,7 @@ Super VelocityCurve cannot rely on a single human tester. This document describe
 | Local pluginval | `./scripts/validate-plugins-local.sh` | Same as CI, bounded timeout |
 | QA iteration script | `./scripts/qa-iterate.sh [--pluginval]` | Build + ctest + checklist reminder |
 
-Run engine tests on every push. pluginval runs on macOS (all formats) and Windows (VST3; CLAP is build-only on Windows — see [PLUGINVAL.md](PLUGINVAL.md)).
+Run engine tests on every push. pluginval runs on macOS and Windows (VST3/AU). CLAP uses **clap-validator** on both platforms — see [PLUGINVAL.md](PLUGINVAL.md).
 
 ## Manual smoke matrix (release gate)
 

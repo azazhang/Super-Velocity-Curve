@@ -4,9 +4,16 @@ Free, open-source **MIDI velocity curves** built for finger drummers and pad pla
 
 Shape how hard you hit maps to MIDI velocity **per pad**, with **controller-specific profiles** that travel with you across DAWs and drum plugins.
 
-> **Status: beta (v0.2.x)** — core workflow works; expect rough edges. Known limitations are listed [below](#known-limitations).
+> **Status: beta (v0.2.x)** — core workflow works; expect rough edges. [Known limitations](#known-limitations) below.
 
-[![Verified by pluginval](https://assets.tracktion.com/img/pages/develop/develop-logo-pluginval.png)](https://www.tracktion.com/develop/pluginval) — automated validation at strictness 5 (VST3/AU in CI).
+## Support the project
+
+If Super VelocityCurve helps your playing or teaching:
+
+- [Buy Me a Coffee](https://buymeacoffee.com/azhang)
+- [Ko-fi — Studio J](https://ko-fi.com/studioj)
+
+<a href="https://www.tracktion.com/develop/pluginval"><img src="https://assets.tracktion.com/img/pages/develop/develop-logo-pluginval.png" alt="Verified by pluginval" width="120" /></a> — automated validation at strictness 5 (VST3/AU in CI).
 
 ## Why Super VelocityCurve?
 
@@ -26,8 +33,7 @@ Shape how hard you hit maps to MIDI velocity **per pad**, with **controller-spec
 
 **→ [Install guide](docs/user/install.md)** — copy plugins into the right folders, rescan, troubleshoot unsigned builds.
 
-**GitHub Releases:** [github.com/azazhang/Super_VelocityCurve/releases](https://github.com/azazhang/Super_VelocityCurve/releases)  
-If the page is empty, no release zip has been published yet — you can [build from source](docs/developer/CONTRIBUTING.md).
+**Latest release:** [github.com/azazhang/Super_VelocityCurve/releases/latest](https://github.com/azazhang/Super_VelocityCurve/releases/latest) — macOS and Windows unsigned zips (VST3, Standalone; AU + CLAP on Mac; **CLAP MIDI FX on Windows too**).
 
 ## Getting started
 
@@ -35,7 +41,14 @@ If the page is empty, no release zip has been published yet — you can [build f
 
 ## Which plugin do I need?
 
-Two builds ship in each release: **Instrument** (Ableton) and **MIDI FX** (most other DAWs). On macOS you also get **AU** and **CLAP** (MIDI FX only).
+Two builds ship in each release: **Instrument** (Ableton) and **MIDI FX** (most other DAWs).
+
+| Format | Instrument | MIDI FX | Platforms |
+|--------|------------|---------|-----------|
+| VST3 | ✓ | ✓ | macOS, Windows |
+| AU | ✓ | ✓ | macOS only |
+| CLAP | — | ✓ | macOS, Windows |
+| Standalone | ✓ | — | macOS app, Windows exe |
 
 | DAW | Plugin name | Formats | Where to load |
 |-----|-------------|---------|---------------|
@@ -66,18 +79,10 @@ This is honest beta software — not a finished 1.0 product.
 |------|----------------|
 | **Quality** | v0.2.x — UI and edge cases still improving; report issues on GitHub |
 | **macOS installs** | Release zips are **unsigned**; you may need a one-time security allow or `xattr -cr` (see [install](docs/user/install.md)) |
-| **Ableton** | No third-party MIDI FX slot — use the **Instrument** build and route MIDI to your drum track |
-| **CLAP** | MIDI FX only — there is no CLAP Instrument build for Ableton-style routing |
+| **Ableton** | No third-party MIDI FX slot — use the **VST3 Instrument** build and route MIDI to your drum track |
+| **CLAP Instrument** | Not shipped — CLAP is **MIDI FX only** (`note-effect`). Ableton (the main reason for the Instrument build) does not load CLAP; use VST3 Instrument there |
 | **MIDI 2.0** | High-res output LUT is built in; **host UMP I/O** is not wired yet — most setups still use MIDI 1.0 |
-| **Releases** | Automated CI builds plugins; **GitHub release zips** appear when a maintainer publishes a version tag |
 | **Host coverage** | pluginval checks load/stability; **full DAW smoke** on every host is not complete — try your setup and open an issue if something fails |
-
-## Support the project
-
-If Super VelocityCurve helps your playing or teaching:
-
-- [Buy Me a Coffee](https://buymeacoffee.com/azhang)
-- [Ko-fi — Studio J](https://ko-fi.com/studioj)
 
 ## Contributing
 

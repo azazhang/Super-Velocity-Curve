@@ -4,10 +4,8 @@ No coding required. Pick the download for your computer, unzip, and copy the plu
 
 ## Step 1 — Download
 
-1. Open the **[Releases](https://github.com/azazhang/Super_VelocityCurve/releases)** page on GitHub.
-2. Download the latest **`SuperVelocityCurve-macOS-unsigned.zip`** (Mac) or **`SuperVelocityCurve-Windows-unsigned.zip`** (Windows).
-
-If Releases is empty, no zip has been published yet — build from source ([CONTRIBUTING](../developer/CONTRIBUTING.md)) or ask the maintainer to run the Release workflow ([RELEASE.md](../developer/RELEASE.md)).
+1. Open **[Releases](https://github.com/azazhang/Super_VelocityCurve/releases/latest)** on GitHub.
+2. Download **`SuperVelocityCurve-macOS-unsigned.zip`** (Mac) or **`SuperVelocityCurve-Windows-unsigned.zip`** (Windows).
 
 > Builds are **unsigned** (free/open source). macOS may ask you to allow the plugin once — see [Troubleshooting](#troubleshooting) below.
 
@@ -16,7 +14,8 @@ If Releases is empty, no zip has been published yet — build from source ([CONT
 Double-click the zip file. You should see folders like:
 
 - `Super VelocityCurve.vst3`
-- `Super VelocityCurve MIDI FX.vst3` (and/or `.component` / `.clap` on Mac)
+- `Super VelocityCurve MIDI FX.vst3` (and/or `.component` on Mac)
+- `Super VelocityCurve MIDI FX.clap` (Mac and Windows — MIDI FX only)
 - `Super VelocityCurve.app` (Mac standalone) or `.exe` (Windows standalone)
 
 ## Step 3 — Copy plugins to the right place
@@ -42,11 +41,12 @@ Double-click the zip file. You should see folders like:
 |---------------------|---------|
 | `Super VelocityCurve.vst3` | `C:\Program Files\Common Files\VST3\` |
 | `Super VelocityCurve MIDI FX.vst3` | `C:\Program Files\Common Files\VST3\` |
+| `Super VelocityCurve MIDI FX.clap` | `C:\Program Files\Common Files\CLAP\` (Bitwig, Reaper 7+, etc.) |
 | `Super VelocityCurve.exe` | Any folder you like (standalone) |
 
 ## Step 4 — Rescan in your DAW
 
-Open your DAW’s plugin preferences and **rescan VST3** (and AU on Mac).
+Open your DAW’s plugin preferences and **rescan VST3** (and AU on Mac, **CLAP** if your host uses it).
 
 - **Ableton Live:** use the **Instrument** build only — see [Getting started](getting-started.md#ableton-live).
 - **Logic Pro:** use **`Super VelocityCurve MIDI FX.component` (AU only)** in the MIDI FX slot — Logic does not load VST3. See [Getting started](getting-started.md#logic-pro).
@@ -66,7 +66,7 @@ Or: **System Settings → Privacy & Security → Open Anyway** after the first b
 
 ### Windows: plugin doesn’t appear
 
-Confirm the `.vst3` folder (not just files inside it) is in `Common Files\VST3\`, then rescan in your DAW.
+Confirm the `.vst3` folder (not just files inside it) is in `Common Files\VST3\`, then rescan in your DAW. For CLAP hosts, copy `Super VelocityCurve MIDI FX.clap` to `C:\Program Files\Common Files\CLAP\` and rescan CLAP.
 
 ### Still stuck?
 

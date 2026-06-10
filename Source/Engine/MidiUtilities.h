@@ -4,6 +4,7 @@
 #include <JuceHeader.h>
 #include <array>
 #include <atomic>
+#include <memory>
 #include <optional>
 #include <unordered_map>
 
@@ -90,6 +91,8 @@ struct VelocityHistogram
 class HistogramBank
 {
 public:
+    HistogramBank();
+
     void record (int note, int channel, float inputNormalized, float outputNormalized) noexcept;
     void clear() noexcept;
     void clearPad (int note, int channel) noexcept;
@@ -98,7 +101,8 @@ public:
 
 private:
     VelocityHistogram global;
-    std::array<VelocityHistogram, kMidiNoteChannelSlots> perPad {};
+    // Heap-backed: ~2 MiB of atomics must not live inline on VelocityEngine (Windows stack is 1 MiB).
+    std::unique_ptr<std::array<VelocityHistogram, kMidiNoteChannelSlots>> perPad;
 };
 
 } // namespace svc

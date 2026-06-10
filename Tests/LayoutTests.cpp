@@ -6,6 +6,7 @@
 #include "../Source/UI/PadGridComponent.h"
 #include "../Source/UI/MidiNoteNames.h"
 #include "../Source/UI/PadUiMerge.h"
+#include <JuceHeader.h>
 #include <iostream>
 
 #define EXPECT_TRUE(cond) \
@@ -185,7 +186,6 @@ static int testProcessorStateRoundtrip()
 
 static int testHeadlessEditorMinLayout()
 {
-    juce::ScopedJuceInitialiser_GUI gui;
     SuperVelocityCurveAudioProcessor processor;
     std::unique_ptr<SuperVelocityCurveAudioProcessorEditor> editor (
         dynamic_cast<SuperVelocityCurveAudioProcessorEditor*> (processor.createEditor()));
@@ -203,7 +203,6 @@ static int testHeadlessEditorMinLayout()
 
 static int testStateAfterEditorDestroyed()
 {
-    juce::ScopedJuceInitialiser_GUI gui;
     SuperVelocityCurveAudioProcessor processor;
     processor.prepareToPlay (48000.0, 512);
     {
@@ -220,7 +219,6 @@ static int testStateAfterEditorDestroyed()
 
 static int testEditorStateRoundtrip()
 {
-    juce::ScopedJuceInitialiser_GUI gui;
     SuperVelocityCurveAudioProcessor processor;
     processor.prepareToPlay (48000.0, 512);
     std::unique_ptr<SuperVelocityCurveAudioProcessorEditor> editor (
@@ -236,6 +234,8 @@ static int testEditorStateRoundtrip()
 
 int main()
 {
+    juce::ScopedJuceInitialiser_GUI gui;
+
     if (testMinWindowCurveVisible() != 0) return 1;
     if (testDefaultWindowWithCollapsedBottomSections() != 0) return 1;
     if (testSectionContentHeightClamped() != 0) return 1;

@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.2.8 (2026-06-10)
+
+### Fixed
+- **Windows CI:** `HistogramBank` per-pad storage heap-allocated (~2 MiB was overflowing the 1 MiB default stack when tests stack-allocated `VelocityEngine`)
+- **Layout tests:** JUCE GUI initialiser required on headless Windows runners
+
 ## v0.2.7 (2026-06-10)
 
 ### Changed

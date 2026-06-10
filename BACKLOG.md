@@ -2,7 +2,7 @@
 
 ## Honest status (2026-06-10)
 
-**v0.2.7:** Pad label layout, live hits linger, AT curve toggle, calibration wizard, Ko-fi link, user README/docs cleanup. **v0.2.6:** UI fixes — pad scrollbar, idle repaint, MIDI note names, save-dialog, profile-switch perf. **v0.2.5:** Engine QA fixes — zone-routing note-off/aftertouch, gated note-off suppression, lock-free retrigger, histogram thread safety. **v0.2.4:** pluginval state crash fixed. **v0.2.3:** Layout/UI automated tests; CI-3 universal macOS release.
+**v0.2.8:** Windows CI segfault fix — heap-backed `HistogramBank`, layout-test GUI init. **v0.2.7:** Pad label layout, live hits linger, AT curve toggle, calibration wizard, Ko-fi link, user README/docs cleanup. **v0.2.6:** UI fixes — pad scrollbar, idle repaint, MIDI note names, save-dialog, profile-switch perf. **v0.2.5:** Engine QA fixes — zone-routing note-off/aftertouch, gated note-off suppression, lock-free retrigger, histogram thread safety. **v0.2.4:** pluginval state crash fixed. **v0.2.3:** Layout/UI automated tests; CI-3 universal macOS release.
 
 **Still requires human verification:** P1 DAW smoke (Ableton Instrument + Logic MIDI FX). Run `./scripts/qa-iterate.sh --pluginval` then manual checklist in `docs/developer/TESTING.md`.
 
@@ -29,6 +29,6 @@
 
 ## Validation
 
-- Version: **0.2.7** (`CMakeLists.txt`)
+- Version: **0.2.8** (`CMakeLists.txt`)
 - Tests: **23** engine + **12** layout (`ctest`)
 - Local QA: `./scripts/qa-iterate.sh [--pluginval]`

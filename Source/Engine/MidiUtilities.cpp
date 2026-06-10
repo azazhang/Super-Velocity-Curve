@@ -156,22 +156,27 @@ HistogramSnapshot VelocityHistogram::snapshot() const
     return copy;
 }
 
+HistogramBank::HistogramBank()
+    : perPad (std::make_unique<std::array<VelocityHistogram, kMidiNoteChannelSlots>>())
+{
+}
+
 void HistogramBank::record (int note, int channel, float inputNormalized, float outputNormalized) noexcept
 {
     global.record (inputNormalized, outputNormalized);
-    perPad[midiNoteChannelIndex (note, channel)].record (inputNormalized, outputNormalized);
+    (*perPad)[midiNoteChannelIndex (note, channel)].record (inputNormalized, outputNormalized);
 }
 
 void HistogramBank::clear() noexcept
 {
     global.clear();
-    for (auto& histogram : perPad)
+    for (auto& histogram : *perPad)
         histogram.clear();
 }
 
 void HistogramBank::clearPad (int note, int channel) noexcept
 {
-    perPad[midiNoteChannelIndex (note, channel)].clear();
+    (*perPad)[midiNoteChannelIndex (note, channel)].clear();
 }
 
 HistogramSnapshot HistogramBank::getGlobalSnapshot() const
@@ -181,7 +186,7 @@ HistogramSnapshot HistogramBank::getGlobalSnapshot() const
 
 HistogramSnapshot HistogramBank::getPadSnapshot (int note, int channel) const
 {
-    return perPad[midiNoteChannelIndex (note, channel)].snapshot();
+    return (*perPad)[midiNoteChannelIndex (note, channel)].snapshot();
 }
 
 } // namespace svc

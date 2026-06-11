@@ -3,7 +3,7 @@
 namespace svc::urls
 {
 
-inline constexpr const char* kGitHubRepo     = "https://github.com/azazhang/Super_VelocityCurve";
+inline constexpr const char* kGitHubRepo     = "https://github.com/azazhang/Super-Velocity-Curve";
 inline constexpr const char* kHomepage       = "https://azhang.eu.org/";
 /** Studio J YouTube channel (artist JJJ_B / producer azazhang). */
 inline constexpr const char* kYouTube        = "https://www.youtube.com/@JJJB";

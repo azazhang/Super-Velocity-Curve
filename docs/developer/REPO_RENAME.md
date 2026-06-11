@@ -1,6 +1,8 @@
-# Repository rename plan
+# Repository rename
 
-Move from the awkward hybrid slug **`Super_VelocityCurve`** to a URL that matches the public brand **Super Velocity Curve**.
+**Status: completed 2026-06-11** — `azazhang/Super_VelocityCurve` → **`azazhang/Super-Velocity-Curve`**
+
+Historical plan for moving from the awkward hybrid slug to a URL that matches the public brand **Super Velocity Curve**.
 
 ## Recommended new slug
 

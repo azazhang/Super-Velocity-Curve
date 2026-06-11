@@ -4,7 +4,7 @@
 
 Every push to `main` runs `.github/workflows/build.yml` on `windows-latest` (build + ctest + pluginval VST3 + clap-validator CLAP).
 
-1. Open [Actions](https://github.com/azazhang/Super_VelocityCurve/actions) → latest green **Build** workflow.
+1. Open [Actions](https://github.com/azazhang/Super-Velocity-Curve/actions) → latest green **Build** workflow.
 2. Download artifact **`SuperVelocityCurve-Windows`** (`SuperVelocityCurve-Windows-unsigned.zip`).
 3. Unzip — contains VST3, Standalone `.exe`, and CLAP `.clap` DLL.
 4. Copy into host folders per [install guide](../user/install.md) on a Windows machine or VM.

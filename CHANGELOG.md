@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+- GitHub repository renamed to [`azazhang/Super-Velocity-Curve`](https://github.com/azazhang/Super-Velocity-Curve) (redirects from `Super_VelocityCurve`)
+
 ## v0.2.9 (2026-06-10)
 
 ### Changed

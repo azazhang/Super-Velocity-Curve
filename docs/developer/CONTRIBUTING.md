@@ -21,7 +21,7 @@ JUCE emits **one artefacts folder per CMake target**, not one folder for the who
 
 Inside each, **`RelWithDebInfo/` vs `Release/`** is the CMake build type. They coexist if you reconfigure between types. **Use one type consistently** — CI uses `RelWithDebInfo`; local dev can match with `-DCMAKE_BUILD_TYPE=RelWithDebInfo`.
 
-**Run the app:** `build/SuperVelocityCurve_artefacts/RelWithDebInfo/Standalone/Super VelocityCurve.app`
+**Run the app:** `build/SuperVelocityCurve_artefacts/RelWithDebInfo/Standalone/Super Velocity Curve.app`
 
 To avoid stale duplicates: `rm -rf build && cmake -B build ...` when switching build types.
 

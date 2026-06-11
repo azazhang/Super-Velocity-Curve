@@ -1,6 +1,6 @@
 # Verified by pluginval
 
-Super VelocityCurve is validated with [pluginval](https://github.com/Tracktion/pluginval) at **strictness level 5** in CI. The official badge and program details: [tracktion.com/develop/pluginval](https://www.tracktion.com/develop/pluginval).
+Super Velocity Curve is validated with [pluginval](https://github.com/Tracktion/pluginval) at **strictness level 5** in CI. The official badge and program details: [tracktion.com/develop/pluginval](https://www.tracktion.com/develop/pluginval).
 
 ## Program requirements (Tracktion)
 

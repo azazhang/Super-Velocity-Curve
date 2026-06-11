@@ -51,15 +51,15 @@ validate() {
 
 shopt -s nullglob
 paths=(
-  "$BUILD/SuperVelocityCurve_artefacts/$CMAKE_BUILD_TYPE/VST3/Super VelocityCurve.vst3"
-  "$BUILD/SuperVelocityCurveMidiFx_artefacts/$CMAKE_BUILD_TYPE/VST3/Super VelocityCurve MIDI FX.vst3"
-  "$BUILD/SuperVelocityCurve_artefacts/$CMAKE_BUILD_TYPE/AU/Super VelocityCurve.component"
-  "$BUILD/SuperVelocityCurveMidiFx_artefacts/$CMAKE_BUILD_TYPE/AU/Super VelocityCurve MIDI FX.component"
+  "$BUILD/SuperVelocityCurve_artefacts/$CMAKE_BUILD_TYPE/VST3/Super Velocity Curve.vst3"
+  "$BUILD/SuperVelocityCurveMidiFx_artefacts/$CMAKE_BUILD_TYPE/VST3/Super Velocity Curve MIDI FX.vst3"
+  "$BUILD/SuperVelocityCurve_artefacts/$CMAKE_BUILD_TYPE/AU/Super Velocity Curve.component"
+  "$BUILD/SuperVelocityCurveMidiFx_artefacts/$CMAKE_BUILD_TYPE/AU/Super Velocity Curve MIDI FX.component"
   "$BUILD/SuperVelocityCurveMidiFx_artefacts/$CMAKE_BUILD_TYPE/CLAP/"*.clap
-  "$BUILD/SuperVelocityCurve_artefacts/Release/VST3/Super VelocityCurve.vst3"
-  "$BUILD/SuperVelocityCurveMidiFx_artefacts/Release/VST3/Super VelocityCurve MIDI FX.vst3"
-  "$BUILD/SuperVelocityCurve_artefacts/Release/AU/Super VelocityCurve.component"
-  "$BUILD/SuperVelocityCurveMidiFx_artefacts/Release/AU/Super VelocityCurve MIDI FX.component"
+  "$BUILD/SuperVelocityCurve_artefacts/Release/VST3/Super Velocity Curve.vst3"
+  "$BUILD/SuperVelocityCurveMidiFx_artefacts/Release/VST3/Super Velocity Curve MIDI FX.vst3"
+  "$BUILD/SuperVelocityCurve_artefacts/Release/AU/Super Velocity Curve.component"
+  "$BUILD/SuperVelocityCurveMidiFx_artefacts/Release/AU/Super Velocity Curve MIDI FX.component"
 )
 
 found=0

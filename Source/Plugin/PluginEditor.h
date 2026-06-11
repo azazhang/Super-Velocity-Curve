@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Config/AppBranding.h"
 #include "../Standalone/StandaloneMidiPanel.h"
 #include "../UI/AboutPanelComponent.h"
 #include "../UI/UnsavedProfileDialogComponent.h"
@@ -35,8 +36,8 @@ public:
 private:
     SuperVelocityCurveAudioProcessor& audioProcessor;
 
-    juce::Label titleLabel { {}, "Super VelocityCurve" };
-    juce::Label subtitleLabel { {}, "Per-pad velocity curves for finger drummers" };
+    juce::Label titleLabel { {}, svc::branding::kProductName };
+    juce::Label subtitleLabel { {}, "Per-pad velocity curves for pads, kits, and controllers" };
     juce::ComboBox profileBox;
     juce::ComboBox outputModeBox;
     juce::ComboBox curvePresetBox;

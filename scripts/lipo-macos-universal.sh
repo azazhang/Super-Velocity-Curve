@@ -38,12 +38,12 @@ copy_tree() {
 
 # Copy bundle trees from arm64, then replace Mach-O executables with universal slices.
 for bundle in \
-  "Super VelocityCurve.component" \
-  "Super VelocityCurve MIDI FX.component" \
-  "Super VelocityCurve.vst3" \
-  "Super VelocityCurve MIDI FX.vst3" \
-  "Super VelocityCurve.app" \
-  "Super VelocityCurve MIDI FX.clap"
+  "Super Velocity Curve.component" \
+  "Super Velocity Curve MIDI FX.component" \
+  "Super Velocity Curve.vst3" \
+  "Super Velocity Curve MIDI FX.vst3" \
+  "Super Velocity Curve.app" \
+  "Super Velocity Curve MIDI FX.clap"
 do
   [[ -e "$ARM64_DIST/$bundle" ]] || continue
   copy_tree "$bundle"
@@ -55,9 +55,9 @@ do
     vst_name="${bundle%.vst3}"
     lipo_pair "$bundle/Contents/MacOS/$vst_name"
   elif [[ "$bundle" == *.app ]]; then
-    lipo_pair "$bundle/Contents/MacOS/Super VelocityCurve"
+    lipo_pair "$bundle/Contents/MacOS/Super Velocity Curve"
   elif [[ "$bundle" == *.clap ]]; then
-    lipo_pair "$bundle/Contents/MacOS/Super VelocityCurve MIDI FX"
+    lipo_pair "$bundle/Contents/MacOS/Super Velocity Curve MIDI FX"
   fi
 done
 

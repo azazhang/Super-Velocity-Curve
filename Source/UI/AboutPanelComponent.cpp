@@ -1,10 +1,11 @@
 #include "AboutPanelComponent.h"
+#include "../Config/AppBranding.h"
 #include "../Config/AppUrls.h"
 #include <BinaryData.h>
 
 AboutPanelComponent::AboutPanelComponent()
 {
-    titleLabel.setText ("Super VelocityCurve", juce::dontSendNotification);
+    titleLabel.setText (svc::branding::kProductName, juce::dontSendNotification);
     titleLabel.setFont (svc::ui::Theme::titleFont());
     titleLabel.setJustificationType (juce::Justification::centred);
 
@@ -26,8 +27,8 @@ AboutPanelComponent::AboutPanelComponent()
     developerNameLabel.setFont (svc::ui::Theme::bodyFont().withHeight (17.0f));
     developerNameLabel.setJustificationType (juce::Justification::centredLeft);
 
-    blurbLabel.setText ("Free, open-source MIDI velocity curves for finger drummers.\n"
-                        "Validated with pluginval strictness 5 (tap badge for details).",
+    blurbLabel.setText ("Per-pad MIDI velocity curves — finger drumming, e-kits, and any setup\n"
+                        "where one global DAW curve is not enough. pluginval strictness 5 (tap badge).",
                         juce::dontSendNotification);
     blurbLabel.setFont (svc::ui::Theme::smallFont());
     blurbLabel.setJustificationType (juce::Justification::centred);

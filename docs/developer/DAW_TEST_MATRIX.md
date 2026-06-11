@@ -1,16 +1,16 @@
 # DAW test matrix
 
-Manual verification checklist for Super VelocityCurve **v0.5**. Use the plugin variant that matches your DAW.
+Manual verification checklist for Super Velocity Curve **v0.5**. Use the plugin variant that matches your DAW.
 
 | DAW | Plugin variant | Insert location | MIDI routing | Status |
 |-----|----------------|-----------------|--------------|--------|
-| **Ableton Live 11/12** | `Super VelocityCurve.vst3` (Instrument) | Instruments on MIDI track | Track 2 **MIDI From** → Track 1 → plugin | Required workaround |
-| **Logic Pro** | `Super VelocityCurve MIDI FX.component` (`aumi`) | MIDI FX slot on software instrument track | Native MIDI FX chain | Preferred |
-| **Logic Pro** | `Super VelocityCurve.component` (`aumf`) | Audio / Music Effect insert | Sidechain MIDI if needed | Fallback |
-| **Reaper** | `Super VelocityCurve MIDI FX.vst3` | Track FX → MIDI | Input monitoring on | Preferred |
-| **Bitwig Studio** | `Super VelocityCurve MIDI FX.clap` or `.vst3` | Note FX / MIDI FX | Device chain | CLAP preferred |
-| **Studio One** | `Super VelocityCurve MIDI FX.vst3` | Instrument or MIDI FX (host-dependent) | Pre-instrument | Test per version |
-| **Standalone** | `Super VelocityCurve.app` / `.exe` | N/A | IAC Driver (macOS) or loopMIDI (Windows) | Virtual MIDI |
+| **Ableton Live 11/12** | `Super Velocity Curve.vst3` (Instrument) | Instruments on MIDI track | Track 2 **MIDI From** → Track 1 → plugin | Required workaround |
+| **Logic Pro** | `Super Velocity Curve MIDI FX.component` (`aumi`) | MIDI FX slot on software instrument track | Native MIDI FX chain | Preferred |
+| **Logic Pro** | `Super Velocity Curve.component` (`aumf`) | Audio / Music Effect insert | Sidechain MIDI if needed | Fallback |
+| **Reaper** | `Super Velocity Curve MIDI FX.vst3` | Track FX → MIDI | Input monitoring on | Preferred |
+| **Bitwig Studio** | `Super Velocity Curve MIDI FX.clap` or `.vst3` | Note FX / MIDI FX | Device chain | CLAP preferred |
+| **Studio One** | `Super Velocity Curve MIDI FX.vst3` | Instrument or MIDI FX (host-dependent) | Pre-instrument | Test per version |
+| **Standalone** | `Super Velocity Curve.app` / `.exe` | N/A | IAC Driver (macOS) or loopMIDI (Windows) | Virtual MIDI |
 
 ## AU type reference
 

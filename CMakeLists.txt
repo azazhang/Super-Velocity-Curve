@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(SuperVelocityCurve VERSION 0.2.8)
+project(SuperVelocityCurve VERSION 0.2.9)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -83,13 +83,13 @@ endfunction()
 
 # Instrument VST3 + AU Music Effect (aumf) + Standalone — required for Ableton Live.
 juce_add_plugin(SuperVelocityCurve
-    COMPANY_NAME "SuperVelocityCurve"
+    COMPANY_NAME "Super Velocity Curve"
     PLUGIN_MANUFACTURER_CODE Svvc
     PLUGIN_CODE Svcv
     BUNDLE_ID com.supervelocitycurve.instrument
     ICON_BIG ${CMAKE_CURRENT_SOURCE_DIR}/Resources/AppIcon.png
     FORMATS AU VST3 Standalone
-    PRODUCT_NAME "Super VelocityCurve"
+    PRODUCT_NAME "Super Velocity Curve"
     IS_SYNTH FALSE
     NEEDS_MIDI_INPUT TRUE
     NEEDS_MIDI_OUTPUT TRUE
@@ -108,13 +108,13 @@ endif()
 
 # MIDI FX VST3 + AU MIDI Processor (aumi) — Logic MIDI FX slot, Reaper, Bitwig.
 juce_add_plugin(SuperVelocityCurveMidiFx
-    COMPANY_NAME "SuperVelocityCurve"
+    COMPANY_NAME "Super Velocity Curve"
     PLUGIN_MANUFACTURER_CODE Svvc
     PLUGIN_CODE Svc2
     BUNDLE_ID com.supervelocitycurve.midifx
     ICON_BIG ${CMAKE_CURRENT_SOURCE_DIR}/Resources/AppIcon.png
     FORMATS AU VST3
-    PRODUCT_NAME "Super VelocityCurve MIDI FX"
+    PRODUCT_NAME "Super Velocity Curve MIDI FX"
     IS_SYNTH FALSE
     NEEDS_MIDI_INPUT TRUE
     NEEDS_MIDI_OUTPUT TRUE
@@ -137,10 +137,10 @@ if(SVC_BUILD_CLAP AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/third_party/clap-juce-
     if(SVC_COPY_PLUGIN_AFTER_BUILD AND APPLE)
         add_custom_command(TARGET SuperVelocityCurveMidiFx_CLAP POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E make_directory "$ENV{HOME}/Library/Audio/Plug-Ins/CLAP"
-            COMMAND ${CMAKE_COMMAND} -E rm -rf "$ENV{HOME}/Library/Audio/Plug-Ins/CLAP/Super VelocityCurve MIDI FX.clap"
+            COMMAND ${CMAKE_COMMAND} -E rm -rf "$ENV{HOME}/Library/Audio/Plug-Ins/CLAP/Super Velocity Curve MIDI FX.clap"
             COMMAND ${CMAKE_COMMAND} -E copy_directory
                 "$<TARGET_BUNDLE_DIR:SuperVelocityCurveMidiFx_CLAP>"
-                "$ENV{HOME}/Library/Audio/Plug-Ins/CLAP/Super VelocityCurve MIDI FX.clap"
+                "$ENV{HOME}/Library/Audio/Plug-Ins/CLAP/Super Velocity Curve MIDI FX.clap"
             COMMENT "Install CLAP to ~/Library/Audio/Plug-Ins/CLAP/")
     endif()
 endif()
@@ -191,8 +191,8 @@ if(SVC_BUILD_TESTS)
         PRIVATE
             JUCE_WEB_BROWSER=0
             JUCE_USE_CURL=0
-            JucePlugin_Name="Super VelocityCurve"
-            JucePlugin_Manufacturer="SuperVelocityCurve"
+            JucePlugin_Name="Super Velocity Curve"
+            JucePlugin_Manufacturer="Super Velocity Curve"
             JucePlugin_ManufacturerCode=0x53767663
             JucePlugin_PluginCode=0x53766376
             JucePlugin_IsSynth=0

@@ -1,6 +1,6 @@
 # Testing & QA strategy
 
-Super VelocityCurve cannot rely on a single human tester. This document describes the layered approach we use and plan to expand.
+Super Velocity Curve cannot rely on a single human tester. This document describes the layered approach we use and plan to expand.
 
 ## Test pyramid
 

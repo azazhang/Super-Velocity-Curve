@@ -1,4 +1,4 @@
-# Agent instructions (Super VelocityCurve)
+# Agent instructions (Super Velocity Curve)
 
 This file is for **AI coding agents** and contributors only — not linked from the top of [README.md](README.md). End users: [README.md](README.md) → [docs/user/](docs/user/). Doc map: [docs/README.md](docs/README.md).
 
@@ -9,6 +9,7 @@ This file is for **AI coding agents** and contributors only — not linked from 
 - **Profiles** serialize to XML `.svcp` via `ProfileStore`
 - **Theme** in `Source/UI/Theme.h` — `ThemeMode::dark` (default) and `light`
 - **URLs** in `Source/Config/AppUrls.h` — GitHub, homepage, YouTube, support, pluginval
+- **Brand strings** in `Source/Config/AppBranding.h` — user-facing name is **Super Velocity Curve** (three words). Code/targets stay `SuperVelocityCurve`. See [docs/developer/NAMING.md](docs/developer/NAMING.md). Run `./scripts/check-branding.sh` before commit.
 
 ## Build & test
 
@@ -25,7 +26,7 @@ ctest --test-dir build --output-on-failure
 1. Run `cmake --build build` (full plugin targets, not tests-only).
 2. Run `ctest --test-dir build --output-on-failure`.
 3. Tell the user the **exact path and binary timestamp** to open, e.g.  
-   `build/SuperVelocityCurve_artefacts/RelWithDebInfo/Standalone/Super VelocityCurve.app`  
+   `build/SuperVelocityCurve_artefacts/RelWithDebInfo/Standalone/Super Velocity Curve.app`  
    Do not end a fix session with “rebuild yourself” or only `open` instructions without having built first.
 
 Local `COPY_PLUGIN_AFTER_BUILD` also installs VST3/AU/CLAP to `~/Library/Audio/Plug-Ins/` — mention that if relevant.

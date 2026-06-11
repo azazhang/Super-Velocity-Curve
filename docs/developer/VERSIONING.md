@@ -1,6 +1,6 @@
 # Versioning policy
 
-Super VelocityCurve uses **0.x.y** while the product is still in active beta:
+Super Velocity Curve uses **0.x.y** while the product is still in active beta:
 
 | Segment | Meaning |
 |---------|---------|

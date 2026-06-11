@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Install unsigned Super VelocityCurve builds (macOS).
+# Install unsigned Super Velocity Curve builds (macOS).
 set -euo pipefail
 
 VST3_INST="$HOME/Library/Audio/Plug-Ins/VST3"

@@ -1,6 +1,6 @@
 # Getting started
 
-Super VelocityCurve shapes **how hard you hit** maps to **MIDI velocity** — per pad, per profile.
+**Super Velocity Curve** maps **how hard you hit** to **MIDI velocity** — per pad, per profile. Start here whether you finger-drum on a grid, play an e-kit into VST drums, or just need more than one global curve in your DAW.
 
 ## Quick workflow
 
@@ -17,50 +17,50 @@ Same table as the [README](../README.md#which-plugin-do-i-need). Quick reference
 
 | DAW | Plugin | Formats | Slot |
 |-----|--------|---------|------|
-| Ableton Live | Super VelocityCurve | VST3 Instrument | Instrument on MIDI track (see below) |
-| Logic Pro | Super VelocityCurve MIDI FX | AU | MIDI FX above instrument |
-| Reaper | Super VelocityCurve MIDI FX | VST3, CLAP; AU on macOS | Track input FX |
-| Bitwig | Super VelocityCurve MIDI FX | CLAP (preferred), VST3 | Note FX |
-| FL Studio | Super VelocityCurve MIDI FX | VST3 | MIDI effect on channel rack |
-| Cubase / Nuendo | Super VelocityCurve MIDI FX | VST3 | MIDI Modifiers |
-| Studio One | Super VelocityCurve MIDI FX | VST3 | Event FX / MIDI FX |
-| Standalone | Super VelocityCurve | app / exe | IAC / loopMIDI to DAW |
+| Ableton Live | Super Velocity Curve | VST3 Instrument | Instrument on MIDI track (see below) |
+| Logic Pro | Super Velocity Curve MIDI FX | AU | MIDI FX above instrument |
+| Reaper | Super Velocity Curve MIDI FX | VST3, CLAP; AU on macOS | Track input FX |
+| Bitwig | Super Velocity Curve MIDI FX | CLAP (preferred), VST3 | Note FX |
+| FL Studio | Super Velocity Curve MIDI FX | VST3 | MIDI effect on channel rack |
+| Cubase / Nuendo | Super Velocity Curve MIDI FX | VST3 | MIDI Modifiers |
+| Studio One | Super Velocity Curve MIDI FX | VST3 | Event FX / MIDI FX |
+| Standalone | Super Velocity Curve | app / exe | IAC / loopMIDI to DAW |
 
 ## Ableton Live
 
 Ableton blocks third-party plugins in the **MIDI FX** slot.
 
-1. Create a MIDI track with **`Super VelocityCurve.vst3`** (Instrument).
+1. Create a MIDI track with **`Super Velocity Curve.vst3`** (Instrument).
 2. On your **drum track**, set **MIDI From** → that track’s output.
 3. Mute the instrument track’s audio if it makes sound — only MIDI routing matters.
 
 ## Logic Pro
 
 1. On a software instrument track, open the **MIDI FX** slot (above the instrument).
-2. Load **`Super VelocityCurve MIDI FX.component`** (AU).
+2. Load **`Super Velocity Curve MIDI FX.component`** (AU).
 3. Your drum plugin (Kontakt, Drum Kit Designer, etc.) stays in the instrument slot.
 
 ## Reaper
 
-1. Add **`Super VelocityCurve MIDI FX`** as a **track input FX** (or container FX before the instrument).
-2. **macOS:** AU `.component` or VST3 or CLAP (`Super VelocityCurve MIDI FX.clap`, Reaper 7+).
+1. Add **`Super Velocity Curve MIDI FX`** as a **track input FX** (or container FX before the instrument).
+2. **macOS:** AU `.component` or VST3 or CLAP (`Super Velocity Curve MIDI FX.clap`, Reaper 7+).
 3. **Windows:** VST3 or CLAP.
 4. Ensure MIDI reaches the track before the drum plugin.
 
 ## Bitwig
 
-1. On a note lane, add **`Super VelocityCurve MIDI FX`** as a **Note FX**.
+1. On a note lane, add **`Super Velocity Curve MIDI FX`** as a **Note FX**.
 2. CLAP is the preferred format on Bitwig; VST3 also works.
 
 ## FL Studio
 
-1. Add **`Super VelocityCurve MIDI FX.vst3`** to the channel as a **MIDI effect** (not a generator).
+1. Add **`Super Velocity Curve MIDI FX.vst3`** to the channel as a **MIDI effect** (not a generator).
 2. Place it **before** your FPC / sampler in the chain so velocities are shaped pre-instrument.
 
 ## Cubase / Nuendo
 
 1. Open the track’s **MIDI Modifiers** or insert as MIDI plugin (depends on version).
-2. Use **`Super VelocityCurve MIDI FX.vst3`**.
+2. Use **`Super Velocity Curve MIDI FX.vst3`**.
 
 ## Pad setup
 

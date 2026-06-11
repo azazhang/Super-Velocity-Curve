@@ -1,6 +1,6 @@
 # Agentic QA workflow
 
-Super VelocityCurve bugs often live at the intersection of **JUCE widget side effects**, **timer-driven UI**, and **multi-step user flows** — areas that pure `ctest` assertions miss. This document defines how humans and coding agents should validate changes **before** marking work done.
+Super Velocity Curve bugs often live at the intersection of **JUCE widget side effects**, **timer-driven UI**, and **multi-step user flows** — areas that pure `ctest` assertions miss. This document defines how humans and coding agents should validate changes **before** marking work done.
 
 ## Principles
 

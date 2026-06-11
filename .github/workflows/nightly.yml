@@ -66,10 +66,10 @@ jobs:
               "$PV" --validate-in-process --strictness-level 5 --timeout-ms 120000 \
               --output-dir pluginval-logs "$target"
           }
-          validate "build/SuperVelocityCurve_artefacts/${CMAKE_BUILD_TYPE}/VST3/Super VelocityCurve.vst3"
-          validate "build/SuperVelocityCurveMidiFx_artefacts/${CMAKE_BUILD_TYPE}/VST3/Super VelocityCurve MIDI FX.vst3"
-          validate "build/SuperVelocityCurve_artefacts/${CMAKE_BUILD_TYPE}/AU/Super VelocityCurve.component"
-          validate "build/SuperVelocityCurveMidiFx_artefacts/${CMAKE_BUILD_TYPE}/AU/Super VelocityCurve MIDI FX.component"
+          validate "build/SuperVelocityCurve_artefacts/${CMAKE_BUILD_TYPE}/VST3/Super Velocity Curve.vst3"
+          validate "build/SuperVelocityCurveMidiFx_artefacts/${CMAKE_BUILD_TYPE}/VST3/Super Velocity Curve MIDI FX.vst3"
+          validate "build/SuperVelocityCurve_artefacts/${CMAKE_BUILD_TYPE}/AU/Super Velocity Curve.component"
+          validate "build/SuperVelocityCurveMidiFx_artefacts/${CMAKE_BUILD_TYPE}/AU/Super Velocity Curve MIDI FX.component"
 
       - uses: actions/upload-artifact@v4
         with:

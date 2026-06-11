@@ -24,4 +24,4 @@ Or use **workflow_dispatch** on the Release workflow (no tag required for pre-re
 
 Artifacts: `SuperVelocityCurve-macOS-unsigned.zip`, `SuperVelocityCurve-Windows-unsigned.zip`.
 
-Each zip includes VST3 + Standalone; macOS adds AU bundles; **both platforms** include `Super VelocityCurve MIDI FX.clap` (flat `.clap` on Windows).
+Each zip includes VST3 + Standalone; macOS adds AU bundles; **both platforms** include `Super Velocity Curve MIDI FX.clap` (flat `.clap` on Windows).

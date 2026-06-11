@@ -1,39 +1,53 @@
-# Super VelocityCurve
+# Super Velocity Curve
 
-Free, open-source **MIDI velocity curves** built for finger drummers and pad players — not keyboard players tweaking one global curve.
+**Per-pad MIDI velocity curves** — when your DAW’s single global curve is not enough.
 
-Shape how hard you hit maps to MIDI velocity **per pad**, with **controller-specific profiles** that travel with you across DAWs and drum plugins.
+Free and open source. Built around **pad grids and drum layouts**, but useful anywhere you need **different dynamics per note**: finger drumming, electronic kits, hybrid percussion, inconsistent controllers, or teaching soft vs loud hits.
 
 > **Status: beta (v0.2.x)** — core workflow works; expect rough edges. [Known limitations](#known-limitations) below.
 
 ## Support the project
 
-If Super VelocityCurve helps your playing or teaching:
+If this helps your playing or teaching:
 
 - [Buy Me a Coffee](https://buymeacoffee.com/azhang)
 - [Ko-fi — Studio J](https://ko-fi.com/studioj)
 
 <a href="https://www.tracktion.com/develop/pluginval"><img src="https://assets.tracktion.com/img/pages/develop/develop-logo-pluginval.png" alt="Verified by pluginval" width="120" /></a> — automated validation at strictness 5 (VST3/AU in CI).
 
-## Why Super VelocityCurve?
+## Who is this for?
+
+| You | What you get |
+|-----|----------------|
+| **Finger drummers** (Launchpad, Maschine, FGDP, SamplePad) | Factory layouts, per-pad curves, ghost-note gates, retrigger guard |
+| **E-kit players** routing into VST drums | Zone curves — soft rims, punchy kicks, different cymbal weights |
+| **Producers** with uneven pad sensitivity | Shape dynamics *before* the sampler; histograms show what you actually play |
+| **Teachers & demo** | Repeatable soft/loud tiers; profiles you can share as `.svcp` files |
+| **Multi-DAW users** | Same profile in Logic, Reaper, Bitwig, Ableton — export/import, not re-tweaking |
+
+**Velocity curve** is the term musicians already know. Super Velocity Curve means **better than one curve for the whole keyboard**.
+
+## Why not just use my DAW curve?
 
 | Problem | Our approach |
 |---------|----------------|
-| One global velocity curve in your DAW | **Per-pad curves** — soft ghost notes on snare, punchy kicks, different curves per cymbal |
-| Pads feel different on Launchpad vs Maschine vs SPD-SX | **Factory profiles** tuned for real layouts (GM, Launchpad 8×8, Maschine, SPD-SX, Yamaha FGDP) |
-| Soft hits disappear or loud hits clip | **Input gates** + floor/ceiling — drop below-threshold hits or clamp output range |
+| One global velocity curve in your DAW | **Per-pad curves** — ghost snares, punchy kicks, separate cymbal weight |
+| Pads feel different on Launchpad vs Maschine vs SPD-SX | **Factory profiles** for real layouts (GM, Launchpad 8×8, Maschine, SPD-SX, Yamaha FGDP) |
+| Soft hits disappear or loud hits clip | **Input gates** + floor/ceiling — drop or clamp out-of-range hits |
 | Double-triggering on sensitive pads | **Per-pad retrigger guard** (ms) |
 | Aftertouch feels wrong on expressive kits | **Separate aftertouch curves** per pad |
-| Moving between DAWs breaks your setup | **Export/import `.svcp` profiles** — your curves are yours |
+| Moving between DAWs breaks your setup | **Export/import `.svcp` profiles** |
 | MIDI 2.0 controllers arriving | **16384-entry LUT**, Auto / MIDI 1.0 / MIDI 2.0 output modes |
 
 **A/B compare**, **live histograms**, **calibration wizard**, and **note remap** round out the workflow.
 
 ## Download & install
 
-**→ [Install guide](docs/user/install.md)** — copy plugins into the right folders, rescan, troubleshoot unsigned builds.
+**→ [Install guide](docs/user/install.md)** — copy plugins, rescan, unsigned-build tips.
 
-**Latest release:** [github.com/azazhang/Super_VelocityCurve/releases/latest](https://github.com/azazhang/Super_VelocityCurve/releases/latest) — macOS and Windows unsigned zips (VST3, Standalone; AU + CLAP on Mac; **CLAP MIDI FX on Windows too**).
+**Latest release:** [github.com/azazhang/Super_VelocityCurve/releases/latest](https://github.com/azazhang/Super_VelocityCurve/releases/latest) — macOS and Windows zips (VST3 + Standalone; AU on Mac; CLAP MIDI FX on **both** platforms).
+
+> **Upgrading from v0.2.8 or earlier?** Plugin folders were renamed to three-word **Super Velocity Curve** bundles. Remove pre-v0.2.9 copies from your plug-in folders and rescan so your DAW does not list duplicates.
 
 ## Getting started
 
@@ -41,7 +55,7 @@ If Super VelocityCurve helps your playing or teaching:
 
 ## Which plugin do I need?
 
-Two builds ship in each release: **Instrument** (Ableton) and **MIDI FX** (most other DAWs).
+Two builds per release: **Instrument** (Ableton) and **MIDI FX** (most other DAWs).
 
 | Format | Instrument | MIDI FX | Platforms |
 |--------|------------|---------|-----------|
@@ -50,20 +64,18 @@ Two builds ship in each release: **Instrument** (Ableton) and **MIDI FX** (most 
 | CLAP | — | ✓ | macOS, Windows |
 | Standalone | ✓ | — | macOS app, Windows exe |
 
-**Why no CLAP Instrument?** By design, not omission. CLAP hosts expose MIDI FX as `note-effect` plugins in the chain — that matches how Reaper, Bitwig, and Logic work. Ableton needs an **Instrument** slot and does not load CLAP, so the Instrument build is VST3/AU only. One MIDI FX CLAP covers every CLAP-capable host.
+**Why no CLAP Instrument?** By design. CLAP hosts load MIDI FX as `note-effect` in the chain (Reaper, Bitwig, Logic). Ableton needs an **Instrument** slot and does not load CLAP — that build stays VST3/AU.
 
 | DAW | Plugin name | Formats | Where to load |
 |-----|-------------|---------|---------------|
-| Ableton Live | Super VelocityCurve | VST3 Instrument | MIDI track (instrument slot — not MIDI FX) |
-| Logic Pro | Super VelocityCurve MIDI FX | AU | MIDI FX slot above the instrument |
-| Reaper | Super VelocityCurve MIDI FX | VST3, CLAP; AU on macOS | Track input FX (before instrument) |
-| Bitwig | Super VelocityCurve MIDI FX | CLAP (preferred), VST3 | Note FX chain |
-| FL Studio | Super VelocityCurve MIDI FX | VST3 | MIDI effect on channel (before sampler) |
-| Cubase / Nuendo | Super VelocityCurve MIDI FX | VST3 | MIDI Modifiers / MIDI plugin slot |
-| Studio One | Super VelocityCurve MIDI FX | VST3 | Event FX / MIDI FX (version-dependent) |
-| Standalone | Super VelocityCurve | app / exe | Route via IAC (Mac) or loopMIDI (Windows) |
-
-Details and screenshots-level steps: [getting-started.md](docs/user/getting-started.md).
+| Ableton Live | Super Velocity Curve | VST3 Instrument | MIDI track (instrument slot — not MIDI FX) |
+| Logic Pro | Super Velocity Curve MIDI FX | AU | MIDI FX slot above the instrument |
+| Reaper | Super Velocity Curve MIDI FX | VST3, CLAP; AU on macOS | Track input FX (before instrument) |
+| Bitwig | Super Velocity Curve MIDI FX | CLAP (preferred), VST3 | Note FX chain |
+| FL Studio | Super Velocity Curve MIDI FX | VST3 | MIDI effect on channel (before sampler) |
+| Cubase / Nuendo | Super Velocity Curve MIDI FX | VST3 | MIDI Modifiers / MIDI plugin slot |
+| Studio One | Super Velocity Curve MIDI FX | VST3 | Event FX / MIDI FX (version-dependent) |
+| Standalone | Super Velocity Curve | app / exe | IAC (Mac) or loopMIDI (Windows) |
 
 ## Features
 
@@ -75,20 +87,17 @@ Details and screenshots-level steps: [getting-started.md](docs/user/getting-star
 
 ## Known limitations
 
-This is honest beta software — not a finished 1.0 product.
-
 | Area | What to expect |
 |------|----------------|
 | **Quality** | v0.2.x — UI and edge cases still improving; report issues on GitHub |
-| **macOS installs** | Release zips are **unsigned**; you may need a one-time security allow or `xattr -cr` (see [install](docs/user/install.md)) |
-| **Ableton** | No third-party MIDI FX slot — use the **VST3 Instrument** build and route MIDI to your drum track |
-| **MIDI 2.0** | High-res output LUT is built in; **host UMP I/O** is not wired yet — most setups still use MIDI 1.0 |
-| **Host coverage** | pluginval checks load/stability; **full DAW smoke** on every host is not complete — try your setup and open an issue if something fails |
+| **macOS installs** | Release zips are **unsigned**; one-time allow or `xattr -cr` (see [install](docs/user/install.md)) |
+| **Ableton** | No third-party MIDI FX slot — use the **VST3 Instrument** build |
+| **MIDI 2.0** | High-res LUT built in; **host UMP I/O** not wired yet — most setups use MIDI 1.0 |
+| **Host coverage** | pluginval checks load/stability; full DAW smoke on every host is not complete |
 
 ## Contributing
 
-Developers: [docs/README.md](docs/README.md) (build, test, CI).  
-Contributors welcome — see [CONTRIBUTING.md](docs/developer/CONTRIBUTING.md).
+Developers: [docs/README.md](docs/README.md) · [Naming layers](docs/developer/NAMING.md) · [CONTRIBUTING.md](docs/developer/CONTRIBUTING.md).
 
 ## License
 
@@ -96,4 +105,4 @@ MIT — see [LICENSE](LICENSE).
 
 ---
 
-**Version & changelog:** [CHANGELOG.md](CHANGELOG.md) · [Versioning policy](docs/developer/VERSIONING.md) (beta numbering)
+**Version & changelog:** [CHANGELOG.md](CHANGELOG.md) · [Versioning policy](docs/developer/VERSIONING.md)

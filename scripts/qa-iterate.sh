@@ -20,6 +20,9 @@ done
 log() { printf '\n[qa-iterate round %s] %s\n' "$ROUND" "$*"; }
 fail() { log "FAIL: $*"; exit 1; }
 
+log "Branding (three-word product name)"
+"$ROOT/scripts/check-branding.sh"
+
 log "Configure + build ($CMAKE_BUILD_TYPE)"
 cmake -B "$BUILD" -G Ninja -DCMAKE_BUILD_TYPE="$CMAKE_BUILD_TYPE" -DSVC_ENABLE_LTO=OFF >/dev/null
 cmake --build "$BUILD" --parallel
@@ -27,8 +30,8 @@ cmake --build "$BUILD" --parallel
 log "Tests (ctest: engine + layout)"
 ctest --test-dir "$BUILD" --output-on-failure
 
-STANDALONE="$BUILD/SuperVelocityCurve_artefacts/$CMAKE_BUILD_TYPE/Standalone/Super VelocityCurve.app"
-BINARY="$STANDALONE/Contents/MacOS/Super VelocityCurve"
+STANDALONE="$BUILD/SuperVelocityCurve_artefacts/$CMAKE_BUILD_TYPE/Standalone/Super Velocity Curve.app"
+BINARY="$STANDALONE/Contents/MacOS/Super Velocity Curve"
 [[ -x "$BINARY" ]] || fail "Standalone binary missing: $BINARY"
 
 if [[ "$(uname)" == "Darwin" ]]; then

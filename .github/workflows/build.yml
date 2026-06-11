@@ -95,10 +95,10 @@ jobs:
               "$PV" --validate-in-process --strictness-level 5 --timeout-ms 120000 \
               --output-dir pluginval-logs "$target"
           }
-          validate "build/SuperVelocityCurve_artefacts/${CMAKE_BUILD_TYPE}/VST3/Super VelocityCurve.vst3"
-          validate "build/SuperVelocityCurveMidiFx_artefacts/${CMAKE_BUILD_TYPE}/VST3/Super VelocityCurve MIDI FX.vst3"
-          validate "build/SuperVelocityCurve_artefacts/${CMAKE_BUILD_TYPE}/AU/Super VelocityCurve.component"
-          validate "build/SuperVelocityCurveMidiFx_artefacts/${CMAKE_BUILD_TYPE}/AU/Super VelocityCurve MIDI FX.component"
+          validate "build/SuperVelocityCurve_artefacts/${CMAKE_BUILD_TYPE}/VST3/Super Velocity Curve.vst3"
+          validate "build/SuperVelocityCurveMidiFx_artefacts/${CMAKE_BUILD_TYPE}/VST3/Super Velocity Curve MIDI FX.vst3"
+          validate "build/SuperVelocityCurve_artefacts/${CMAKE_BUILD_TYPE}/AU/Super Velocity Curve.component"
+          validate "build/SuperVelocityCurveMidiFx_artefacts/${CMAKE_BUILD_TYPE}/AU/Super Velocity Curve MIDI FX.component"
           if [ -d "build/SuperVelocityCurveMidiFx_artefacts/${CMAKE_BUILD_TYPE}/CLAP" ]; then
             clap="$(find build/SuperVelocityCurveMidiFx_artefacts/${CMAKE_BUILD_TYPE}/CLAP -name '*.clap' | head -1)"
             if [ -n "$clap" ]; then
@@ -121,11 +121,11 @@ jobs:
       - name: Package macOS artifacts
         run: |
           mkdir -p dist
-          cp -R "build/SuperVelocityCurve_artefacts/${CMAKE_BUILD_TYPE}/AU/Super VelocityCurve.component" dist/
-          cp -R "build/SuperVelocityCurveMidiFx_artefacts/${CMAKE_BUILD_TYPE}/AU/Super VelocityCurve MIDI FX.component" dist/
-          cp -R "build/SuperVelocityCurve_artefacts/${CMAKE_BUILD_TYPE}/VST3/Super VelocityCurve.vst3" dist/
-          cp -R "build/SuperVelocityCurveMidiFx_artefacts/${CMAKE_BUILD_TYPE}/VST3/Super VelocityCurve MIDI FX.vst3" dist/
-          cp -R "build/SuperVelocityCurve_artefacts/${CMAKE_BUILD_TYPE}/Standalone/Super VelocityCurve.app" dist/
+          cp -R "build/SuperVelocityCurve_artefacts/${CMAKE_BUILD_TYPE}/AU/Super Velocity Curve.component" dist/
+          cp -R "build/SuperVelocityCurveMidiFx_artefacts/${CMAKE_BUILD_TYPE}/AU/Super Velocity Curve MIDI FX.component" dist/
+          cp -R "build/SuperVelocityCurve_artefacts/${CMAKE_BUILD_TYPE}/VST3/Super Velocity Curve.vst3" dist/
+          cp -R "build/SuperVelocityCurveMidiFx_artefacts/${CMAKE_BUILD_TYPE}/VST3/Super Velocity Curve MIDI FX.vst3" dist/
+          cp -R "build/SuperVelocityCurve_artefacts/${CMAKE_BUILD_TYPE}/Standalone/Super Velocity Curve.app" dist/
           if [ -d "build/SuperVelocityCurveMidiFx_artefacts/${CMAKE_BUILD_TYPE}/CLAP" ]; then
             cp -R build/SuperVelocityCurveMidiFx_artefacts/${CMAKE_BUILD_TYPE}/CLAP/*.clap dist/ 2>/dev/null || true
           fi
@@ -193,8 +193,8 @@ jobs:
               throw "pluginval failed for $absPath (exit $($proc.ExitCode))"
             }
           }
-          Validate-Plugin "build/SuperVelocityCurve_artefacts/$env:CMAKE_BUILD_TYPE/VST3/Super VelocityCurve.vst3"
-          Validate-Plugin "build/SuperVelocityCurveMidiFx_artefacts/$env:CMAKE_BUILD_TYPE/VST3/Super VelocityCurve MIDI FX.vst3"
+          Validate-Plugin "build/SuperVelocityCurve_artefacts/$env:CMAKE_BUILD_TYPE/VST3/Super Velocity Curve.vst3"
+          Validate-Plugin "build/SuperVelocityCurveMidiFx_artefacts/$env:CMAKE_BUILD_TYPE/VST3/Super Velocity Curve MIDI FX.vst3"
           if (Test-Path "build/SuperVelocityCurveMidiFx_artefacts/$env:CMAKE_BUILD_TYPE/CLAP") {
             $clap = Get-ChildItem "build/SuperVelocityCurveMidiFx_artefacts/$env:CMAKE_BUILD_TYPE/CLAP" -Filter *.clap | Select-Object -First 1
             if ($clap) {
@@ -212,9 +212,9 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path dist
-          Copy-Item -Recurse "build/SuperVelocityCurve_artefacts/$env:CMAKE_BUILD_TYPE/VST3/Super VelocityCurve.vst3" dist/
-          Copy-Item -Recurse "build/SuperVelocityCurveMidiFx_artefacts/$env:CMAKE_BUILD_TYPE/VST3/Super VelocityCurve MIDI FX.vst3" dist/
-          Copy-Item -Recurse "build/SuperVelocityCurve_artefacts/$env:CMAKE_BUILD_TYPE/Standalone/Super VelocityCurve.exe" dist/
+          Copy-Item -Recurse "build/SuperVelocityCurve_artefacts/$env:CMAKE_BUILD_TYPE/VST3/Super Velocity Curve.vst3" dist/
+          Copy-Item -Recurse "build/SuperVelocityCurveMidiFx_artefacts/$env:CMAKE_BUILD_TYPE/VST3/Super Velocity Curve MIDI FX.vst3" dist/
+          Copy-Item -Recurse "build/SuperVelocityCurve_artefacts/$env:CMAKE_BUILD_TYPE/Standalone/Super Velocity Curve.exe" dist/
           if (Test-Path "build/SuperVelocityCurveMidiFx_artefacts/$env:CMAKE_BUILD_TYPE/CLAP") {
             Copy-Item -Recurse "build/SuperVelocityCurveMidiFx_artefacts/$env:CMAKE_BUILD_TYPE/CLAP/*.clap" dist/ -ErrorAction SilentlyContinue
           }

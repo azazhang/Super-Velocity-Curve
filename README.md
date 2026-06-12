@@ -47,8 +47,6 @@ If this helps your playing or teaching:
 
 **Latest release:** [github.com/azazhang/SuperVelocityCurve/releases/latest](https://github.com/azazhang/SuperVelocityCurve/releases/latest) — macOS and Windows zips (VST3 + Standalone; AU on Mac; CLAP MIDI FX on **both** platforms).
 
-> **Upgrading from v0.2.8 or earlier?** Plugin folders were renamed to three-word **Super Velocity Curve** bundles. Remove pre-v0.2.9 copies from your plug-in folders and rescan so your DAW does not list duplicates.
-
 ## Getting started
 
 **→ [Getting started](docs/user/getting-started.md)** — per-DAW routing, curve editor, profiles, save/export.

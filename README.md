@@ -97,7 +97,7 @@ Two builds per release: **Instrument** (Ableton) and **MIDI FX** (most other DAW
 
 ## Contributing
 
-Developers: [docs/README.md](docs/README.md) · [Naming layers](docs/developer/NAMING.md) · [CONTRIBUTING.md](docs/developer/CONTRIBUTING.md).
+Developers: [docs/README.md](docs/README.md) · [CONTRIBUTING.md](docs/developer/CONTRIBUTING.md).
 
 ## License
 

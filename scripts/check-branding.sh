@@ -22,11 +22,11 @@ while IFS= read -r -d '' f; do
   done
 done < <(git ls-files -z \
   ':!JUCE' ':!third_party' \
-  ':!docs/developer/NAMING.md' ':!scripts/check-branding.sh' \
+  ':!scripts/check-branding.sh' \
   '*.md' '*.h' '*.cpp' '*.sh' '*.yml' 'CMakeLists.txt')
 
 if (( found != 0 )); then
-  echo "Branding check failed. See docs/developer/NAMING.md" >&2
+  echo "Branding check failed. Use Super Velocity Curve or SuperVelocityCurve only." >&2
   exit 1
 fi
 

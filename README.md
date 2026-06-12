@@ -45,7 +45,7 @@ If this helps your playing or teaching:
 
 **→ [Install guide](docs/user/install.md)** — copy plugins, rescan, unsigned-build tips.
 
-**Latest release:** [github.com/azazhang/Super-Velocity-Curve/releases/latest](https://github.com/azazhang/Super-Velocity-Curve/releases/latest) — macOS and Windows zips (VST3 + Standalone; AU on Mac; CLAP MIDI FX on **both** platforms).
+**Latest release:** [github.com/azazhang/SuperVelocityCurve/releases/latest](https://github.com/azazhang/SuperVelocityCurve/releases/latest) — macOS and Windows zips (VST3 + Standalone; AU on Mac; CLAP MIDI FX on **both** platforms).
 
 > **Upgrading from v0.2.8 or earlier?** Plugin folders were renamed to three-word **Super Velocity Curve** bundles. Remove pre-v0.2.9 copies from your plug-in folders and rescan so your DAW does not list duplicates.
 

@@ -9,7 +9,7 @@ This file is for **AI coding agents** and contributors only — not linked from 
 - **Profiles** serialize to XML `.svcp` via `ProfileStore`
 - **Theme** in `Source/UI/Theme.h` — `ThemeMode::dark` (default) and `light`
 - **URLs** in `Source/Config/AppUrls.h` — GitHub, homepage, YouTube, support, pluginval
-- **Brand strings** in `Source/Config/AppBranding.h` — user-facing name is **Super Velocity Curve** (three words). Code/targets stay `SuperVelocityCurve`. See [docs/developer/NAMING.md](docs/developer/NAMING.md). Run `./scripts/check-branding.sh` before commit.
+- **Naming:** **Super Velocity Curve** (people) vs **SuperVelocityCurve** (repo, code, zips). See [docs/developer/NAMING.md](docs/developer/NAMING.md). Run `./scripts/check-branding.sh` before commit.
 
 ## Build & test
 

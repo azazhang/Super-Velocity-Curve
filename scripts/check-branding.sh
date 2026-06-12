@@ -1,19 +1,25 @@
 #!/usr/bin/env bash
-# Fail if the deprecated hybrid brand "Super VelocityCurve" appears in tracked project files.
+# Fail on deprecated name spellings. Allowed: "Super Velocity Curve" | SuperVelocityCurve
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-HYBRID='Super VelocityCurve'
+FORBIDDEN=(
+  'Super VelocityCurve'
+  'Super-Velocity-Curve'
+  'Super_VelocityCurve'
+)
 found=0
 
 while IFS= read -r -d '' f; do
-  if grep -q "$HYBRID" "$f"; then
-    echo "HYBRID BRAND (use 'Super Velocity Curve'): $f"
-    grep -n "$HYBRID" "$f" || true
-    found=1
-  fi
+  for bad in "${FORBIDDEN[@]}"; do
+    if grep -q "$bad" "$f"; then
+      echo "FORBIDDEN '$bad' in $f"
+      grep -n "$bad" "$f" || true
+      found=1
+    fi
+  done
 done < <(git ls-files -z \
   ':!JUCE' ':!third_party' \
   ':!docs/developer/NAMING.md' ':!scripts/check-branding.sh' \
@@ -24,4 +30,4 @@ if (( found != 0 )); then
   exit 1
 fi
 
-echo "Branding check passed (no hybrid '$HYBRID')."
+echo "Branding check passed."

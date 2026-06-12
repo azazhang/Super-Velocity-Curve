@@ -15,8 +15,7 @@ The [README](../README.md) at the repo root is the public landing page for end u
 |-----|---------|
 | [developer/CONTRIBUTING.md](developer/CONTRIBUTING.md) | Build, test, PR workflow |
 | [developer/VERSIONING.md](developer/VERSIONING.md) | Beta version numbering (0.2.x) |
-| [developer/NAMING.md](developer/NAMING.md) | Brand vs code vs repo naming layers |
-| [developer/REPO_RENAME.md](developer/REPO_RENAME.md) | GitHub slug rename (completed 2026-06-11) |
+| [developer/NAMING.md](developer/NAMING.md) | Two naming forms (brand vs machine) |
 | [CHANGELOG.md](../CHANGELOG.md) | Release notes |
 | [developer/CI.md](developer/CI.md) | CI architecture |
 | [developer/DAW_TEST_MATRIX.md](developer/DAW_TEST_MATRIX.md) | Host compatibility checklist |

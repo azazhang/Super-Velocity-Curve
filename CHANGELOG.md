@@ -3,7 +3,8 @@
 ## Unreleased
 
 ### Changed
-- GitHub repository renamed to [`azazhang/Super-Velocity-Curve`](https://github.com/azazhang/Super-Velocity-Curve) (redirects from `Super_VelocityCurve`)
+- GitHub repository: [`azazhang/SuperVelocityCurve`](https://github.com/azazhang/SuperVelocityCurve) (older repo URLs redirect)
+- Naming docs simplified to two forms — see [NAMING.md](docs/developer/NAMING.md)
 
 ## v0.2.9 (2026-06-10)
 

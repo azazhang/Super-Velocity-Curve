@@ -2,7 +2,7 @@
 # Bounded CI watcher — avoids unbounded `gh run watch` background hangs in agent shells.
 set -euo pipefail
 
-REPO="${GITHUB_REPOSITORY:-azazhang/Super-Velocity-Curve}"
+REPO="${GITHUB_REPOSITORY:-azazhang/SuperVelocityCurve}"
 RUN_ID="${1:-$(gh run list --repo "$REPO" --limit 1 --json databaseId -q '.[0].databaseId')}"
 MAX_WAIT_SEC="${CI_WATCH_TIMEOUT_SEC:-2700}"  # 45 minutes
 POLL_SEC="${CI_WATCH_POLL_SEC:-30}"

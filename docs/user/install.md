@@ -4,7 +4,7 @@ No coding required. Pick the download for your computer, unzip, and copy the plu
 
 ## Step 1 — Download
 
-1. Open **[Releases](https://github.com/azazhang/Super-Velocity-Curve/releases/latest)** on GitHub.
+1. Open **[Releases](https://github.com/azazhang/SuperVelocityCurve/releases/latest)** on GitHub.
 2. Download **`SuperVelocityCurve-macOS-unsigned.zip`** (Mac) or **`SuperVelocityCurve-Windows-unsigned.zip`** (Windows).
 
 > Builds are **unsigned** (free/open source). macOS may ask you to allow the plugin once — see [Troubleshooting](#troubleshooting) below.
@@ -72,4 +72,4 @@ Confirm the `.vst3` folder (not just files inside it) is in `Common Files\VST3\`
 
 ### Still stuck?
 
-Open a [GitHub Issue](https://github.com/azazhang/Super-Velocity-Curve/issues) and say your OS, DAW, and which plugin variant you installed.
+Open a [GitHub Issue](https://github.com/azazhang/SuperVelocityCurve/issues) and say your OS, DAW, and which plugin variant you installed.

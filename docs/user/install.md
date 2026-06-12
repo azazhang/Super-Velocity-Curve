@@ -18,8 +18,6 @@ Double-click the zip file. You should see folders like:
 - `Super Velocity Curve MIDI FX.clap` (Mac and Windows — MIDI FX only)
 - `Super Velocity Curve.app` (Mac standalone) or `Super Velocity Curve.exe` (Windows standalone)
 
-> **Upgrading from v0.2.8 or older?** Bundles were renamed to **Super Velocity Curve** (three words). Delete pre-v0.2.9 copies from your plug-in folders before copying the new ones, then rescan — otherwise your DAW may list both.
-
 ## Step 3 — Copy plugins to the right place
 
 ### macOS

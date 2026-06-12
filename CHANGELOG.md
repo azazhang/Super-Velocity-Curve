@@ -13,9 +13,6 @@
 - README marketing: audience hooks (finger drummers, e-kits, producers, teachers, multi-DAW)
 - `Source/Config/AppBranding.h` + `scripts/check-branding.sh`
 
-### Note
-- Plugin **folder names** on disk now use three words (`Super Velocity Curve.vst3`, etc.). Remove pre-v0.2.9 bundles and rescan to avoid duplicate DAW entries. Host plugin IDs are unchanged.
-
 ## v0.2.8 (2026-06-10)
 
 ### Fixed

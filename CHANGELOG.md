@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+## v0.2.22 (2026-06-13)
+
+### Fixed
+- **macOS installer:** Plug-in bundles with spaces in their names (e.g. `Super Velocity Curve.vst3`) are now copied correctly; v0.2.21 only installed the standalone `.app`
+- **macOS installer:** Script no longer reports failure after a successful install when run from an already-unzipped folder
+
+### Added
+- **CI:** `verify-macos-installer.sh` runs the same install path as double-clicking **Install Super Velocity Curve** before macOS release zips are published
+
 ## v0.2.21 (2026-06-13)
 
 ### Fixed

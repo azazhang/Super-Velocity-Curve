@@ -29,7 +29,11 @@ else
 fi
 
 WORKDIR=""
-cleanup_workdir() { [[ -n "$WORKDIR" && -d "$WORKDIR" ]] && rm -rf "$WORKDIR"; }
+cleanup_workdir() {
+  if [[ -n "${WORKDIR:-}" && -d "$WORKDIR" ]]; then
+    rm -rf "$WORKDIR"
+  fi
+}
 trap cleanup_workdir EXIT
 
 if [[ -f "$SRC" && "$SRC" == *.zip ]]; then
@@ -46,7 +50,6 @@ fi
 
 mkdir -p "$VST3_INST" "$AU_INST" "$CLAP_INST"
 
-# Remove legacy bundle names from earlier branding so DAWs do not list duplicates.
 LEGACY_AU=(
   "Super VelocityCurve MIDI FX.component"
   "Super_VelocityCurve MIDI FX.component"
@@ -86,45 +89,70 @@ prepare_bundle() {
   codesign --force --sign - --timestamp=none --deep "$bundle"
 }
 
-install_glob() {
+install_items() {
   local dest="$1"
   shift
-  for pattern in "$@"; do
-    for item in $pattern; do
-      [[ -e "$item" ]] || continue
-      [[ "$(basename "$item")" == Super\ VelocityCurve* ]] && continue
-      echo "Installing $(basename "$item") → $dest"
-      rm -rf "$dest/$(basename "$item")"
-      COPYFILE_DISABLE=1 cp -R "$item" "$dest/"
-      prepare_bundle "$dest/$(basename "$item")"
-    done
+  local item name
+  for item in "$@"; do
+    [[ -e "$item" ]] || continue
+    name="$(basename "$item")"
+    [[ "$name" == Super\ VelocityCurve* ]] && continue
+    echo "Installing $name → $dest"
+    rm -rf "$dest/$name"
+    COPYFILE_DISABLE=1 cp -R "$item" "$dest/"
+    prepare_bundle "$dest/$name"
   done
 }
 
-echo "Installing plugins (quarantine removal + ad-hoc sign)…"
+echo "Installing plugins…"
 
-install_glob "$VST3_INST" \
-  "$SRC"/*.vst3 "$SRC"/*.VST3 \
-  "$SRC"/VST3/*.vst3 "$SRC"/VST3/*.VST3 \
+shopt -s nullglob
+
+vst3_items=(
+  "$SRC"/*.vst3 "$SRC"/*.VST3
+  "$SRC"/VST3/*.vst3 "$SRC"/VST3/*.VST3
   "$SRC"/*/*.vst3 "$SRC"/*/*.VST3
-
-install_glob "$AU_INST" \
-  "$SRC"/*.component \
-  "$SRC"/AU/*.component \
+)
+au_items=(
+  "$SRC"/*.component
+  "$SRC"/AU/*.component
   "$SRC"/*/*.component
-
-install_glob "$CLAP_INST" \
-  "$SRC"/*.clap \
-  "$SRC"/CLAP/*.clap \
+)
+clap_items=(
+  "$SRC"/*.clap
+  "$SRC"/CLAP/*.clap
   "$SRC"/*/*.clap
+)
+app_items=(
+  "$SRC"/*.app
+  "$SRC"/*/*.app
+)
 
-for item in "$SRC"/*.app "$SRC"/*/*.app; do
-  [[ -e "$item" ]] || continue
-  echo "Installing $(basename "$item") → $APP_INST"
-  rm -rf "$APP_INST/$(basename "$item")"
+shopt -u nullglob
+
+if (( ${#vst3_items[@]} > 0 )); then
+  install_items "$VST3_INST" "${vst3_items[@]}"
+fi
+if (( ${#au_items[@]} > 0 )); then
+  install_items "$AU_INST" "${au_items[@]}"
+fi
+if (( ${#clap_items[@]} > 0 )); then
+  install_items "$CLAP_INST" "${clap_items[@]}"
+fi
+
+for item in "${app_items[@]}"; do
+  name="$(basename "$item")"
+  echo "Installing $name → $APP_INST"
+  rm -rf "$APP_INST/$name"
   COPYFILE_DISABLE=1 cp -R "$item" "$APP_INST/"
-  prepare_bundle "$APP_INST/$(basename "$item")"
+  prepare_bundle "$APP_INST/$name"
 done
+
+plugin_count=$((${#vst3_items[@]} + ${#au_items[@]} + ${#clap_items[@]}))
+if (( plugin_count == 0 )); then
+  echo "Error: no plug-in bundles found in $SRC" >&2
+  exit 1
+fi
 
 cat <<'EOF'
 

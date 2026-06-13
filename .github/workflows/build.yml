@@ -134,6 +134,7 @@ jobs:
           cp dist-assets/macOS/README.txt dist/
           chmod +x dist/install-macos.sh
           chmod +x "dist/Install Super Velocity Curve.command"
+          bash scripts/verify-macos-installer.sh dist
           cd dist && zip -r ../SuperVelocityCurve-macOS-unsigned.zip .
 
       - uses: actions/upload-artifact@v4

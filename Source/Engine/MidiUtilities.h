@@ -35,11 +35,12 @@ struct MidiRoutingSettings
     int inputChannelFilter = 0;
     int outputChannel = 0;
     bool remapEnabled = false;
-    std::array<std::optional<NoteRemapEntry>, 128> noteRemap {};
+    std::vector<NoteRemapEntry> noteRemaps;
 
     void setRemap (int sourceNote, int sourceChannel, int targetNote, int targetChannel);
     void clearRemaps();
     bool remapNote (int& note, int& channel) const;
+    const std::vector<NoteRemapEntry>& getRemaps() const noexcept { return noteRemaps; }
     bool passesChannelFilter (int channel) const;
     int transformOutputChannel (int channel) const;
 };

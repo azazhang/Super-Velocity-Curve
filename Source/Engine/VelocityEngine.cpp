@@ -195,6 +195,14 @@ void VelocityEngine::processMidiBuffer (juce::MidiBuffer& buffer, int numSamples
         const auto sampleOffset = metadata.samplePosition;
         const auto eventTime = runningTimeSeconds + (static_cast<double> (sampleOffset) / sampleRate);
 
+        int physicalNote = -1;
+        int physicalChannel = 0;
+        if (message.isNoteOn() || message.isNoteOff())
+        {
+            physicalNote = message.getNoteNumber();
+            physicalChannel = message.getChannel();
+        }
+
         if (! midiRouting.processMessage (message))
             continue;
 
@@ -206,9 +214,9 @@ void VelocityEngine::processMidiBuffer (juce::MidiBuffer& buffer, int numSamples
         {
             const auto inputNormalized = decodeInputFromMidi1 (message.getVelocity());
             const bool inputIsMidi2 = false;
-            const auto settings = resolvePadSettings (note, channel);
+            const auto settings = resolvePadSettings (physicalNote, physicalChannel);
 
-            if (shouldDropRetrigger (settings, note, channel, eventTime))
+            if (shouldDropRetrigger (settings, physicalNote, physicalChannel, eventTime))
                 continue;
 
             const auto outputNormalized = processNoteVelocity (settings, inputNormalized);
@@ -242,11 +250,11 @@ void VelocityEngine::processMidiBuffer (juce::MidiBuffer& buffer, int numSamples
             voice.sounding = true;
             voice.suppressNextNoteOff = false;
 
-            histogramBank.record (note, channel, inputNormalized, outputNormalized);
+            histogramBank.record (physicalNote, physicalChannel, inputNormalized, outputNormalized);
 
             HitEvent hit;
-            hit.note = note;
-            hit.channel = channel;
+            hit.note = physicalNote;
+            hit.channel = physicalChannel;
             hit.inputVelocity = inputNormalized;
             hit.outputVelocity = outputNormalized;
             hit.outputMidi2 = encoding.emitMidi2Ump ? encoding.midi2 : -1;
@@ -254,7 +262,7 @@ void VelocityEngine::processMidiBuffer (juce::MidiBuffer& buffer, int numSamples
             hit.timestamp = static_cast<std::uint64_t> (eventTime * 1000.0);
             hitFifo.push (hit);
 
-            markRetriggerTime (note, channel, eventTime);
+            markRetriggerTime (physicalNote, physicalChannel, eventTime);
             processed.addEvent (message, sampleOffset);
             continue;
         }
@@ -277,7 +285,7 @@ void VelocityEngine::processMidiBuffer (juce::MidiBuffer& buffer, int numSamples
             }
             else if (processingSettings.zoneRouting.enabled)
             {
-                const auto settings = resolvePadSettings (note, channel);
+                const auto settings = resolvePadSettings (physicalNote, physicalChannel);
                 message.setChannel (resolveOutputChannel (settings.group, channel));
             }
 
@@ -295,7 +303,9 @@ void VelocityEngine::processMidiBuffer (juce::MidiBuffer& buffer, int numSamples
                 message.setChannel (voice.outputChannel);
             else
             {
-                const auto settings = resolvePadSettings (note, channel);
+                const auto atNote = physicalNote >= 0 ? physicalNote : note;
+                const auto atChannel = physicalNote >= 0 ? physicalChannel : channel;
+                const auto settings = resolvePadSettings (atNote, atChannel);
                 message.setChannel (resolveOutputChannel (settings.group, channel));
             }
         }

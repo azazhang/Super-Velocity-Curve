@@ -345,6 +345,7 @@ SuperVelocityCurveAudioProcessorEditor::SuperVelocityCurveAudioProcessorEditor (
     {
         audioProcessor.getProfileStore().syncActiveUserProfileFromEdits();
         applyProfileToEngine();
+        refreshRoutingPanels();
     };
 
     saveProfileButton.onClick = [this]

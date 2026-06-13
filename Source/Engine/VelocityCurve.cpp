@@ -98,20 +98,20 @@ void VelocityCurve::setCeiling (float normalizedCeiling) noexcept
     rebuildLut();
 }
 
-float VelocityCurve::interpolateControlPoints (const std::vector<CurveControlPoint>& points, float input)
+float VelocityCurve::interpolateControlPoints (const CurveControlPoint* points, size_t numPoints, float input)
 {
     const auto clampedInput = std::clamp (input, 0.0f, 1.0f);
 
-    if (points.empty())
+    if (points == nullptr || numPoints == 0)
         return clampedInput;
 
-    if (clampedInput <= points.front().input)
-        return points.front().output;
+    if (clampedInput <= points[0].input)
+        return points[0].output;
 
-    if (clampedInput >= points.back().input)
-        return points.back().output;
+    if (clampedInput >= points[numPoints - 1].input)
+        return points[numPoints - 1].output;
 
-    for (size_t i = 1; i < points.size(); ++i)
+    for (size_t i = 1; i < numPoints; ++i)
     {
         const auto& a = points[i - 1];
         const auto& b = points[i];
@@ -127,7 +127,12 @@ float VelocityCurve::interpolateControlPoints (const std::vector<CurveControlPoi
         }
     }
 
-    return points.back().output;
+    return points[numPoints - 1].output;
+}
+
+float VelocityCurve::interpolateControlPoints (const std::vector<CurveControlPoint>& points, float input)
+{
+    return interpolateControlPoints (points.data(), points.size(), input);
 }
 
 float VelocityCurve::evaluateMappedOutput (float input) const noexcept

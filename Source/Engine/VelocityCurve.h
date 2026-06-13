@@ -53,6 +53,7 @@ public:
 
     static std::vector<CurveControlPoint> makePresetPoints (CurvePreset preset);
     static void enforceMonotonicOutputs (std::vector<CurveControlPoint>& points);
+    static float interpolateControlPoints (const CurveControlPoint* points, size_t numPoints, float input);
 
 private:
     std::vector<CurveControlPoint> controlPoints;

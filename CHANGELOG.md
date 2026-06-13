@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+## v0.2.24 (2026-06-13)
+
+### Fixed
+- **Engine:** Pad curves/gates/retrigger now resolve on the physical MIDI note before note remap (fixes Roland SPD-SX and similar profiles)
+- **Engine:** Library compensation no longer builds a `VelocityCurve` on the audio thread
+- **Engine:** MIDI 2.0 wire velocity now scales to the full 16-bit range (0–65535)
+- **Engine:** Note remap table supports multiple source channels for the same note
+- **UI:** Note remap checkbox stays in sync when rows are added or cleared
+- **UI:** Typed MIDI note values in pad settings commit immediately
+- **Dev build:** Standalone target no longer fails post-build sign when `COPY_PLUGIN_AFTER_BUILD` is on
+
 ## v0.2.23 (2026-06-13)
 
 ### Fixed

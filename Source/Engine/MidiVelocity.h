@@ -11,7 +11,7 @@ namespace svc
 // so profiles remain valid as hosts and controllers adopt higher resolution.
 
 inline constexpr int midi1Max = 127;
-inline constexpr int midi2Max = 16383;
+inline constexpr int midi2Max = 65535;
 
 enum class VelocityOutputMode
 {

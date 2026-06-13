@@ -94,11 +94,8 @@ void NoteRemapEditorComponent::rebuildEntriesFromProfile()
         return;
 
     const auto& routing = profile->getMidiRouting();
-    for (int i = 0; i < 128; ++i)
-    {
-        if (routing.noteRemap[static_cast<size_t> (i)].has_value())
-            entries.push_back (*routing.noteRemap[static_cast<size_t> (i)]);
-    }
+    for (const auto& entry : routing.getRemaps())
+        entries.push_back (entry);
 }
 
 void NoteRemapEditorComponent::syncProfileFromEntries()

@@ -1,22 +1,29 @@
 #include "MidiUtilities.h"
+#include <algorithm>
 
 namespace svc
 {
 
 void MidiRoutingSettings::setRemap (int sourceNote, int sourceChannel, int targetNote, int targetChannel)
 {
-    if (sourceNote >= 0 && sourceNote < 128)
-    {
-        noteRemap[static_cast<size_t> (sourceNote)] = NoteRemapEntry {
-            sourceNote, sourceChannel, targetNote, targetChannel
-        };
-        remapEnabled = true;
-    }
+    if (sourceNote < 0 || sourceNote >= 128)
+        return;
+
+    noteRemaps.erase (std::remove_if (noteRemaps.begin(), noteRemaps.end(),
+                                      [sourceNote, sourceChannel] (const NoteRemapEntry& entry)
+                                      {
+                                          return entry.sourceNote == sourceNote
+                                              && entry.sourceChannel == sourceChannel;
+                                      }),
+                      noteRemaps.end());
+
+    noteRemaps.push_back ({ sourceNote, sourceChannel, targetNote, targetChannel });
+    remapEnabled = ! noteRemaps.empty();
 }
 
 void MidiRoutingSettings::clearRemaps()
 {
-    noteRemap.fill (std::nullopt);
+    noteRemaps.clear();
     remapEnabled = false;
 }
 
@@ -25,18 +32,22 @@ bool MidiRoutingSettings::remapNote (int& note, int& channel) const
     if (! remapEnabled || note < 0 || note >= 128)
         return false;
 
-    const auto& entry = noteRemap[static_cast<size_t> (note)];
-    if (! entry.has_value())
-        return false;
+    for (const auto& entry : noteRemaps)
+    {
+        if (entry.sourceNote != note)
+            continue;
 
-    if (entry->sourceChannel != 0 && entry->sourceChannel != channel)
-        return false;
+        if (entry.sourceChannel != 0 && entry.sourceChannel != channel)
+            continue;
 
-    note = entry->targetNote;
-    if (entry->targetChannel != 0)
-        channel = entry->targetChannel;
+        note = entry.targetNote;
+        if (entry.targetChannel != 0)
+            channel = entry.targetChannel;
 
-    return true;
+        return true;
+    }
+
+    return false;
 }
 
 bool MidiRoutingSettings::passesChannelFilter (int channel) const

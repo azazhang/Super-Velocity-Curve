@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(SuperVelocityCurve VERSION 0.2.23)
+project(SuperVelocityCurve VERSION 0.2.24)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -160,7 +160,6 @@ if(APPLE)
     svc_adhoc_sign_plugin_bundles(
         SuperVelocityCurve_VST3 "$ENV{HOME}/Library/Audio/Plug-Ins/VST3/Super Velocity Curve.vst3"
         SuperVelocityCurve_AU "$ENV{HOME}/Library/Audio/Plug-Ins/Components/Super Velocity Curve.component"
-        SuperVelocityCurve_Standalone "$ENV{HOME}/Applications/Super Velocity Curve.app"
         SuperVelocityCurveMidiFx_VST3 "$ENV{HOME}/Library/Audio/Plug-Ins/VST3/Super Velocity Curve MIDI FX.vst3"
         SuperVelocityCurveMidiFx_AU "$ENV{HOME}/Library/Audio/Plug-Ins/Components/Super Velocity Curve MIDI FX.component")
 endif()

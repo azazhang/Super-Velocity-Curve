@@ -322,6 +322,61 @@ static int testProfileMidiKeyValidation()
     return 0;
 }
 
+static int testRemapPerChannelEntries()
+{
+    svc::MidiRoutingSettings routing;
+    routing.setRemap (36, 1, 40, 1);
+    routing.setRemap (36, 10, 50, 10);
+    EXPECT_TRUE (routing.getRemaps().size() == 2);
+
+    int note = 36;
+    int channel = 1;
+    EXPECT_TRUE (routing.remapNote (note, channel));
+    EXPECT_TRUE (note == 40 && channel == 1);
+
+    note = 36;
+    channel = 10;
+    EXPECT_TRUE (routing.remapNote (note, channel));
+    EXPECT_TRUE (note == 50 && channel == 10);
+    return 0;
+}
+
+static int testRemapUsesPhysicalPadSettings()
+{
+    svc::MidiRoutingSettings routing;
+    routing.setRemap (60, 10, 36, 10);
+
+    svc::VelocityEngine engine;
+    engine.setMidiRouting (routing);
+    engine.setOutputMode (svc::VelocityOutputMode::midi1);
+
+    svc::PadSettings pad;
+    pad.enabled = true;
+    pad.curve.setControlPoints ({ { 0.0f, 0.0f }, { 1.0f, 0.25f } });
+    engine.setPadSettings (60, 10, pad);
+
+    juce::MidiBuffer buffer;
+    buffer.addEvent (juce::MidiMessage::noteOn (10, 60, 1.0f), 0);
+    engine.processMidiBuffer (buffer, 64);
+    EXPECT_TRUE (buffer.getNumEvents() == 1);
+
+    juce::MidiMessage msg;
+    for (const auto metadata : buffer)
+        msg = metadata.getMessage();
+
+    EXPECT_TRUE (msg.getNoteNumber() == 36);
+    EXPECT_TRUE (msg.getChannel() == 10);
+    EXPECT_TRUE (msg.getVelocity() >= 28 && msg.getVelocity() <= 36);
+    return 0;
+}
+
+static int testMidi2FullScaleVelocity()
+{
+    EXPECT_TRUE (svc::normalizedToMidi2 (1.0f) == svc::midi2Max);
+    EXPECT_TRUE (std::abs (svc::normalizedToMidi2 (0.5f) - svc::midi2Max / 2) <= 1);
+    return 0;
+}
+
 static int testDeterministicVelocityReplay()
 {
     svc::VelocityEngine engine;
@@ -509,6 +564,9 @@ int main()
     if (testVelocityEnginePerPadRetrigger() != 0) return 1;
     if (testProfileApplyClearsOldPads() != 0) return 1;
     if (testNoteRemapAndChannelFilter() != 0) return 1;
+    if (testRemapPerChannelEntries() != 0) return 1;
+    if (testRemapUsesPhysicalPadSettings() != 0) return 1;
+    if (testMidi2FullScaleVelocity() != 0) return 1;
     if (testMidi1OutputMode() != 0) return 1;
     if (testGateClampMode() != 0) return 1;
     if (testPerPadHistogram() != 0) return 1;

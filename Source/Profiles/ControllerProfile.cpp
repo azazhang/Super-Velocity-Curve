@@ -127,18 +127,14 @@ juce::ValueTree ControllerProfile::toValueTree() const
     tree.appendChild (zoneTree, nullptr);
 
     juce::ValueTree remaps ("Remaps");
-    for (int i = 0; i < 128; ++i)
+    for (const auto& e : midiRouting.getRemaps())
     {
-        if (midiRouting.noteRemap[static_cast<size_t> (i)].has_value())
-        {
-            const auto& e = *midiRouting.noteRemap[static_cast<size_t> (i)];
-            juce::ValueTree r ("Remap");
-            r.setProperty ("sourceNote", e.sourceNote, nullptr);
-            r.setProperty ("sourceChannel", e.sourceChannel, nullptr);
-            r.setProperty ("targetNote", e.targetNote, nullptr);
-            r.setProperty ("targetChannel", e.targetChannel, nullptr);
-            remaps.appendChild (r, nullptr);
-        }
+        juce::ValueTree r ("Remap");
+        r.setProperty ("sourceNote", e.sourceNote, nullptr);
+        r.setProperty ("sourceChannel", e.sourceChannel, nullptr);
+        r.setProperty ("targetNote", e.targetNote, nullptr);
+        r.setProperty ("targetChannel", e.targetChannel, nullptr);
+        remaps.appendChild (r, nullptr);
     }
     tree.appendChild (remaps, nullptr);
 

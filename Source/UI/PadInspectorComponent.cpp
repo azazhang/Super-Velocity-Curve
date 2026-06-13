@@ -35,10 +35,10 @@ PadInspectorComponent::PadInspectorComponent()
     midiNoteSlider.onValueChange = [this]
     {
         currentPad.midiNote = static_cast<int> (midiNoteSlider.getValue());
+        notifyChanged();
     };
     midiNoteSlider.onDragEnd = [this]
     {
-        notifyChanged();
         finishPadEdit();
     };
     content.addAndMakeVisible (midiNoteLabel);

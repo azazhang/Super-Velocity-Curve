@@ -74,6 +74,27 @@ void SuperVelocityCurveAudioProcessor::applyProfileToEngine()
     profileStore.applyActiveToEngine (engine);
 }
 
+void SuperVelocityCurveAudioProcessor::syncPadToEngine (const svc::ProfilePad& pad)
+{
+    engine.setPadSettings (pad.midiNote, pad.midiChannel, svc::ControllerProfile::toEngineSettings (pad));
+}
+
+void SuperVelocityCurveAudioProcessor::syncRoutingToEngine()
+{
+    const auto& profile = profileStore.getActiveProfile();
+    engine.setMidiRouting (profile.getMidiRouting());
+    engine.setProcessingSettings (profile.getProcessingSettings());
+}
+
+void SuperVelocityCurveAudioProcessor::handleAsyncUpdate()
+{
+    if (auto* editor = getActiveEditor())
+    {
+        if (auto* svcEditor = dynamic_cast<SuperVelocityCurveAudioProcessorEditor*> (editor))
+            svcEditor->handlePendingEngineHits();
+    }
+}
+
 void SuperVelocityCurveAudioProcessor::injectStandaloneMidi (const juce::MidiMessage& message)
 {
     const juce::ScopedLock lock (standaloneMidiLock);
@@ -100,6 +121,9 @@ void SuperVelocityCurveAudioProcessor::processBlock (juce::AudioBuffer<float>& b
     }
 
     engine.processMidiBuffer (midiMessages, buffer.getNumSamples());
+
+    if (engine.getHitFifo().hasPending())
+        triggerAsyncUpdate();
 
     if (wrapperType == wrapperType_Standalone && standaloneMidiOutput != nullptr)
     {

@@ -30,7 +30,11 @@ public:
         const auto nextWrite = (write + 1) % capacity;
 
         if (nextWrite == readIndex.load (std::memory_order_acquire))
-            return false;
+        {
+            // Drop the oldest event so the newest hits always reach the UI.
+            const auto read = readIndex.load (std::memory_order_relaxed);
+            readIndex.store ((read + 1) % capacity, std::memory_order_release);
+        }
 
         buffer[static_cast<size_t> (write)] = event;
         writeIndex.store (nextWrite, std::memory_order_release);

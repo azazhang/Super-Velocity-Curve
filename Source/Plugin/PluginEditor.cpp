@@ -200,10 +200,7 @@ SuperVelocityCurveAudioProcessorEditor::SuperVelocityCurveAudioProcessorEditor (
             applyListenCurveToEngine (pad.curve);
     };
 
-    curveEditor.onPadEditFinished = [this]
-    {
-        applyProfileToEngine();
-    };
+    curveEditor.onPadEditFinished = nullptr;
 
     padInspector.onPadChanged = [this] (int index, const svc::ProfilePad& inspectorPad)
     {
@@ -223,7 +220,12 @@ SuperVelocityCurveAudioProcessorEditor::SuperVelocityCurveAudioProcessorEditor (
 
     padInspector.onPadEditFinished = [this]
     {
-        applyProfileToEngine();
+        if (selectedPadIndex < 0)
+            return;
+
+        const auto& pad = audioProcessor.getProfileStore().getActiveProfile().getPads()[static_cast<size_t> (selectedPadIndex)];
+        audioProcessor.syncPadToEngine (pad);
+        syncAbAuditionIfActive();
     };
 
     padInspector.onEditAftertouchRequested = [this]
@@ -256,7 +258,7 @@ SuperVelocityCurveAudioProcessorEditor::SuperVelocityCurveAudioProcessorEditor (
     curvePresetBox.onChange = [this]
     {
         curveEditor.applyPreset (static_cast<svc::CurvePreset> (curvePresetBox.getSelectedItemIndex()));
-        applyProfileToEngine();
+        tryUpdateSelectedPadFromUI (selectedPadIndex, curveEditor.getPad());
     };
 
     resetCurveButton.onClick = [this] { curveEditor.resetCurve(); };
@@ -344,14 +346,14 @@ SuperVelocityCurveAudioProcessorEditor::SuperVelocityCurveAudioProcessorEditor (
     midiRoutingPanel.onRoutingChanged = [this]
     {
         audioProcessor.getProfileStore().syncActiveUserProfileFromEdits();
-        applyProfileToEngine();
+        audioProcessor.syncRoutingToEngine();
         refreshRoutingPanels();
     };
 
     noteRemapEditor.onRemapsChanged = [this]
     {
         audioProcessor.getProfileStore().syncActiveUserProfileFromEdits();
-        applyProfileToEngine();
+        audioProcessor.syncRoutingToEngine();
         refreshRoutingPanels();
     };
 
@@ -1023,7 +1025,10 @@ bool SuperVelocityCurveAudioProcessorEditor::tryUpdateSelectedPadFromUI (int pad
     padGrid.updatePad (padIndex, pad);
 
     if (syncEngine)
-        applyProfileToEngine();
+    {
+        audioProcessor.syncPadToEngine (pad);
+        syncAbAuditionIfActive();
+    }
 
     return true;
 }
@@ -1051,19 +1056,9 @@ void SuperVelocityCurveAudioProcessorEditor::applyListenCurveToEngine (const svc
     if (selectedPadIndex < 0 || selectedPadIndex >= static_cast<int> (profile.getPads().size()))
         return;
 
-    const auto& pad = profile.getPads()[static_cast<size_t> (selectedPadIndex)];
-    svc::PadSettings settings;
-    settings.midiNote = pad.midiNote;
-    settings.midiChannel = pad.midiChannel;
-    settings.name = pad.label;
-    settings.group = pad.group;
-    settings.curve = curve;
-    settings.enabled = pad.enabled;
-    settings.velocityGate = pad.velocityGate;
-    settings.gateMode = pad.gateMode;
-    settings.retriggerGuardMs = pad.retriggerGuardMs;
-    settings.aftertouch = pad.aftertouch;
-    audioProcessor.getEngine().setPadSettings (pad.midiNote, pad.midiChannel, settings);
+    auto pad = profile.getPads()[static_cast<size_t> (selectedPadIndex)];
+    pad.curve = curve;
+    audioProcessor.syncPadToEngine (pad);
 }
 
 void SuperVelocityCurveAudioProcessorEditor::clearAbCompare()
@@ -1225,6 +1220,18 @@ void SuperVelocityCurveAudioProcessorEditor::setScaleFactor (float newScale)
     resized();
     refreshThemedComponents();
     repaintThemedCanvases();
+}
+
+void SuperVelocityCurveAudioProcessorEditor::handlePendingEngineHits()
+{
+    if (! isShowing())
+        return;
+
+    updateLiveHits();
+    padGrid.decayHitVisuals();
+    midiMeters.decay();
+    curveEditor.decayHitMarkers();
+    syncUiTimer();
 }
 
 void SuperVelocityCurveAudioProcessorEditor::timerCallback()

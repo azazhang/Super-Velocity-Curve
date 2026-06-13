@@ -35,6 +35,29 @@ void VelocityEngine::setPadSettings (int note, int channel, const PadSettings& s
         midiRouting.setAftertouchSettings (note, channel, settings.aftertouch);
 }
 
+void VelocityEngine::applyProfileState (const MidiRoutingSettings& routing,
+                                        const EngineProcessingSettings& processing,
+                                        const PadMap& newPads,
+                                        const bool resetVoices)
+{
+    const std::unique_lock lock (padMutex);
+    midiRouting.setSettings (routing);
+    processingSettings = processing;
+    pads = newPads;
+
+    midiRouting.clearAftertouchSettings();
+    for (const auto& entry : pads)
+    {
+        if (entry.second.aftertouch.enabled)
+            midiRouting.setAftertouchSettings (entry.first.note,
+                                               entry.first.channel,
+                                               entry.second.aftertouch);
+    }
+
+    if (resetVoices)
+        clearVoiceState();
+}
+
 PadSettings VelocityEngine::getPadSettings (int note, int channel) const
 {
     const std::shared_lock lock (padMutex);

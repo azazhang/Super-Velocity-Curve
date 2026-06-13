@@ -5,7 +5,8 @@
 #include <JuceHeader.h>
 
 class SuperVelocityCurveAudioProcessor : public juce::AudioProcessor,
-                                         private juce::AudioProcessorValueTreeState::Listener
+                                         private juce::AudioProcessorValueTreeState::Listener,
+                                         private juce::AsyncUpdater
 {
 public:
     SuperVelocityCurveAudioProcessor();
@@ -46,6 +47,8 @@ public:
     juce::AudioProcessorValueTreeState& getApvts() noexcept { return apvts; }
 
     void applyProfileToEngine();
+    void syncPadToEngine (const svc::ProfilePad& pad);
+    void syncRoutingToEngine();
     void syncOutputModeToEngine();
     void injectStandaloneMidi (const juce::MidiMessage& message);
     void setStandaloneMidiOutput (juce::MidiOutput* output) noexcept;
@@ -60,6 +63,7 @@ private:
     juce::AudioProcessorValueTreeState apvts;
 
     void parameterChanged (const juce::String& parameterID, float newValue) override;
+    void handleAsyncUpdate() override;
 
     juce::CriticalSection standaloneMidiLock;
     juce::MidiBuffer standaloneMidiQueue;

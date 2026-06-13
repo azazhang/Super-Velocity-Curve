@@ -36,6 +36,9 @@ public:
     /** Called after host `setStateInformation` when this editor is still open. */
     void syncFromProcessorState();
 
+    /** Audio thread may queue hits while the message thread is busy; drain them here. */
+    void handlePendingEngineHits();
+
 private:
     SuperVelocityCurveAudioProcessor& audioProcessor;
 

@@ -79,27 +79,31 @@ ControllerProfile ControllerProfile::copy() const
     return copy;
 }
 
+PadSettings ControllerProfile::toEngineSettings (const ProfilePad& pad)
+{
+    PadSettings settings;
+    settings.midiNote = pad.midiNote;
+    settings.midiChannel = pad.midiChannel;
+    settings.name = pad.label;
+    settings.group = pad.group;
+    settings.curve = pad.curve;
+    settings.enabled = pad.enabled;
+    settings.velocityGate = pad.velocityGate;
+    settings.gateMode = pad.gateMode;
+    settings.retriggerGuardMs = pad.retriggerGuardMs;
+    settings.aftertouch = pad.aftertouch;
+    return settings;
+}
+
 void ControllerProfile::applyToEngine (VelocityEngine& engine) const
 {
-    engine.clearAllPads();
-    engine.setMidiRouting (midiRouting);
-    engine.setProcessingSettings (processingSettings);
+    VelocityEngine::PadMap padMap;
+    padMap.reserve (pads.size());
 
     for (const auto& pad : pads)
-    {
-        PadSettings settings;
-        settings.midiNote = pad.midiNote;
-        settings.midiChannel = pad.midiChannel;
-        settings.name = pad.label;
-        settings.group = pad.group;
-        settings.curve = pad.curve;
-        settings.enabled = pad.enabled;
-        settings.velocityGate = pad.velocityGate;
-        settings.gateMode = pad.gateMode;
-        settings.retriggerGuardMs = pad.retriggerGuardMs;
-        settings.aftertouch = pad.aftertouch;
-        engine.setPadSettings (pad.midiNote, pad.midiChannel, settings);
-    }
+        padMap[{ pad.midiNote, pad.midiChannel }] = toEngineSettings (pad);
+
+    engine.applyProfileState (midiRouting, processingSettings, padMap, true);
 }
 
 juce::ValueTree ControllerProfile::toValueTree() const

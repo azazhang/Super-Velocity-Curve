@@ -11,6 +11,8 @@
 namespace svc
 {
 
+struct PadSettings;
+
 enum class ProfileLayout
 {
     gmStandard,
@@ -74,6 +76,8 @@ public:
     PadMutationResult removePad (int index);
     PadMutationResult setPadAt (int index, const ProfilePad& pad);
     void applyToEngine (class VelocityEngine& engine) const;
+
+    static PadSettings toEngineSettings (const ProfilePad& pad);
 
     MidiRoutingSettings& getMidiRouting() noexcept { return midiRouting; }
     const MidiRoutingSettings& getMidiRouting() const noexcept { return midiRouting; }

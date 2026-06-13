@@ -33,6 +33,23 @@ struct PadSettings
 class VelocityEngine
 {
 public:
+    struct NoteKey
+    {
+        int note;
+        int channel;
+        bool operator== (const NoteKey& o) const noexcept { return note == o.note && channel == o.channel; }
+    };
+
+    struct NoteKeyHash
+    {
+        std::size_t operator() (const NoteKey& key) const noexcept
+        {
+            return static_cast<std::size_t> (key.note) * 17u + static_cast<std::size_t> (key.channel);
+        }
+    };
+
+    using PadMap = std::unordered_map<NoteKey, PadSettings, NoteKeyHash>;
+
     VelocityEngine();
 
     void setSampleRate (double rate) noexcept;
@@ -41,6 +58,10 @@ public:
 
     void clearAllPads();
     void setPadSettings (int note, int channel, const PadSettings& settings);
+    void applyProfileState (const MidiRoutingSettings& routing,
+                            const EngineProcessingSettings& processing,
+                            const PadMap& newPads,
+                            bool resetVoices);
     PadSettings getPadSettings (int note, int channel) const;
 
     void setMidiRouting (const MidiRoutingSettings& settings);
@@ -61,21 +82,6 @@ public:
     void clearPadHistogram (int note, int channel) noexcept { histogramBank.clearPad (note, channel); }
 
 private:
-    struct NoteKey
-    {
-        int note;
-        int channel;
-        bool operator== (const NoteKey& o) const noexcept { return note == o.note && channel == o.channel; }
-    };
-
-    struct NoteKeyHash
-    {
-        std::size_t operator() (const NoteKey& key) const noexcept
-        {
-            return static_cast<std::size_t> (key.note) * 17u + static_cast<std::size_t> (key.channel);
-        }
-    };
-
     struct ActiveVoice
     {
         bool sounding = false;
@@ -84,10 +90,7 @@ private:
         int outputChannel = 1;
     };
 
-    using PadMap = std::unordered_map<NoteKey, PadSettings, NoteKeyHash>;
-
-    PadMap pads;
-    std::array<ActiveVoice, kMidiNoteChannelSlots> activeVoices {};
+    PadMap pads;    std::array<ActiveVoice, kMidiNoteChannelSlots> activeVoices {};
     std::array<std::atomic<int64_t>, kMidiNoteChannelSlots> retriggerLastTimeUs {};
     MidiRoutingProcessor midiRouting;
     EngineProcessingSettings processingSettings;

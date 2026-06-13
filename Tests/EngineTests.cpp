@@ -1,3 +1,4 @@
+#include "../Source/Engine/HitEventFifo.h"
 #include "../Source/Engine/MidiUtilities.h"
 #include "../Source/Engine/EngineSettings.h"
 #include "../Source/Engine/VelocityCurve.h"
@@ -558,6 +559,25 @@ static int testMidi1WireQuantize()
     return 0;
 }
 
+static int testHitEventFifoDropsOldestWhenFull()
+{
+    svc::HitEventFifo fifo;
+    constexpr int total = svc::HitEventFifo::capacity + 5;
+
+    for (int i = 0; i < total; ++i)
+    {
+        svc::HitEvent event;
+        event.note = i;
+        EXPECT_TRUE (fifo.push (event));
+    }
+
+    svc::HitEvent last;
+    while (fifo.pop (last)) {}
+
+    EXPECT_TRUE (last.note == total - 1);
+    return 0;
+}
+
 int main()
 {
     if (testVelocityCurveMonotonic() != 0) return 1;
@@ -586,6 +606,7 @@ int main()
     if (testZoneRoutingNoteOffChannel() != 0) return 1;
     if (testGatedNoteOffSuppressed() != 0) return 1;
     if (testRetriggerDroppedNoteOffStillPasses() != 0) return 1;
+    if (testHitEventFifoDropsOldestWhenFull() != 0) return 1;
     std::cout << "All engine tests passed.\n";
     return 0;
 }

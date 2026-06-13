@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+## v0.2.26 (2026-06-07)
+
+### Fixed
+- **Live MIDI display:** Hit queue now drops oldest events when full instead of silently discarding new hits during fast playing
+- **Live MIDI display:** Audio thread wakes the UI via `AsyncUpdater` when hits are pending, so live readout does not depend on timer polling alone
+- **Engine sync:** Profile apply uses one lock and swaps pad state atomically instead of clear + N per-pad locks (reduces audio-thread blocking)
+- **Curve editing:** Pad/curve edits sync a single pad to the engine instead of re-applying the entire profile; removes duplicate full apply on mouse-up
+- **Routing edits:** MIDI routing/remap changes update routing only, without rebuilding all pad curves
+
 ## v0.2.25 (2026-06-13)
 
 ### Fixed

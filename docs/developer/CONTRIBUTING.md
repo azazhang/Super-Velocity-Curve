@@ -52,6 +52,16 @@ No Windows machine? See [WINDOWS_TESTING.md](WINDOWS_TESTING.md) — download CI
 
 Tag `v*.*.*` runs `.github/workflows/release.yml` and publishes GitHub Release artifacts.
 
+### Dev-only maintenance
+
+After rebranding renames on **your machine**, remove old bundle folders once:
+
+```bash
+./scripts/dev/cleanup-legacy-plugin-bundles.sh
+```
+
+This script is **not** included in release zips and is **not** run by the user installer.
+
 CI uses **RelWithDebInfo + no LTO + Ninja + ccache** on macOS (see [CI.md](CI.md)). Local Release builds still use LTO by default.
 
 ## Versioning

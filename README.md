@@ -45,7 +45,11 @@ If this helps your playing or teaching:
 
 **→ [Install guide](docs/user/install.md)** — copy plugins, rescan, unsigned-build tips.
 
-**Latest release:** [github.com/azazhang/SuperVelocityCurve/releases/latest](https://github.com/azazhang/SuperVelocityCurve/releases/latest) — macOS and Windows zips (VST3 + Standalone; AU on Mac; CLAP MIDI FX on **both** platforms).
+**Direct download (latest release, no release page):**
+- macOS: [SuperVelocityCurve-macOS-unsigned.zip](https://github.com/azazhang/SuperVelocityCurve/releases/latest/download/SuperVelocityCurve-macOS-unsigned.zip)
+- Windows: [SuperVelocityCurve-Windows-unsigned.zip](https://github.com/azazhang/SuperVelocityCurve/releases/latest/download/SuperVelocityCurve-Windows-unsigned.zip)
+
+Release notes: [releases/latest](https://github.com/azazhang/SuperVelocityCurve/releases/latest)
 
 ## Getting started
 
@@ -80,7 +84,7 @@ Two builds per release: **Instrument** (Ableton) and **MIDI FX** (most other DAW
 - Per-pad velocity curves with gate handles, presets, floor/ceiling
 - Factory profiles: GM, Launchpad 8×8, Maschine, SPD-SX, Yamaha FGDP
 - Calibration wizard, histograms, A/B compare, note remap
-- Humanize, library compensation, zone routing by pad group
+- Humanize, sample-library compensation, zone routing by pad group
 - Standalone app with MIDI in/out
 
 ## Known limitations
@@ -88,7 +92,7 @@ Two builds per release: **Instrument** (Ableton) and **MIDI FX** (most other DAW
 | Area | What to expect |
 |------|----------------|
 | **Quality** | v0.2.x — UI and edge cases still improving; report issues on GitHub |
-| **macOS installs** | Release zips are **unsigned**; one-time allow or `xattr -cr` (see [install](docs/user/install.md)) |
+| **macOS installs** | Download zip → unzip → double-click **Install Super Velocity Curve** (see [install](docs/user/install.md)) |
 | **Ableton** | No third-party MIDI FX slot — use the **VST3 Instrument** build |
 | **MIDI 2.0** | High-res LUT built in; **host UMP I/O** not wired yet — most setups use MIDI 1.0 |
 | **Host coverage** | pluginval checks load/stability; full DAW smoke on every host is not complete |

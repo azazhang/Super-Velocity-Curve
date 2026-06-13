@@ -29,6 +29,9 @@ public:
 
     void paint (juce::Graphics&) override;
     void resized() override;
+    void visibilityChanged() override;
+    void setScaleFactor (float newScale) override;
+    void mouseMove (const juce::MouseEvent& event) override;
 
     /** Called after host `setStateInformation` when this editor is still open. */
     void syncFromProcessorState();
@@ -61,6 +64,7 @@ private:
     juce::Label outputModeLabel { {}, "MIDI output" };
     juce::Label presetLabel { {}, "Curve preset" };
     juce::Label liveHitsLabel { {}, "Live" };
+    juce::Label statusLabel;
     juce::Label themeLabel { {}, "Appearance" };
     juce::ComboBox themeBox;
 
@@ -91,6 +95,11 @@ private:
     std::optional<svc::VelocityCurve> curveA;
 
     void timerCallback() override;
+    void finishEditorStartup();
+    bool needsAnimatedUi() const noexcept;
+    void syncUiTimer() noexcept;
+    void clearStatus();
+    void scheduleStatusClear();
     void rebuildProfileList();
     void onProfileSelected();
     void attemptProfileSwitch (int profileBoxId);
@@ -104,7 +113,7 @@ private:
     void showPadAtIndex (int padIndex);
     svc::ProfilePad mergeActivePadFromUI() const;
     void commitActivePadEdits();
-    void updateSelectedPadFromUI (int padIndex, const svc::ProfilePad& pad, bool syncEngine = true);
+    bool tryUpdateSelectedPadFromUI (int padIndex, const svc::ProfilePad& pad, bool syncEngine = true);
     void applyProfileToEngine();
     void syncAbAuditionIfActive();
     void updateLiveHits();
@@ -116,6 +125,7 @@ private:
     void refreshRoutingPanels();
     void applyThemeFromUI();
     void refreshThemedComponents();
+    void repaintThemedCanvases();
     void showAboutPanel();
     void hideAboutPanel();
     void showUnsavedProfileDialog();
@@ -128,15 +138,18 @@ private:
 
     juce::String statusMessage;
     bool statusIsError = false;
+    int statusClearToken = 0;
 
     svc::ControllerProfile profileBaseline;
     juce::String profileBaselineName;
     bool suppressProfileBoxChange = false;
     int suppressProfileStoreNotifications = 0;
     int pendingProfileBoxId = 0;
-    int histogramRefreshCooldown = 0;
     juce::String persistedLiveHitsText;
+    juce::String lastLiveHitsText;
     int liveHitsDisplayTicksRemaining = 0;
+    bool editorStartupComplete = false;
+    int uiTimerHz = 0;
 
     svc::ui::AppLookAndFeel appLookAndFeel;
 

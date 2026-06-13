@@ -1,5 +1,10 @@
 #include "MidiActivityMeterComponent.h"
 
+MidiActivityMeterComponent::MidiActivityMeterComponent()
+{
+    setOpaque (true);
+}
+
 void MidiActivityMeterComponent::pushInputLevel (float velocityNormalized)
 {
     inputLevel = juce::jmax (inputLevel, velocityNormalized);
@@ -10,9 +15,14 @@ void MidiActivityMeterComponent::pushOutputLevel (float velocityNormalized)
     outputLevel = juce::jmax (outputLevel, velocityNormalized);
 }
 
+bool MidiActivityMeterComponent::hasVisibleLevels() const noexcept
+{
+    return inputLevel > 0.01f || outputLevel > 0.01f;
+}
+
 void MidiActivityMeterComponent::decay()
 {
-    const bool hadActivity = inputLevel > 0.01f || outputLevel > 0.01f;
+    const bool hadActivity = hasVisibleLevels();
 
     inputLevel *= 0.85f;
     outputLevel *= 0.85f;

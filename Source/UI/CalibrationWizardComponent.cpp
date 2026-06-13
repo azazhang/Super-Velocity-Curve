@@ -20,7 +20,14 @@ CalibrationWizardComponent::CalibrationWizardComponent()
             onCurveCalibrated (buildCurve());
     };
 
+    applyTheme();
     reset();
+}
+
+void CalibrationWizardComponent::applyTheme()
+{
+    instructionLabel.setColour (juce::Label::textColourId, juce::Colour (svc::ui::Theme::textPrimary()));
+    readoutLabel.setColour (juce::Label::textColourId, juce::Colour (svc::ui::Theme::textMuted()));
 }
 
 bool CalibrationWizardComponent::hasValidHits() const noexcept

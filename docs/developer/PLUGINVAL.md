@@ -17,7 +17,7 @@ Official badge asset: `https://assets.tracktion.com/img/pages/develop/develop-lo
 
 | Platform | Formats | Tool |
 |----------|---------|------|
-| macOS | VST3 Instrument, VST3 MIDI FX, AU `aumf`, AU `aumi` | **pluginval** strictness 5 |
+| macOS | VST3 Instrument, VST3 MIDI FX, AU `aumu`, AU `aumi` | **pluginval** strictness 5 |
 | Windows | VST3 Instrument, VST3 MIDI FX | **pluginval** strictness 5 |
 | macOS | CLAP (bundle) | **[clap-validator](https://github.com/free-audio/clap-validator)** |
 | Windows | CLAP (flat `.clap` DLL) | **clap-validator** |

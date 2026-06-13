@@ -72,6 +72,11 @@ jobs:
           if [ -d "build/SuperVelocityCurveMidiFx_artefacts/Release/CLAP" ]; then
             cp -R build/SuperVelocityCurveMidiFx_artefacts/Release/CLAP/*.clap dist/ 2>/dev/null || true
           fi
+          cp scripts/install-macos.sh dist/
+          cp "dist-assets/macOS/Install Super Velocity Curve.command" dist/
+          cp dist-assets/macOS/README.txt dist/
+          chmod +x dist/install-macos.sh
+          chmod +x "dist/Install Super Velocity Curve.command"
           cd dist && zip -r ../SuperVelocityCurve-macOS-${{ matrix.arch }}-unsigned.zip .
 
       - uses: actions/upload-artifact@v4

@@ -19,9 +19,9 @@ inline const char* libraryCompensationPresetName (LibraryCompensationPreset pres
 {
     switch (preset)
     {
-        case LibraryCompensationPreset::acoustic:    return "Acoustic library";
-        case LibraryCompensationPreset::electronic:  return "Electronic library";
-        case LibraryCompensationPreset::compressed:  return "Compressed library";
+        case LibraryCompensationPreset::acoustic:    return "Acoustic samples";
+        case LibraryCompensationPreset::electronic:  return "Electronic samples";
+        case LibraryCompensationPreset::compressed:  return "Compressed samples";
         case LibraryCompensationPreset::none:
         default:                                     return "None";
     }
@@ -29,9 +29,12 @@ inline const char* libraryCompensationPresetName (LibraryCompensationPreset pres
 
 inline LibraryCompensationPreset libraryCompensationPresetFromName (std::string_view name) noexcept
 {
-    if (name == "Acoustic library")   return LibraryCompensationPreset::acoustic;
-    if (name == "Electronic library") return LibraryCompensationPreset::electronic;
-    if (name == "Compressed library") return LibraryCompensationPreset::compressed;
+    if (name == "Acoustic samples" || name == "Acoustic library")
+        return LibraryCompensationPreset::acoustic;
+    if (name == "Electronic samples" || name == "Electronic library")
+        return LibraryCompensationPreset::electronic;
+    if (name == "Compressed samples" || name == "Compressed library")
+        return LibraryCompensationPreset::compressed;
     return LibraryCompensationPreset::none;
 }
 

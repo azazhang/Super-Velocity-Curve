@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(SuperVelocityCurve VERSION 0.2.9)
+project(SuperVelocityCurve VERSION 0.2.20)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -81,7 +81,37 @@ function(svc_configure_plugin_target target)
     endif()
 endfunction()
 
-# Instrument VST3 + AU Music Effect (aumf) + Standalone — required for Ableton Live.
+# Linker-signed JUCE bundles fail Ableton's PluginScanner ("code has no resources").
+function(svc_adhoc_sign_plugin_bundles)
+    if(NOT APPLE)
+        return()
+    endif()
+    set(_argv ${ARGN})
+    list(LENGTH _argv _argc)
+    math(EXPR _end "${_argc} - 2")
+    foreach(_i RANGE 0 ${_end} 2)
+        list(GET _argv ${_i} bundle_target)
+        math(EXPR _j "${_i} + 1")
+        list(GET _argv ${_j} installed_path)
+        if(NOT TARGET ${bundle_target})
+            continue()
+        endif()
+        add_custom_command(TARGET ${bundle_target} POST_BUILD
+            COMMAND xattr -cr "$<TARGET_BUNDLE_DIR:${bundle_target}>"
+            COMMAND dot_clean -m "$<TARGET_BUNDLE_DIR:${bundle_target}>" || true
+            COMMAND codesign --force --sign - --timestamp=none --deep "$<TARGET_BUNDLE_DIR:${bundle_target}>"
+            COMMENT "Ad-hoc sign ${bundle_target} build bundle")
+        if(SVC_COPY_PLUGIN_AFTER_BUILD)
+            add_custom_command(TARGET ${bundle_target} POST_BUILD
+                COMMAND xattr -cr "${installed_path}"
+                COMMAND dot_clean -m "${installed_path}" || true
+                COMMAND codesign --force --sign - --timestamp=none --deep "${installed_path}"
+                COMMENT "Ad-hoc sign ${bundle_target} installed copy")
+        endif()
+    endforeach()
+endfunction()
+
+# Instrument VST3 + AU Music Device (aumu) + Standalone — Ableton instrument/MIDI track slot.
 juce_add_plugin(SuperVelocityCurve
     COMPANY_NAME "Super Velocity Curve"
     PLUGIN_MANUFACTURER_CODE Svvc
@@ -94,6 +124,7 @@ juce_add_plugin(SuperVelocityCurve
     NEEDS_MIDI_INPUT TRUE
     NEEDS_MIDI_OUTPUT TRUE
     IS_MIDI_EFFECT FALSE
+    AU_MAIN_TYPE kAudioUnitType_MusicDevice
     VST3_CATEGORIES Instrument
     EDITOR_WANTS_KEYBOARD_FOCUS FALSE
     COPY_PLUGIN_AFTER_BUILD ${SVC_COPY_PLUGIN_AFTER_BUILD})
@@ -125,6 +156,15 @@ juce_add_plugin(SuperVelocityCurveMidiFx
 
 svc_configure_plugin_target(SuperVelocityCurveMidiFx)
 
+if(APPLE)
+    svc_adhoc_sign_plugin_bundles(
+        SuperVelocityCurve_VST3 "$ENV{HOME}/Library/Audio/Plug-Ins/VST3/Super Velocity Curve.vst3"
+        SuperVelocityCurve_AU "$ENV{HOME}/Library/Audio/Plug-Ins/Components/Super Velocity Curve.component"
+        SuperVelocityCurve_Standalone "$ENV{HOME}/Applications/Super Velocity Curve.app"
+        SuperVelocityCurveMidiFx_VST3 "$ENV{HOME}/Library/Audio/Plug-Ins/VST3/Super Velocity Curve MIDI FX.vst3"
+        SuperVelocityCurveMidiFx_AU "$ENV{HOME}/Library/Audio/Plug-Ins/Components/Super Velocity Curve MIDI FX.component")
+endif()
+
 option(SVC_BUILD_CLAP "Build CLAP format via clap-juce-extensions" ON)
 
 if(SVC_BUILD_CLAP AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/third_party/clap-juce-extensions/CMakeLists.txt")
@@ -140,6 +180,8 @@ if(SVC_BUILD_CLAP AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/third_party/clap-juce-
             COMMAND ${CMAKE_COMMAND} -E rm -rf "$ENV{HOME}/Library/Audio/Plug-Ins/CLAP/Super Velocity Curve MIDI FX.clap"
             COMMAND ${CMAKE_COMMAND} -E copy_directory
                 "$<TARGET_BUNDLE_DIR:SuperVelocityCurveMidiFx_CLAP>"
+                "$ENV{HOME}/Library/Audio/Plug-Ins/CLAP/Super Velocity Curve MIDI FX.clap"
+            COMMAND codesign --force --sign - --timestamp=none --deep
                 "$ENV{HOME}/Library/Audio/Plug-Ins/CLAP/Super Velocity Curve MIDI FX.clap"
             COMMENT "Install CLAP to ~/Library/Audio/Plug-Ins/CLAP/")
     endif()

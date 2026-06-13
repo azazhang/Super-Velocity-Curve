@@ -1,73 +1,89 @@
 # Install Super Velocity Curve
 
-No coding required. Pick the download for your computer, unzip, and copy the plugins into the folders below.
+## Mac
 
-## Step 1 — Download
+### Step 1 — Download
 
-1. Open **[Releases](https://github.com/azazhang/SuperVelocityCurve/releases/latest)** on GitHub.
-2. Download **`SuperVelocityCurve-macOS-unsigned.zip`** (Mac) or **`SuperVelocityCurve-Windows-unsigned.zip`** (Windows).
+1. Open [Releases](https://github.com/azazhang/SuperVelocityCurve/releases/latest).
+2. Download **`SuperVelocityCurve-macOS-unsigned.zip`**.
 
-> Builds are **unsigned** (free/open source). macOS may ask you to allow the plugin once — see [Troubleshooting](#troubleshooting) below.
+### Step 2 — Unzip
 
-## Step 2 — Unzip
+Double-click the zip file. Open the folder that appears.
 
-Double-click the zip file. You should see folders like:
+### Step 3 — Install
 
-- `Super Velocity Curve.vst3`
-- `Super Velocity Curve MIDI FX.vst3` (and/or `.component` on Mac)
-- `Super Velocity Curve MIDI FX.clap` (Mac and Windows — MIDI FX only)
-- `Super Velocity Curve.app` (Mac standalone) or `Super Velocity Curve.exe` (Windows standalone)
+1. Double-click **`Install Super Velocity Curve`**.
+2. Wait until the window says installation finished.
+3. Press **Return** to close the window.
 
-## Step 3 — Copy plugins to the right place
+If Mac blocks the installer the first time:
 
-### macOS
+1. Open **System Settings** → **Privacy & Security**.
+2. Click **Open Anyway** next to the blocked installer message.
+3. Double-click **`Install Super Velocity Curve`** again.
 
-| What you downloaded | Copy to |
-|---------------------|---------|
+### Step 4 — Restart your DAW
+
+1. Quit your music app completely (for example **Logic Pro → Quit Logic Pro**).
+2. Open it again.
+3. Rescan plug-ins if prompted (Logic: **Settings → Plug-in Manager → Reset & Rescan Selection**).
+
+### Step 5 — Add the plugin
+
+| DAW | Plugin name | Where to add it |
+|-----|-------------|-----------------|
+| **Logic Pro** | Super Velocity Curve MIDI FX | Track → **MIDI FX** slot |
+| **Ableton Live** | Super Velocity Curve | **Instrument** on a MIDI track |
+| **Bitwig, Reaper 7+, etc.** | Super Velocity Curve MIDI FX | CLAP MIDI FX slot (if your host supports CLAP) |
+| **Without a DAW** | Super Velocity Curve | **Applications** (installed by the installer) |
+
+See [Getting started](getting-started.md) for screenshots and first-use tips.
+
+---
+
+## Windows
+
+1. Download **`SuperVelocityCurve-Windows-unsigned.zip`** from [Releases](https://github.com/azazhang/SuperVelocityCurve/releases/latest).
+2. Unzip the file.
+3. Copy the folder **`Super Velocity Curve.vst3`** to `C:\Program Files\Common Files\VST3\`.
+4. Copy **`Super Velocity Curve MIDI FX.vst3`** to the same folder if you use it.
+5. Copy **`Super Velocity Curve MIDI FX.clap`** to `C:\Program Files\Common Files\CLAP\` if your host uses CLAP.
+6. If Windows shows a blocked warning: right-click the folder → **Properties** → check **Unblock** → OK.
+7. Quit your DAW, reopen it, and rescan plug-ins.
+
+---
+
+## Manual install (Mac)
+
+| Folder in the zip | Destination |
+|-------------------|-------------|
 | `Super Velocity Curve.vst3` | `~/Library/Audio/Plug-Ins/VST3/` |
 | `Super Velocity Curve MIDI FX.vst3` | `~/Library/Audio/Plug-Ins/VST3/` |
 | `Super Velocity Curve.component` | `~/Library/Audio/Plug-Ins/Components/` |
 | `Super Velocity Curve MIDI FX.component` | `~/Library/Audio/Plug-Ins/Components/` |
-| `Super Velocity Curve MIDI FX.clap` | `~/Library/Audio/Plug-Ins/CLAP/` (Bitwig, Reaper 7+, etc.) |
-| `Super Velocity Curve.app` | Applications folder (optional — runs without a DAW) |
+| `Super Velocity Curve MIDI FX.clap` | `~/Library/Audio/Plug-Ins/CLAP/` |
+| `Super Velocity Curve.app` | Applications |
 
-> **CLAP = MIDI FX only (intentional).** CLAP hosts load it in the note/MIDI FX chain. Ableton’s instrument slot needs VST3 — see [Which plugin do I need?](../../README.md#which-plugin-do-i-need).
+In Finder, press **Cmd+Shift+G** and paste `~/Library/Audio/Plug-Ins/VST3/` to open the VST3 folder.
 
-**Finder shortcut:** In Finder, press **Cmd+Shift+G** and paste `~/Library/Audio/Plug-Ins/VST3/`.
+After copying, run **`Install Super Velocity Curve`** from the same unzipped folder so plug-ins are prepared for your DAW.
 
-### Windows
-
-| What you downloaded | Copy to |
-|---------------------|---------|
-| `Super Velocity Curve.vst3` | `C:\Program Files\Common Files\VST3\` |
-| `Super Velocity Curve MIDI FX.vst3` | `C:\Program Files\Common Files\VST3\` |
-| `Super Velocity Curve MIDI FX.clap` | `C:\Program Files\Common Files\CLAP\` (Bitwig, Reaper 7+, etc.) |
-| `Super Velocity Curve.exe` | Any folder you like (standalone) |
-
-## Step 4 — Rescan in your DAW
-
-Open your DAW’s plugin preferences and **rescan VST3** (and AU on Mac, **CLAP** if your host uses it).
-
-- **Ableton Live:** use the **Instrument** build only — see [Getting started](getting-started.md#ableton-live).
-- **Logic Pro:** use **`Super Velocity Curve MIDI FX.component` (AU only)** in the MIDI FX slot — Logic does not load VST3. See [Getting started](getting-started.md#logic-pro).
+---
 
 ## Troubleshooting
 
-### macOS: “plugin cannot be opened” / security warning
+**Plugin missing or wrong version**  
+Download a fresh zip, unzip, run **Install Super Velocity Curve**, quit the DAW fully, and rescan.
 
-In Terminal, run (adjust the path if needed):
+**Logic Pro**  
+Add **Super Velocity Curve MIDI FX** in the track **MIDI FX** slot.
 
-```bash
-xattr -cr ~/Library/Audio/Plug-Ins/VST3/Super\ VelocityCurve.vst3
-xattr -cr ~/Library/Audio/Plug-Ins/VST3/Super\ VelocityCurve\ MIDI\ FX.vst3
-```
+**Ableton Live**  
+Add **Super Velocity Curve** as an **Instrument** on a MIDI track.
 
-Or: **System Settings → Privacy & Security → Open Anyway** after the first blocked load.
+**Windows**  
+Copy the whole `.vst3` folder, not files from inside it.
 
-### Windows: plugin doesn’t appear
-
-Confirm the `.vst3` folder (not just files inside it) is in `Common Files\VST3\`, then rescan in your DAW. For CLAP hosts, copy `Super Velocity Curve MIDI FX.clap` to `C:\Program Files\Common Files\CLAP\` and rescan CLAP.
-
-### Still stuck?
-
-Open a [GitHub Issue](https://github.com/azazhang/SuperVelocityCurve/issues) and say your OS, DAW, and which plugin variant you installed.
+**Still stuck?**  
+[Open an issue](https://github.com/azazhang/SuperVelocityCurve/issues) with your OS, DAW, and what happened.

@@ -6,9 +6,11 @@
 class MidiActivityMeterComponent : public juce::Component
 {
 public:
+    MidiActivityMeterComponent();
     void pushInputLevel (float velocityNormalized);
     void pushOutputLevel (float velocityNormalized);
     void decay();
+    bool hasVisibleLevels() const noexcept;
     void paint (juce::Graphics& g) override;
 
 private:

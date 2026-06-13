@@ -37,6 +37,12 @@ public:
         return true;
     }
 
+    bool hasPending() const noexcept
+    {
+        return readIndex.load (std::memory_order_acquire)
+            != writeIndex.load (std::memory_order_acquire);
+    }
+
     bool pop (HitEvent& event) noexcept
     {
         const auto read = readIndex.load (std::memory_order_relaxed);

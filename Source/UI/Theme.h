@@ -28,21 +28,25 @@ struct Theme
     static juce::uint32 accentSecondary()  { return currentMode == ThemeMode::dark ? 0xffc77dff : 0xff7c3aed; }
     static juce::uint32 accentDim()        { return currentMode == ThemeMode::dark ? 0xff2a4a66 : 0xffbfdbfe; }
     static juce::uint32 accentWarm()       { return currentMode == ThemeMode::dark ? 0xffe8b84a : 0xffd97706; }
-    static juce::uint32 textPrimary()      { return currentMode == ThemeMode::dark ? 0xfff0f0f4 : 0xff111827; }
-    static juce::uint32 textSecondary()    { return currentMode == ThemeMode::dark ? 0xff9b9ba8 : 0xff6b7280; }
+    static juce::uint32 textPrimary()      { return currentMode == ThemeMode::dark ? 0xfff0f0f4 : 0xff020617; }
+    static juce::uint32 textSecondary()    { return currentMode == ThemeMode::dark ? 0xff9b9ba8 : 0xff1e293b; }
+    static juce::uint32 textMuted()        { return currentMode == ThemeMode::dark ? 0xff888894 : 0xff334155; }
     static juce::uint32 padIdle()          { return currentMode == ThemeMode::dark ? 0xff2c2c38 : 0xffe2e5ea; }
     static juce::uint32 padHover()         { return currentMode == ThemeMode::dark ? 0xff383848 : 0xffcdd3dc; }
-    static juce::uint32 padSelected()      { return currentMode == ThemeMode::dark ? 0xff3a5070 : 0xff7eb8ff; }
+    static juce::uint32 padSelected()      { return currentMode == ThemeMode::dark ? 0xff3a5070 : 0xff93c5fd; }
     static juce::uint32 padHit()           { return currentMode == ThemeMode::dark ? 0xffe8b84a : 0xfff59e0b; }
     static juce::uint32 padDisabled()      { return currentMode == ThemeMode::dark ? 0xff1a1a20 : 0xfff3f4f6; }
     static juce::uint32 curveLine()        { return currentMode == ThemeMode::dark ? 0xff5eb0ff : 0xff2563eb; }
     static juce::uint32 curveLineEnd()     { return currentMode == ThemeMode::dark ? 0xff8ec5ff : 0xff60a5fa; }
-    static juce::uint32 curveGrid()        { return currentMode == ThemeMode::dark ? 0xff32323e : 0xffe5e7eb; }
+    static juce::uint32 curveGrid()        { return currentMode == ThemeMode::dark ? 0xff32323e : 0xffcbd5e1; }
     static juce::uint32 curveHit()         { return currentMode == ThemeMode::dark ? 0xffd4a84b : 0xffb8860b; }
     static juce::uint32 curveGateMuted()   { return currentMode == ThemeMode::dark ? 0xff1a1520 : 0xfffee2e2; }
     static juce::uint32 curveGateSaturated() { return currentMode == ThemeMode::dark ? 0xff101828 : 0xffdbeafe; }
     static juce::uint32 plotBackground()   { return currentMode == ThemeMode::dark ? 0xff121218 : 0xffe8eaed; }
     static juce::uint32 success()          { return currentMode == ThemeMode::dark ? 0xff4ade80 : 0xff16a34a; }
+    static juce::uint32 error()            { return currentMode == ThemeMode::dark ? 0xfff87171 : 0xffdc2626; }
+
+    static float curveGridAlpha() noexcept { return currentMode == ThemeMode::dark ? 0.55f : 0.9f; }
 
     static juce::Font titleFont()       { return juce::Font (juce::FontOptions (20.0f)).boldened(); }
     static juce::Font sectionFont()     { return juce::Font (juce::FontOptions (11.5f)).boldened(); }
@@ -50,23 +54,14 @@ struct Theme
     static juce::Font smallFont()       { return juce::Font (juce::FontOptions (10.5f)); }
     static juce::Font sectionHeaderFont() { return juce::Font (juce::FontOptions (10.0f)).boldened(); }
 
-    static void fillBackgroundGradient (juce::Graphics& g, juce::Rectangle<int> bounds)
+    static void fillBackground (juce::Graphics& g, juce::Rectangle<int> bounds)
     {
-        juce::ColourGradient grad (juce::Colour (backgroundTop()), 0.0f, 0.0f,
-                                   juce::Colour (background()), 0.0f, static_cast<float> (bounds.getHeight()),
-                                   false);
-        g.setGradientFill (grad);
-        g.fillRect (bounds);
+        g.fillAll (juce::Colour (background()));
+        juce::ignoreUnused (bounds);
     }
 
     static void fillPanel (juce::Graphics& g, juce::Rectangle<float> bounds, float radius = 8.0f)
     {
-        if (currentMode == ThemeMode::light)
-        {
-            g.setColour (juce::Colours::black.withAlpha (0.06f));
-            g.fillRoundedRectangle (bounds.translated (0.0f, 1.0f), radius);
-        }
-
         g.setColour (juce::Colour (panel()));
         g.fillRoundedRectangle (bounds, radius);
         g.setColour (juce::Colour (border()).withAlpha (currentMode == ThemeMode::dark ? 0.75f : 0.9f));
@@ -86,6 +81,14 @@ struct Theme
         g.setFont (sectionHeaderFont());
         g.setColour (juce::Colour (textSecondary()));
         g.drawText (text.toUpperCase(), area, juce::Justification::centredLeft);
+    }
+
+    /** Readable label colour on top of a pad/button fill colour. */
+    static juce::Colour textOnBackground (juce::uint32 backgroundArgb) noexcept
+    {
+        const auto bg = juce::Colour (backgroundArgb);
+        return bg.getPerceivedBrightness() > 0.58f ? juce::Colour (0xff020617)
+                                                   : juce::Colour (textPrimary());
     }
 
 private:

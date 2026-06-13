@@ -23,6 +23,7 @@ while IFS= read -r -d '' f; do
 done < <(git ls-files -z \
   ':!JUCE' ':!third_party' \
   ':!scripts/check-branding.sh' \
+  ':!scripts/install-macos.sh' \
   '*.md' '*.h' '*.cpp' '*.sh' '*.yml' 'CMakeLists.txt')
 
 if (( found != 0 )); then

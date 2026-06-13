@@ -29,7 +29,9 @@ MidiRoutingPanel::MidiRoutingPanel()
     content.addAndMakeVisible (zoneChannelsLabel);
 
     humanizeLabel.setText ("Humanize amount", juce::dontSendNotification);
-    libraryLabel.setText ("Library compensation", juce::dontSendNotification);
+    libraryLabel.setText ("Sample-library compensation", juce::dontSendNotification);
+    libraryBlendLabel.setTooltip ("Blends a generic sample-library velocity curve in after your per-pad curves (0 = off, 1 = full). "
+                                  "Shapes for acoustic, electronic, or compressed VIs — not tied to any specific library.");
     humanizeSlider.setRange (0.0, 0.25, 0.001);
     libraryBlendSlider.setRange (0.0, 1.0, 0.01);
 
@@ -39,10 +41,10 @@ MidiRoutingPanel::MidiRoutingPanel()
         outputChannelBox.addItem (ch == 0 ? "Keep original" : "Ch " + juce::String (ch), ch + 1);
     }
 
-    libraryPresetBox.addItem ("None", 1);
-    libraryPresetBox.addItem ("Acoustic library", 2);
-    libraryPresetBox.addItem ("Electronic library", 3);
-    libraryPresetBox.addItem ("Compressed library", 4);
+    libraryPresetBox.addItem (svc::libraryCompensationPresetName (svc::LibraryCompensationPreset::none), 1);
+    libraryPresetBox.addItem (svc::libraryCompensationPresetName (svc::LibraryCompensationPreset::acoustic), 2);
+    libraryPresetBox.addItem (svc::libraryCompensationPresetName (svc::LibraryCompensationPreset::electronic), 3);
+    libraryPresetBox.addItem (svc::libraryCompensationPresetName (svc::LibraryCompensationPreset::compressed), 4);
 
     for (int i = 0; i < 7; ++i)
     {
@@ -63,6 +65,18 @@ MidiRoutingPanel::MidiRoutingPanel()
     libraryPresetBox.onChange = [this] { notifyChanged(); };
     libraryBlendSlider.onValueChange = [this] { notifyChanged(); };
     zoneRoutingToggle.onClick = [this] { notifyChanged(); };
+}
+
+void MidiRoutingPanel::applyTheme()
+{
+    const auto labelColour = juce::Colour (svc::ui::Theme::textPrimary());
+
+    for (auto* label : { &inputLabel, &outputLabel, &humanizeLabel, &libraryLabel,
+                         &libraryBlendLabel, &zoneChannelsLabel })
+        label->setColour (juce::Label::textColourId, labelColour);
+
+    for (auto& label : zoneGroupLabels)
+        label.setColour (juce::Label::textColourId, juce::Colour (svc::ui::Theme::textSecondary()));
 }
 
 void MidiRoutingPanel::setProfile (svc::ControllerProfile& p)

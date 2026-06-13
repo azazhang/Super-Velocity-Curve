@@ -2,7 +2,9 @@
 
 #include "../Profiles/ControllerProfile.h"
 #include "Theme.h"
+
 #include <JuceHeader.h>
+
 #include <functional>
 #include <vector>
 
@@ -19,8 +21,10 @@ public:
 
     void setEditTarget (EditTarget target);
     EditTarget getEditTarget() const noexcept { return editTarget; }
+
     void addHitMarker (int note, int channel, float inputNormalized, float outputNormalized, bool isMidi2);
     bool needsHitVisualRepaint() const noexcept;
+    bool decayHitMarkers() noexcept;
 
     std::function<void (const svc::ProfilePad&)> onPadChanged;
     std::function<void()> onPadEditFinished;
@@ -36,13 +40,15 @@ public:
     void copyFrom (const svc::VelocityCurve& other);
     void setFloorCeiling (float floor, float ceiling);
 
-    /** Ghost overlay for A/B compare (does not change editable pad). */
     void setCompareCurve (const svc::VelocityCurve* curve) noexcept { compareCurve = curve; repaint(); }
     void clearCompareCurve() noexcept { compareCurve = nullptr; repaint(); }
+    void setDisplayCurve (const svc::VelocityCurve* curve) noexcept { displayCurve = curve; repaint(); }
+    void clearDisplayCurve() noexcept { displayCurve = nullptr; repaint(); }
 
 private:
     svc::ProfilePad currentPad;
     const svc::VelocityCurve* compareCurve = nullptr;
+    const svc::VelocityCurve* displayCurve = nullptr;
 
     struct HitMarker
     {
@@ -62,7 +68,7 @@ private:
     float plotOutputToControl (float plotOutput) const noexcept;
     juce::Point<float> eventToNormalized (juce::Point<float> pos) const;
     int findNearestControlPoint (juce::Point<float> pos) const;
-    void notifyChanged();
+    void notifyChanged (bool commitToProfile = true);
     void drawGrid (juce::Graphics& g) const;
     void drawGateZones (juce::Graphics& g) const;
     void drawCurve (juce::Graphics& g) const;

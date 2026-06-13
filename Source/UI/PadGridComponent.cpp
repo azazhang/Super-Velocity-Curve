@@ -6,6 +6,8 @@ PadGridComponent::PadCanvas::PadCanvas (PadGridComponent& o) : owner (o) {}
 
 void PadGridComponent::PadCanvas::paint (juce::Graphics& g)
 {
+    g.fillAll (juce::Colour (svc::ui::Theme::panel()));
+
     const auto& pads = owner.currentProfile.getPads();
 
     for (int i = 0; i < static_cast<int> (pads.size()); ++i)
@@ -29,12 +31,7 @@ void PadGridComponent::PadCanvas::paint (juce::Graphics& g)
         }
 
         const auto rect = bounds.toFloat();
-        juce::ColourGradient grad (juce::Colour (baseColour).brighter (i == owner.selectedPadIndex ? 0.12f : 0.06f),
-                                   rect.getCentreX(), rect.getY(),
-                                   juce::Colour (baseColour).darker (0.08f),
-                                   rect.getCentreX(), rect.getBottom(),
-                                   false);
-        g.setGradientFill (grad);
+        g.setColour (juce::Colour (baseColour));
         g.fillRoundedRectangle (rect, 7.0f);
 
         if (i == owner.selectedPadIndex)
@@ -47,13 +44,14 @@ void PadGridComponent::PadCanvas::paint (juce::Graphics& g)
         g.drawRoundedRectangle (rect, 7.0f, 1.0f);
 
         auto textArea = bounds.reduced (6);
-        g.setColour (pad.enabled ? juce::Colour (svc::ui::Theme::textPrimary())
-                                 : juce::Colour (svc::ui::Theme::textSecondary()));
+        const auto labelColour = pad.enabled ? svc::ui::Theme::textOnBackground (baseColour)
+                                             : juce::Colour (svc::ui::Theme::textSecondary());
+        g.setColour (labelColour);
         g.setFont (svc::ui::Theme::bodyFont().boldened());
         g.drawFittedText (pad.label, textArea.removeFromTop (textArea.getHeight() / 2), juce::Justification::centred, 2);
 
         g.setFont (svc::ui::Theme::smallFont());
-        g.setColour (juce::Colour (svc::ui::Theme::textSecondary()));
+        g.setColour (labelColour.withAlpha (pad.enabled ? 0.88f : 0.75f));
         if (owner.displayGridColumns >= 8)
         {
             g.drawFittedText (svc::ui::formatMidiNoteShort (pad.midiNote),
@@ -95,14 +93,22 @@ void PadGridComponent::PadCanvas::mouseMove (const juce::MouseEvent& event)
     const auto index = owner.padIndexAt (event.getPosition());
     if (index != owner.hoveredPadIndex)
     {
+        const auto prev = owner.hoveredPadIndex;
         owner.hoveredPadIndex = index;
-        repaint();
+
+        if (prev >= 0)
+            repaint (owner.padBoundsForIndex (prev));
+
+        if (index >= 0)
+            repaint (owner.padBoundsForIndex (index));
     }
 }
 
 PadGridComponent::PadGridComponent()
     : padCanvas (*this)
 {
+    padCanvas.setOpaque (true);
+    setOpaque (true);
     addAndMakeVisible (addPadButton);
     addAndMakeVisible (deletePadButton);
     addAndMakeVisible (viewport);
@@ -153,7 +159,7 @@ void PadGridComponent::updatePad (int index, const svc::ProfilePad& pad)
         return;
 
     currentProfile.getPads()[static_cast<size_t> (index)] = pad;
-    padCanvas.repaint();
+    padCanvas.repaint (padBoundsForIndex (index));
 }
 
 void PadGridComponent::setSelectedPadIndex (int index)
@@ -171,35 +177,67 @@ void PadGridComponent::flashPadHit (int note, int channel, float outputVelocity)
         if (pad.midiNote == note && pad.midiChannel == channel)
         {
             hitByPadIndex[i] = { outputVelocity, juce::Time::getMillisecondCounterHiRes() };
-            padCanvas.repaint();
+            padCanvas.repaint (padBoundsForIndex (i));
             return;
         }
     }
 }
 
+void PadGridComponent::refreshVisualCache()
+{
+    padCanvas.repaint();
+}
+
+bool PadGridComponent::hasActiveHitVisuals() const noexcept
+{
+    for (const auto& entry : hitByPadIndex)
+        if (entry.second.intensity > 0.02f)
+            return true;
+
+    return false;
+}
+
 void PadGridComponent::decayHitVisuals()
 {
     const auto now = juce::Time::getMillisecondCounterHiRes();
-    bool changed = false;
+    juce::RectangleList<int> dirty;
 
     for (auto it = hitByPadIndex.begin(); it != hitByPadIndex.end();)
     {
+        const auto padIndex = it->first;
         const auto age = now - it->second.lastUpdateMs;
         if (age > 500.0)
         {
+            dirty.add (padBoundsForIndex (padIndex));
             it = hitByPadIndex.erase (it);
-            changed = true;
+            continue;
+        }
+
+        const auto prev = it->second.intensity;
+        const auto next = juce::jmax (0.0f, prev - 0.08f);
+
+        if (next <= 0.001f)
+        {
+            dirty.add (padBoundsForIndex (padIndex));
+            it = hitByPadIndex.erase (it);
+        }
+        else if (std::abs (next - prev) > 0.0001f)
+        {
+            it->second.intensity = next;
+            dirty.add (padBoundsForIndex (padIndex));
+            ++it;
         }
         else
         {
-            it->second.intensity = juce::jmax (0.0f, it->second.intensity - 0.08f);
             ++it;
-            changed = true;
         }
     }
 
-    if (changed)
-        padCanvas.repaint();
+    if (! dirty.isEmpty())
+    {
+        for (const auto& rect : dirty)
+            padCanvas.repaint (rect);
+    }
 }
 
 int PadGridComponent::cellWidth() const

@@ -21,15 +21,23 @@ public:
     std::function<void()> onPadEditFinished;
     std::function<void()> onEditAftertouchRequested;
 
-    void paint (juce::Graphics& g) override;
     void resized() override;
 
 private:
+    struct ContentPanel : juce::Component
+    {
+        void paint (juce::Graphics& g) override
+        {
+            g.fillAll (juce::Colour (svc::ui::Theme::panel()));
+        }
+    };
+
+    ContentPanel content;
+
     svc::ProfilePad currentPad;
     int currentPadIndex = 0;
 
     juce::Viewport viewport;
-    juce::Component content;
 
     juce::Label padNameLabel { {}, "Pad name" };
     juce::TextEditor padNameEditor;

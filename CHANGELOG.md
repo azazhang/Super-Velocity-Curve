@@ -2,9 +2,92 @@
 
 ## Unreleased
 
+## v0.2.20 (2026-06-12)
+
+### Fixed
+- **Light theme black widgets:** Sync JUCE `LookAndFeel_V4` colour scheme with app theme; refresh slider text-box labels, toggles, and text buttons on theme change
+- **Pad settings layout:** Fixed toggle text overlap; themed slider/toggle/button drawing; consistent inspector content background
+- **GUI regressions (v0.2.18–19):** Removed curve static image cache; label/toggle/installer layout fixes
+
 ### Changed
-- GitHub repository: [`azazhang/SuperVelocityCurve`](https://github.com/azazhang/SuperVelocityCurve) (older repo URLs redirect)
-- Repo slug aligned with release zips: `SuperVelocityCurve`
+- Reverted forced synchronous CoreGraphics peer (restores sharp Retina curve rendering)
+- Release zip includes double-click **Install Super Velocity Curve**; user `install.md`; CI packages installer assets
+- macOS install script clears quarantine and ad-hoc signs bundles
+
+## v0.2.19 (2026-06-12)
+
+### Fixed
+- **GUI regressions from v0.2.18:** Removed curve static image cache (caused Retina blur and dark/light theme mismatch on the plot)
+- **Pad settings layout:** Reverted broken custom toggle drawing; increased toggle row height; removed duplicate inspector background paint
+- **Labels:** Transparent backgrounds so custom label drawing no longer paints stray dark fills
+
+### Note
+- Logic WindowServer GPU at idle remains under investigation; v0.2.18 cache experiment reverted
+
+## v0.2.18 (2026-06-12)
+
+### Fixed
+- **Logic GPU:** Disable CALayer backing on all macOS hosts; stop UI timer completely when idle; cache static curve chrome (grid/background); draw curve dynamically during edits; partial pad hit repaints; remove per-frame hit-marker repaints and histogram idle polling
+- **Curve editing:** Profile commits deferred until drag ends (no store thrash while moving control points)
+- **Duplicate MIDI note:** Rejected pad edits no longer overwrite grid/curve; MIDI note commits on drag-end only
+- **Light theme:** Grid contrast, custom toggle buttons, pad inspector background, status bar as proper label with auto-clear
+- **Pad grid:** Hover repaints only the affected pad cell
+
+## v0.2.17 (2026-06-12)
+
+### Fixed
+- **Logic GPU / WindowServer idle surge:** Disable CALayer-backed async view in Logic (`wantsLayerBackedView` → synchronous CoreGraphics); UI timer drops to 1 Hz when idle and only runs at 10 Hz during hit animations / pending MIDI
+
+## v0.2.16 (2026-06-12)
+
+### Fixed
+- **Ableton AU type:** Instrument AU now registers as Music Device (`aumu`) instead of Music Effect (`aumf`)
+- **Ableton VST3 GUI:** Pad canvas background fill, contrasting pad labels in Light mode, forced text-editor/label drawing in custom L&F, host scale-factor + visibility theme refresh
+- **Ableton plugin scan:** Ad-hoc deep `codesign` on local install + post-build (fixes “code has no resources” scanner failures)
+- **Light theme:** Stronger primary/muted text contrast
+
+### Note
+- **Ableton + MIDI FX VST3:** Live does not support VST3 MIDI-effect plugins; use `Super Velocity Curve.vst3` (Instrument) on a MIDI track
+
+## v0.2.14 (2026-06-12)
+
+### Fixed
+- **Logic freeze on open:** Removed MIDI-thread UI wake + `sendLookAndFeelChange` storms; deferred heavy editor startup to next message-loop tick
+- **Light theme text:** `applyColourToAllText` on profile/pad name fields; combo theming helper
+- **Theme + cache:** Buffered views invalidated on appearance change (pads/curve stay light in Light mode)
+
+### Changed
+- UI poll timer: steady 4 Hz while visible (was start/stop logic that could stall Logic)
+- Direct download URLs documented (`releases/latest/download/...`)
+
+## v0.2.13 (2026-06-12)
+
+### Fixed
+- **GPU:** Removed `setBufferedToImage` (was caching stale dark pixels and adding compositor layers); flat fills instead of per-frame gradients on pads/curve/background
+- **Light theme:** Pads and curve plot now repaint with the active theme; combo/text editor colours fixed in pad settings
+
+## v0.2.12 (2026-06-12)
+
+### Fixed
+- **GPU / idle CPU:** Editor UI timer now stops when idle (wakes on MIDI hits only); curve/pad/histogram views cache to buffered images
+- **Light theme:** Form labels, combo text, and slider value boxes use dark primary text; stronger contrast palette
+
+## v0.2.11 (2026-06-12)
+
+### Changed
+- **Sample-library compensation:** UI renamed from “Library compensation / Library mix” to clarify generic VI velocity shapes (not a preset library)
+
+## v0.2.10 (2026-06-12)
+
+### Fixed
+- **A/B audition:** Blue curve line now matches the curve you hear when toggling Hear A / Hear B
+- **GPU / WindowServer:** Idle editor no longer repaints pad hits every frame; UI timer throttles when nothing is animating
+- **About:** Encoding glitch in description text; theme colours refresh when opened
+- **Light theme:** Darker secondary/muted text for hints, routing labels, and live-hit readout
+
+### Changed
+- MIDI routing **Library blend amount** renamed **Library mix** with tooltip explaining the compensation mix
+- `install-macos.sh` removes legacy plugin bundle names before install
 
 ## v0.2.9 (2026-06-10)
 

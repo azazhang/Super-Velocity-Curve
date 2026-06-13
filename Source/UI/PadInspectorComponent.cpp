@@ -1,9 +1,12 @@
 #include "PadInspectorComponent.h"
 #include "MidiNoteNames.h"
 #include "ScrollHelpers.h"
+#include "ThemeUi.h"
 
 PadInspectorComponent::PadInspectorComponent()
 {
+    setOpaque (false);
+    content.setOpaque (true);
     addAndMakeVisible (viewport);
     viewport.setViewedComponent (&content, false);
     svc::ui::configureVerticalViewport (viewport);
@@ -11,7 +14,7 @@ PadInspectorComponent::PadInspectorComponent()
     padNameEditor.setFont (svc::ui::Theme::bodyFont());
     padNameEditor.setIndents (8, 4);
     padNameEditor.setMultiLine (false);
-    padNameEditor.setTextToShowWhenEmpty ("Pad name", juce::Colour (svc::ui::Theme::textSecondary()));
+    padNameEditor.setTextToShowWhenEmpty ("Pad name", juce::Colour (svc::ui::Theme::textMuted()));
     padNameEditor.onFocusLost = padNameEditor.onReturnKey = [this]
     {
         currentPad.label = padNameEditor.getText().trim();
@@ -32,9 +35,12 @@ PadInspectorComponent::PadInspectorComponent()
     midiNoteSlider.onValueChange = [this]
     {
         currentPad.midiNote = static_cast<int> (midiNoteSlider.getValue());
-        notifyChanged();
     };
-    midiNoteSlider.onDragEnd = [this] { finishPadEdit(); };
+    midiNoteSlider.onDragEnd = [this]
+    {
+        notifyChanged();
+        finishPadEdit();
+    };
     content.addAndMakeVisible (midiNoteLabel);
     content.addAndMakeVisible (midiNoteSlider);
 
@@ -201,19 +207,27 @@ void PadInspectorComponent::setAftertouchEditMode (bool editingAftertouch)
 void PadInspectorComponent::applyTheme()
 {
     const auto text = juce::Colour (svc::ui::Theme::textPrimary());
-    const auto bg = juce::Colour (svc::ui::Theme::panelRaised());
-    const auto border = juce::Colour (svc::ui::Theme::border());
 
     for (auto* label : { &padNameLabel, &midiNoteLabel, &midiChannelLabel, &gateLabel, &gateModeLabel,
                          &groupLabel, &retriggerLabel, &floorLabel, &ceilingLabel })
+    {
         label->setColour (juce::Label::textColourId, text);
+        label->setColour (juce::Label::backgroundColourId, juce::Colours::transparentBlack);
+    }
 
-    padNameEditor.setColour (juce::TextEditor::textColourId, text);
-    padNameEditor.setColour (juce::TextEditor::backgroundColourId, bg);
-    padNameEditor.setColour (juce::TextEditor::outlineColourId, border);
-    padNameEditor.setColour (juce::TextEditor::focusedOutlineColourId,
-                             juce::Colour (svc::ui::Theme::accent()).withAlpha (0.55f));
-    padNameEditor.setColour (juce::CaretComponent::caretColourId, juce::Colour (svc::ui::Theme::accentGold()));
+    padNameEditor.setTextToShowWhenEmpty ("Pad name", juce::Colour (svc::ui::Theme::textMuted()));
+    svc::ui::applyTextEditorTheme (padNameEditor);
+
+    for (auto* slider : { &midiNoteSlider, &velocityGateSlider, &retriggerSlider, &floorSlider, &ceilingSlider })
+        svc::ui::applySliderTheme (*slider);
+
+    for (auto* toggle : { &enabledToggle, &aftertouchToggle })
+        svc::ui::applyToggleTheme (*toggle);
+
+    svc::ui::applyTextButtonTheme (editAftertouchButton);
+
+    for (auto* box : { &midiChannelBox, &groupBox, &gateModeBox })
+        svc::ui::applyComboBoxTheme (*box);
 }
 
 void PadInspectorComponent::setPad (const svc::ProfilePad& pad, int padIndex)
@@ -223,6 +237,7 @@ void PadInspectorComponent::setPad (const svc::ProfilePad& pad, int padIndex)
     currentPadIndex = padIndex;
 
     padNameEditor.setText (pad.label, juce::dontSendNotification);
+    svc::ui::applyTextEditorTheme (padNameEditor);
     midiNoteSlider.setValue (pad.midiNote, juce::dontSendNotification);
     midiChannelBox.setSelectedId (juce::jlimit (1, 16, pad.midiChannel), juce::dontSendNotification);
     enabledToggle.setToggleState (pad.enabled, juce::dontSendNotification);
@@ -258,11 +273,6 @@ void PadInspectorComponent::refreshScrollbar()
     svc::ui::updateVerticalScrollbarVisibility (viewport, content);
 }
 
-void PadInspectorComponent::paint (juce::Graphics& g)
-{
-    juce::ignoreUnused (g);
-}
-
 void PadInspectorComponent::resized()
 {
     auto area = getLocalBounds().reduced (4);
@@ -284,12 +294,12 @@ void PadInspectorComponent::layoutContent()
     };
 
     row (padNameLabel, padNameEditor, 46);
-    row (midiNoteLabel, midiNoteSlider);
-    row (midiChannelLabel, midiChannelBox, 40);
-    enabledToggle.setBounds (8, y, width - 16, 22);
-    y += 24;
-    aftertouchToggle.setBounds (8, y, width - 16, 22);
-    y += 24;
+    row (midiNoteLabel, midiNoteSlider, 52);
+    row (midiChannelLabel, midiChannelBox, 44);
+    enabledToggle.setBounds (8, y, width - 16, 26);
+    y += 28;
+    aftertouchToggle.setBounds (8, y, width - 16, 26);
+    y += 28;
     editAftertouchButton.setBounds (8, y, width - 16, 24);
     y += 30;
 

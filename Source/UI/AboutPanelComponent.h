@@ -9,6 +9,7 @@ class AboutPanelComponent : public juce::Component
 public:
     AboutPanelComponent();
 
+    void applyTheme();
     std::function<void()> onDismiss;
 
     void paint (juce::Graphics& g) override;

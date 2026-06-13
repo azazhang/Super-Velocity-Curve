@@ -15,6 +15,7 @@ public:
 
     void captureHit (float velocityNormalized);
     void reset();
+    void applyTheme();
     void paint (juce::Graphics& g) override;
     void resized() override;
 

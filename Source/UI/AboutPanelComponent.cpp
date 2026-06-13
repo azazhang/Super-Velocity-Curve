@@ -27,7 +27,7 @@ AboutPanelComponent::AboutPanelComponent()
     developerNameLabel.setFont (svc::ui::Theme::bodyFont().withHeight (17.0f));
     developerNameLabel.setJustificationType (juce::Justification::centredLeft);
 
-    blurbLabel.setText ("Per-pad MIDI velocity curves — finger drumming, e-kits, and any setup\n"
+    blurbLabel.setText ("Per-pad MIDI velocity curves for finger drumming, e-kits, and any setup\n"
                         "where one global DAW curve is not enough. pluginval strictness 5 (tap badge).",
                         juce::dontSendNotification);
     blurbLabel.setFont (svc::ui::Theme::smallFont());
@@ -68,6 +68,15 @@ AboutPanelComponent::AboutPanelComponent()
 
     addAndMakeVisible (pluginvalBadgeButton);
     pluginvalBadgeButton.setMouseClickGrabsKeyboardFocus (false);
+}
+
+void AboutPanelComponent::applyTheme()
+{
+    titleLabel.setColour (juce::Label::textColourId, juce::Colour (svc::ui::Theme::textPrimary()));
+    developerNameLabel.setColour (juce::Label::textColourId, juce::Colour (svc::ui::Theme::textPrimary()));
+    versionLabel.setColour (juce::Label::textColourId, juce::Colour (svc::ui::Theme::textSecondary()));
+    developerKickerLabel.setColour (juce::Label::textColourId, juce::Colour (svc::ui::Theme::textSecondary()));
+    blurbLabel.setColour (juce::Label::textColourId, juce::Colour (svc::ui::Theme::textMuted()));
 }
 
 void AboutPanelComponent::openUrl (const juce::String& url) const

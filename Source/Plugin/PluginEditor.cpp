@@ -1,6 +1,7 @@
 #include "PluginEditor.h"
 #include "../UI/EditorLayout.h"
 #include "../UI/PadUiMerge.h"
+#include "../UI/ThemeUi.h"
 #include <juce_gui_basics/juce_gui_basics.h>
 
 namespace
@@ -46,13 +47,19 @@ SuperVelocityCurveAudioProcessorEditor::SuperVelocityCurveAudioProcessorEditor (
       audioProcessor (p)
 {
     setLookAndFeel (&appLookAndFeel);
+    setOpaque (true);
     setResizable (true, true);
     setResizeLimits (1100, 760, 1900, 1150);
-    setSize (1280, 860);
+    setSize (1100, 760);
 
     titleLabel.setFont (svc::ui::Theme::titleFont());
     subtitleLabel.setFont (svc::ui::Theme::smallFont());
-    subtitleLabel.setColour (juce::Label::textColourId, juce::Colour (svc::ui::Theme::textSecondary()));
+    subtitleLabel.setColour (juce::Label::textColourId, juce::Colour (svc::ui::Theme::textMuted()));
+
+    statusLabel.setInterceptsMouseClicks (false, false);
+    statusLabel.setVisible (false);
+    statusLabel.setColour (juce::Label::backgroundColourId, juce::Colours::transparentBlack);
+    addAndMakeVisible (statusLabel);
 
     titleLabel.setInterceptsMouseClicks (false, false);
     subtitleLabel.setInterceptsMouseClicks (false, false);
@@ -182,7 +189,8 @@ SuperVelocityCurveAudioProcessorEditor::SuperVelocityCurveAudioProcessorEditor (
     curveEditor.onPadChanged = [this] (const svc::ProfilePad& pad)
     {
         if (selectedPadIndex >= 0)
-            updateSelectedPadFromUI (selectedPadIndex, pad, ! curveEditor.isDraggingPoint());
+        if (! tryUpdateSelectedPadFromUI (selectedPadIndex, pad, ! curveEditor.isDraggingPoint()))
+            return;
     };
 
     curveEditor.onPadEditFinished = [this]
@@ -195,15 +203,15 @@ SuperVelocityCurveAudioProcessorEditor::SuperVelocityCurveAudioProcessorEditor (
         juce::ignoreUnused (inspectorPad);
         auto pad = (index == selectedPadIndex) ? mergeActivePadFromUI() : padInspector.getPad();
 
-        updateSelectedPadFromUI (index, pad, false);
+        if (! tryUpdateSelectedPadFromUI (index, pad, false))
+            return;
 
         if (index == selectedPadIndex)
         {
-            curveEditor.setPad (pad, false);
-            padHistogram.setTitle ("Pad: " + pad.label);
+            const auto& committed = audioProcessor.getProfileStore().getActiveProfile().getPads()[static_cast<size_t> (index)];
+            curveEditor.setPad (committed, false);
+            padHistogram.setTitle ("Pad: " + committed.label);
         }
-
-        padGrid.updatePad (index, pad);
     };
 
     padInspector.onPadEditFinished = [this]
@@ -262,7 +270,7 @@ SuperVelocityCurveAudioProcessorEditor::SuperVelocityCurveAudioProcessorEditor (
 
         auto pad = curveEditor.getPad();
         pad.curve = *clipboardCurve;
-        updateSelectedPadFromUI (selectedPadIndex, pad);
+        tryUpdateSelectedPadFromUI (selectedPadIndex, pad);
         curveEditor.setPad (pad, false);
         showStatus ("Curve pasted.");
     };
@@ -321,7 +329,7 @@ SuperVelocityCurveAudioProcessorEditor::SuperVelocityCurveAudioProcessorEditor (
     {
         auto pad = curveEditor.getPad();
         pad.curve = curve;
-        updateSelectedPadFromUI (selectedPadIndex, pad);
+        tryUpdateSelectedPadFromUI (selectedPadIndex, pad);
         curveEditor.setPad (pad, false);
         showStatus ("Calibration applied.");
     };
@@ -442,11 +450,86 @@ SuperVelocityCurveAudioProcessorEditor::SuperVelocityCurveAudioProcessorEditor (
         refreshRoutingPanels();
     };
 
+    juce::Timer::callAfterDelay (1, [safe = juce::Component::SafePointer<SuperVelocityCurveAudioProcessorEditor> (this)]
+    {
+        if (safe != nullptr)
+            safe->finishEditorStartup();
+    });
+}
+
+void SuperVelocityCurveAudioProcessorEditor::finishEditorStartup()
+{
+    if (editorStartupComplete)
+        return;
+
+    editorStartupComplete = true;
+    applyThemeFromUI();
     rebuildProfileList();
     refreshRoutingPanels();
-    refreshPadUI (true);
-    captureProfileBaseline();
-    startTimerHz (15);
+
+    juce::Timer::callAfterDelay (1, [safe = juce::Component::SafePointer<SuperVelocityCurveAudioProcessorEditor> (this)]
+    {
+        if (safe == nullptr)
+            return;
+
+        safe->refreshPadUI (true);
+        safe->captureProfileBaseline();
+        safe->refreshThemedComponents();
+
+        if (safe->isShowing())
+            safe->syncUiTimer();
+    });
+}
+
+bool SuperVelocityCurveAudioProcessorEditor::needsAnimatedUi() const noexcept
+{
+    if (padGrid.hasActiveHitVisuals())
+        return true;
+
+    if (midiMeters.hasVisibleLevels())
+        return true;
+
+    if (audioProcessor.getEngine().getHitFifo().hasPending())
+        return true;
+
+    return false;
+}
+
+void SuperVelocityCurveAudioProcessorEditor::syncUiTimer() noexcept
+{
+    if (! isShowing())
+    {
+        stopTimer();
+        uiTimerHz = 0;
+        return;
+    }
+
+    if (! needsAnimatedUi())
+    {
+        stopTimer();
+        uiTimerHz = 0;
+        return;
+    }
+
+    const auto targetHz = 8;
+
+    if (! isTimerRunning() || uiTimerHz != targetHz)
+    {
+        startTimerHz (targetHz);
+        uiTimerHz = targetHz;
+    }
+}
+
+void SuperVelocityCurveAudioProcessorEditor::mouseMove (const juce::MouseEvent& event)
+{
+    juce::AudioProcessorEditor::mouseMove (event);
+
+    if (! isTimerRunning()
+        && (audioProcessor.getEngine().getHitFifo().hasPending() || needsAnimatedUi()))
+    {
+        timerCallback();
+        syncUiTimer();
+    }
 }
 
 void SuperVelocityCurveAudioProcessorEditor::applyThemeFromUI()
@@ -455,7 +538,8 @@ void SuperVelocityCurveAudioProcessorEditor::applyThemeFromUI()
                                                             : svc::ui::ThemeMode::dark);
     appLookAndFeel.refreshTheme();
     refreshThemedComponents();
-    repaint();
+    repaintThemedCanvases();
+    sendLookAndFeelChange();
 }
 
 void SuperVelocityCurveAudioProcessorEditor::showAboutPanel()
@@ -464,6 +548,7 @@ void SuperVelocityCurveAudioProcessorEditor::showAboutPanel()
         return;
 
     aboutPanel = std::make_unique<AboutPanelComponent>();
+    aboutPanel->applyTheme();
     aboutPanel->onDismiss = [this] { hideAboutPanel(); };
     addAndMakeVisible (*aboutPanel);
     aboutPanel->setBounds (getLocalBounds());
@@ -477,24 +562,80 @@ void SuperVelocityCurveAudioProcessorEditor::hideAboutPanel()
 
 void SuperVelocityCurveAudioProcessorEditor::refreshThemedComponents()
 {
-    titleLabel.setColour (juce::Label::textColourId, juce::Colour (svc::ui::Theme::textPrimary()));
-    subtitleLabel.setColour (juce::Label::textColourId, juce::Colour (svc::ui::Theme::textSecondary()));
-    profileNameEditor.setColour (juce::TextEditor::textColourId, juce::Colour (svc::ui::Theme::textPrimary()));
-    profileNameEditor.setColour (juce::TextEditor::backgroundColourId, juce::Colour (svc::ui::Theme::panelRaised()));
+    const auto primary = juce::Colour (svc::ui::Theme::textPrimary());
+    const auto secondary = juce::Colour (svc::ui::Theme::textSecondary());
+    const auto muted = juce::Colour (svc::ui::Theme::textMuted());
+
+    titleLabel.setColour (juce::Label::textColourId, primary);
+    subtitleLabel.setColour (juce::Label::textColourId, muted);
+    for (auto* label : { &profileLabel, &outputModeLabel, &presetLabel, &themeLabel })
+        label->setColour (juce::Label::textColourId, primary);
+    liveHitsLabel.setColour (juce::Label::textColourId, secondary);
+
+    statusLabel.setFont (svc::ui::Theme::smallFont());
+    statusLabel.setJustificationType (juce::Justification::centredLeft);
+    statusLabel.setColour (juce::Label::backgroundColourId, juce::Colours::transparentBlack);
+
+    for (auto* label : { &titleLabel, &subtitleLabel, &profileLabel, &outputModeLabel, &presetLabel,
+                         &themeLabel, &liveHitsLabel, &statusLabel })
+        label->setColour (juce::Label::backgroundColourId, juce::Colours::transparentBlack);
+
+    svc::ui::applyTextEditorTheme (profileNameEditor);
+
+    for (auto* box : { &profileBox, &outputModeBox, &curvePresetBox, &themeBox })
+        svc::ui::applyComboBoxTheme (*box);
+
     midiToolsTabs.setTabBackgroundColour (0, juce::Colour (svc::ui::Theme::panel()));
     midiToolsTabs.setTabBackgroundColour (1, juce::Colour (svc::ui::Theme::panel()));
     padInspector.applyTheme();
+    midiRoutingPanel.applyTheme();
+    calibrationWizard.applyTheme();
+
+    if (aboutPanel != nullptr)
+        aboutPanel->applyTheme();
+}
+
+void SuperVelocityCurveAudioProcessorEditor::repaintThemedCanvases()
+{
+    curveEditor.repaint();
+    padGrid.refreshVisualCache();
+    padHistogram.repaint();
+    globalHistogram.repaint();
+
+    for (auto* c : { static_cast<juce::Component*> (&midiMeters),
+                     static_cast<juce::Component*> (&calibrationWizard),
+                     static_cast<juce::Component*> (&noteRemapEditor),
+                     static_cast<juce::Component*> (&midiRoutingPanel),
+                     static_cast<juce::Component*> (&histogramSection),
+                     static_cast<juce::Component*> (&midiToolsSection),
+                     static_cast<juce::Component*> (&calibrationSection),
+                     static_cast<juce::Component*> (&padSettingsSection) })
+        c->repaint();
+
+    padInspector.applyTheme();
+    repaint();
 }
 
 void SuperVelocityCurveAudioProcessorEditor::paint (juce::Graphics& g)
 {
-    svc::ui::Theme::fillBackgroundGradient (g, getLocalBounds());
+    svc::ui::Theme::fillBackground (g, getLocalBounds());
+}
 
-    if (statusMessage.isNotEmpty())
+void SuperVelocityCurveAudioProcessorEditor::clearStatus()
+{
+    statusMessage.clear();
+    statusIsError = false;
+    statusLabel.setVisible (false);
+}
+
+void SuperVelocityCurveAudioProcessorEditor::scheduleStatusClear()
+{
+    const auto token = ++statusClearToken;
+    juce::Timer::callAfterDelay (6000, [safe = juce::Component::SafePointer<SuperVelocityCurveAudioProcessorEditor> (this), token]
     {
-        g.setColour (statusIsError ? juce::Colours::salmon : juce::Colour (svc::ui::Theme::success()));
-        g.drawText (statusMessage, getLocalBounds().removeFromBottom (22).reduced (16, 0), juce::Justification::centredLeft);
-    }
+        if (safe != nullptr && safe->statusClearToken == token)
+            safe->clearStatus();
+    });
 }
 
 int SuperVelocityCurveAudioProcessorEditor::bottomSectionsHeight() const noexcept
@@ -601,6 +742,8 @@ void SuperVelocityCurveAudioProcessorEditor::resized()
         unsavedProfileDialog->setBounds (getLocalBounds());
         unsavedProfileDialog->toFront (true);
     }
+
+    statusLabel.setBounds (getLocalBounds().removeFromBottom (22).reduced (16, 2));
 }
 
 void SuperVelocityCurveAudioProcessorEditor::rebuildProfileList()
@@ -775,6 +918,7 @@ void SuperVelocityCurveAudioProcessorEditor::performProfileSwitch (int profileBo
 
     profileNameEditor.setText (audioProcessor.getProfileStore().getActiveProfile().getName(),
                                juce::dontSendNotification);
+    svc::ui::applyTextEditorTheme (profileNameEditor);
     clearAbCompare();
     curveEditor.setEditTarget (CurveEditorComponent::EditTarget::velocity);
 
@@ -802,7 +946,7 @@ void SuperVelocityCurveAudioProcessorEditor::commitActivePadEdits()
         return;
 
     padInspector.commitEdits();
-    updateSelectedPadFromUI (selectedPadIndex, mergeActivePadFromUI(), false);
+    tryUpdateSelectedPadFromUI (selectedPadIndex, mergeActivePadFromUI(), false);
 }
 
 void SuperVelocityCurveAudioProcessorEditor::onPadSelected (int padIndex)
@@ -857,20 +1001,20 @@ void SuperVelocityCurveAudioProcessorEditor::showPadAtIndex (int padIndex)
     syncCurveEditTargetUI();
 }
 
-void SuperVelocityCurveAudioProcessorEditor::updateSelectedPadFromUI (int padIndex,
-                                                                      const svc::ProfilePad& pad,
-                                                                      bool syncEngine)
+bool SuperVelocityCurveAudioProcessorEditor::tryUpdateSelectedPadFromUI (int padIndex,
+                                                                          const svc::ProfilePad& pad,
+                                                                          bool syncEngine)
 {
     auto& profile = audioProcessor.getProfileStore().getActiveProfile();
     if (padIndex < 0 || padIndex >= static_cast<int> (profile.getPads().size()))
-        return;
+        return false;
 
     const auto result = profile.setPadAt (padIndex, pad);
     if (result != svc::PadMutationResult::ok)
     {
         showStatus (padMutationMessage (result), true);
         showPadAtIndex (padIndex);
-        return;
+        return false;
     }
 
     audioProcessor.getProfileStore().syncActiveUserProfileFromEdits();
@@ -878,6 +1022,8 @@ void SuperVelocityCurveAudioProcessorEditor::updateSelectedPadFromUI (int padInd
 
     if (syncEngine)
         applyProfileToEngine();
+
+    return true;
 }
 
 void SuperVelocityCurveAudioProcessorEditor::applyProfileToEngine()
@@ -924,6 +1070,7 @@ void SuperVelocityCurveAudioProcessorEditor::clearAbCompare()
     hearingCurveA = false;
     abToggleButton.setButtonText ("Hear A");
     curveEditor.clearCompareCurve();
+    curveEditor.clearDisplayCurve();
     captureAbButton.removeColour (juce::TextButton::buttonOnColourId);
     applyProfileToEngine();
 }
@@ -942,16 +1089,18 @@ void SuperVelocityCurveAudioProcessorEditor::toggleAbCurve()
     if (hearingCurveA)
     {
         applyListenCurveToEngine (*curveA);
+        curveEditor.setDisplayCurve (&*curveA);
         curveEditor.setCompareCurve (&working);
         abToggleButton.setButtonText ("Hearing A");
-        showStatus ("Auditioning captured A (gold line = your edits). Play pads to hear.");
+        showStatus ("Auditioning captured A (blue = A, gold = your edits). Play pads to hear.");
     }
     else
     {
         applyListenCurveToEngine (working);
+        curveEditor.clearDisplayCurve();
         curveEditor.setCompareCurve (&*curveA);
         abToggleButton.setButtonText ("Hearing B");
-        showStatus ("Auditioning your edits (gold line = captured A). Play pads to hear.");
+        showStatus ("Auditioning your edits (blue = edits, gold = captured A). Play pads to hear.");
     }
 }
 
@@ -959,7 +1108,12 @@ void SuperVelocityCurveAudioProcessorEditor::showStatus (const juce::String& mes
 {
     statusMessage = message;
     statusIsError = isError;
-    repaint();
+    statusLabel.setText (message, juce::dontSendNotification);
+    statusLabel.setColour (juce::Label::textColourId,
+                           juce::Colour (isError ? svc::ui::Theme::error() : svc::ui::Theme::success()));
+    statusLabel.setVisible (message.isNotEmpty());
+    statusLabel.toFront (false);
+    scheduleStatusClear();
 }
 
 void SuperVelocityCurveAudioProcessorEditor::updateHistograms()
@@ -1024,15 +1178,39 @@ void SuperVelocityCurveAudioProcessorEditor::updateLiveHits()
         text = "Play your controller - live input->output velocity appears here";
     }
 
-    liveHitsLabel.setText (text, juce::dontSendNotification);
+    if (text != lastLiveHitsText)
+    {
+        lastLiveHitsText = text;
+        liveHitsLabel.setText (text, juce::dontSendNotification);
+    }
 
     if (count > 0)
         updateHistograms();
-    else if (histogramSection.isExpanded() && --histogramRefreshCooldown <= 0)
+}
+
+void SuperVelocityCurveAudioProcessorEditor::visibilityChanged()
+{
+    juce::AudioProcessorEditor::visibilityChanged();
+
+    if (isShowing())
     {
-        histogramRefreshCooldown = 15;
-        updateHistograms();
+        refreshThemedComponents();
+        timerCallback();
+        syncUiTimer();
     }
+    else
+    {
+        stopTimer();
+        uiTimerHz = 0;
+    }
+}
+
+void SuperVelocityCurveAudioProcessorEditor::setScaleFactor (float newScale)
+{
+    juce::AudioProcessorEditor::setScaleFactor (newScale);
+    resized();
+    refreshThemedComponents();
+    repaintThemedCanvases();
 }
 
 void SuperVelocityCurveAudioProcessorEditor::timerCallback()
@@ -1040,8 +1218,7 @@ void SuperVelocityCurveAudioProcessorEditor::timerCallback()
     updateLiveHits();
     padGrid.decayHitVisuals();
     midiMeters.decay();
+    curveEditor.decayHitMarkers();
     audioProcessor.flushStandaloneMidiOutput();
-
-    if (curveEditor.needsHitVisualRepaint())
-        curveEditor.repaint();
+    syncUiTimer();
 }

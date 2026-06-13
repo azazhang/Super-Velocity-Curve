@@ -115,7 +115,7 @@ jobs:
       - name: Validate AU (auval)
         continue-on-error: true
         run: |
-          auval -v aumf Svvc Svcv || echo "auval aumf skipped (unsigned)"
+          auval -v aumu Svvc Svcv || echo "auval aumu skipped (unsigned)"
           auval -v aumi Svvc Svc2 || echo "auval aumi skipped (unsigned)"
 
       - name: Package macOS artifacts
@@ -129,6 +129,11 @@ jobs:
           if [ -d "build/SuperVelocityCurveMidiFx_artefacts/${CMAKE_BUILD_TYPE}/CLAP" ]; then
             cp -R build/SuperVelocityCurveMidiFx_artefacts/${CMAKE_BUILD_TYPE}/CLAP/*.clap dist/ 2>/dev/null || true
           fi
+          cp scripts/install-macos.sh dist/
+          cp "dist-assets/macOS/Install Super Velocity Curve.command" dist/
+          cp dist-assets/macOS/README.txt dist/
+          chmod +x dist/install-macos.sh
+          chmod +x "dist/Install Super Velocity Curve.command"
           cd dist && zip -r ../SuperVelocityCurve-macOS-unsigned.zip .
 
       - uses: actions/upload-artifact@v4

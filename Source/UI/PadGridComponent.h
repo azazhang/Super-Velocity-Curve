@@ -27,6 +27,8 @@ public:
 
     void flashPadHit (int note, int channel, float outputVelocity);
     void decayHitVisuals();
+    bool hasActiveHitVisuals() const noexcept;
+    void refreshVisualCache();
 
     std::function<void (int padIndex)> onPadSelected;
     std::function<void()> onAddPadRequested;

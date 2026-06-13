@@ -109,6 +109,15 @@ void SuperVelocityCurveAudioProcessor::processBlock (juce::AudioBuffer<float>& b
     }
 }
 
+bool SuperVelocityCurveAudioProcessor::hasPendingStandaloneMidiOutput() const
+{
+    if (wrapperType != wrapperType_Standalone || standaloneMidiOutput == nullptr)
+        return false;
+
+    const juce::ScopedLock lock (standaloneOutputLock);
+    return standaloneMidiOutputQueue.getNumEvents() > 0;
+}
+
 void SuperVelocityCurveAudioProcessor::flushStandaloneMidiOutput()
 {
     if (wrapperType != wrapperType_Standalone || standaloneMidiOutput == nullptr)

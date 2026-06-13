@@ -50,6 +50,7 @@ public:
     void injectStandaloneMidi (const juce::MidiMessage& message);
     void setStandaloneMidiOutput (juce::MidiOutput* output) noexcept;
     void flushStandaloneMidiOutput();
+    bool hasPendingStandaloneMidiOutput() const;
 
 private:
     static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();

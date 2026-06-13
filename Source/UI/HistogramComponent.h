@@ -7,6 +7,7 @@
 class HistogramComponent : public juce::Component
 {
 public:
+    HistogramComponent();
     void setHistogram (const svc::HistogramSnapshot& histogram);
     void setTitle (const juce::String& title);
     void paint (juce::Graphics& g) override;

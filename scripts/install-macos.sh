@@ -8,20 +8,12 @@ AU_INST="$HOME/Library/Audio/Plug-Ins/Components"
 CLAP_INST="$HOME/Library/Audio/Plug-Ins/CLAP"
 APP_INST="/Applications"
 
-usage() {
-  cat <<'EOF'
-Usage: install-macos.sh [path-to-unzipped-folder-or-zip]
+if [[ $# -gt 1 ]]; then
+  echo "Usage: install-macos.sh [folder-from-unzipped-release]" >&2
+  exit 1
+fi
 
-With no arguments, installs plugins from the same folder as this script
-(for use inside the release zip with "Install Super Velocity Curve.command").
-
-Developer examples:
-  install-macos.sh ~/Downloads/SuperVelocityCurve-macOS-unsigned.zip
-  install-macos.sh ./build/SuperVelocityCurveMidiFx_artefacts/Release/AU
-EOF
-}
-
-if [[ $# -lt 1 ]]; then
+if [[ $# -eq 0 ]]; then
   SRC="$(cd "$(dirname "$0")" && pwd)"
   echo "Installing from: $SRC"
 else
@@ -50,43 +42,17 @@ fi
 
 mkdir -p "$VST3_INST" "$AU_INST" "$CLAP_INST"
 
-LEGACY_AU=(
-  "Super VelocityCurve MIDI FX.component"
-  "Super_VelocityCurve MIDI FX.component"
-  "Super-Velocity-Curve MIDI FX.component"
-  "Super VelocityCurve.component"
-  "Super_VelocityCurve.component"
-  "Super-Velocity-Curve.component"
-)
-LEGACY_VST3=(
-  "Super VelocityCurve MIDI FX.vst3"
-  "Super_VelocityCurve MIDI FX.vst3"
-  "Super-Velocity-Curve MIDI FX.vst3"
-  "Super VelocityCurve.vst3"
-  "Super_VelocityCurve.vst3"
-  "Super-Velocity-Curve.vst3"
-)
-LEGACY_CLAP=(
-  "Super VelocityCurve MIDI FX.clap"
-  "Super_VelocityCurve MIDI FX.clap"
-  "Super-Velocity-Curve MIDI FX.clap"
-)
-for legacy in "${LEGACY_AU[@]}"; do
-  [[ -d "$AU_INST/$legacy" ]] && echo "Removing legacy $legacy" && rm -rf "$AU_INST/$legacy"
-done
-for legacy in "${LEGACY_VST3[@]}"; do
-  [[ -d "$VST3_INST/$legacy" ]] && echo "Removing legacy $legacy" && rm -rf "$VST3_INST/$legacy"
-done
-for legacy in "${LEGACY_CLAP[@]}"; do
-  [[ -d "$CLAP_INST/$legacy" ]] && echo "Removing legacy $legacy" && rm -rf "$CLAP_INST/$legacy"
-done
-
 prepare_bundle() {
   local bundle="$1"
   xattr -cr "$bundle" 2>/dev/null || true
   dot_clean -m "$bundle" 2>/dev/null || true
   find "$bundle" -name '._*' -delete 2>/dev/null || true
   codesign --force --sign - --timestamp=none --deep "$bundle"
+}
+
+refresh_au_registry() {
+  # macOS caches Audio Unit registrations; Logic may ignore new user-folder AUs until this restarts.
+  killall -9 AudioComponentRegistrar 2>/dev/null || true
 }
 
 install_items() {
@@ -96,7 +62,6 @@ install_items() {
   for item in "$@"; do
     [[ -e "$item" ]] || continue
     name="$(basename "$item")"
-    [[ "$name" == Super\ VelocityCurve* ]] && continue
     echo "Installing $name → $dest"
     rm -rf "$dest/$name"
     COPYFILE_DISABLE=1 cp -R "$item" "$dest/"
@@ -135,6 +100,7 @@ if (( ${#vst3_items[@]} > 0 )); then
 fi
 if (( ${#au_items[@]} > 0 )); then
   install_items "$AU_INST" "${au_items[@]}"
+  refresh_au_registry
 fi
 if (( ${#clap_items[@]} > 0 )); then
   install_items "$CLAP_INST" "${clap_items[@]}"
@@ -158,9 +124,15 @@ cat <<'EOF'
 
 Installation finished.
 
+Plug-ins are in your user Library:
+  ~/Library/Audio/Plug-Ins/VST3/
+  ~/Library/Audio/Plug-Ins/Components/
+  ~/Library/Audio/Plug-Ins/CLAP/
+
 Now:
   1. Quit your music app completely (Logic Pro → Quit Logic Pro).
-  2. Open it again and rescan plug-ins if asked.
+  2. Open it again.
+  3. Logic Pro: Settings → Plug-in Manager → Reset & Rescan Selection if the plug-in is missing.
 
 If Mac blocked the installer earlier, use System Settings → Privacy & Security
 → Open Anyway, then run "Install Super Velocity Curve" again.

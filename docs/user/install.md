@@ -13,9 +13,12 @@ Double-click the zip file. Open the folder that appears.
 
 ### Step 3 — Install
 
-1. Double-click **`Install Super Velocity Curve`**.
-2. Wait until the window says installation finished.
-3. Press **Return** to close the window.
+1. **Quit your music app** (for example **Logic Pro → Quit Logic Pro**).
+2. Double-click **`Install Super Velocity Curve`**.
+3. Wait until the window says installation finished.
+4. Press **Return** to close the window.
+
+Plug-ins go in **your user Library** (`~/Library/Audio/Plug-Ins/…`). You do not need to copy them to the system Library folder.
 
 If Mac blocks the installer the first time:
 
@@ -23,11 +26,10 @@ If Mac blocks the installer the first time:
 2. Click **Open Anyway** next to the blocked installer message.
 3. Double-click **`Install Super Velocity Curve`** again.
 
-### Step 4 — Restart your DAW
+### Step 4 — Open your DAW
 
-1. Quit your music app completely (for example **Logic Pro → Quit Logic Pro**).
-2. Open it again.
-3. Rescan plug-ins if prompted (Logic: **Settings → Plug-in Manager → Reset & Rescan Selection**).
+1. Open your music app.
+2. Rescan plug-ins if prompted (Logic: **Settings → Plug-in Manager → Reset & Rescan Selection**).
 
 ### Step 5 — Add the plugin
 
@@ -72,6 +74,9 @@ After copying, run **`Install Super Velocity Curve`** from the same unzipped fol
 ---
 
 ## Troubleshooting
+
+**Logic Pro does not list the plug-in**  
+Use **Super Velocity Curve MIDI FX** in the track **MIDI FX** slot (not the instrument slot). Quit Logic fully, run the installer again, reopen Logic, then **Settings → Plug-in Manager → Reset & Rescan Selection**. Plug-ins belong in `~/Library/Audio/Plug-Ins/` — copying to `/Library/Audio/Plug-Ins/` should not be necessary.
 
 **Plugin missing or wrong version**  
 Download a fresh zip, unzip, run **Install Super Velocity Curve**, quit the DAW fully, and rescan.

@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+## v0.2.23 (2026-06-13)
+
+### Fixed
+- **macOS installer:** Restart `AudioComponentRegistrar` after AU install so Logic Pro discovers plug-ins in `~/Library` without copying to `/Library`
+- **macOS installer:** Removed developer-only legacy bundle cleanup from the shipped user install path
+
+### Changed
+- **Dev:** One-time legacy bundle removal moved to `scripts/dev/cleanup-legacy-plugin-bundles.sh` (not shipped in release zips)
+- **Docs:** Install steps tell users to quit the DAW before installing; clarify user Library is the correct plug-in location
+
 ## v0.2.22 (2026-06-13)
 
 ### Fixed

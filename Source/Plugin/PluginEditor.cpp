@@ -3,6 +3,7 @@
 #include "../UI/PadUiMerge.h"
 #include "../UI/ThemeUi.h"
 #include <juce_gui_basics/juce_gui_basics.h>
+#include <vector>
 
 namespace
 {
@@ -188,9 +189,15 @@ SuperVelocityCurveAudioProcessorEditor::SuperVelocityCurveAudioProcessorEditor (
     };
     curveEditor.onPadChanged = [this] (const svc::ProfilePad& pad)
     {
-        if (selectedPadIndex >= 0)
-        if (! tryUpdateSelectedPadFromUI (selectedPadIndex, pad, ! curveEditor.isDraggingPoint()))
+        if (selectedPadIndex < 0)
             return;
+
+        const bool dragging = curveEditor.isDraggingPoint();
+        if (! tryUpdateSelectedPadFromUI (selectedPadIndex, pad, ! dragging))
+            return;
+
+        if (dragging && ! (hearingCurveA && curveA.has_value()))
+            applyListenCurveToEngine (pad.curve);
     };
 
     curveEditor.onPadEditFinished = [this]
@@ -505,14 +512,8 @@ void SuperVelocityCurveAudioProcessorEditor::syncUiTimer() noexcept
         return;
     }
 
-    if (! needsAnimatedUi())
-    {
-        stopTimer();
-        uiTimerHz = 0;
-        return;
-    }
-
-    const auto targetHz = 8;
+    // Keep polling while visible so MIDI hits are not stranded in the FIFO when idle.
+    const auto targetHz = needsAnimatedUi() ? 30 : 15;
 
     if (! isTimerRunning() || uiTimerHz != targetHz)
     {
@@ -1132,31 +1133,43 @@ void SuperVelocityCurveAudioProcessorEditor::updateHistograms()
 void SuperVelocityCurveAudioProcessorEditor::updateLiveHits()
 {
     svc::HitEvent hit;
+    std::vector<svc::HitEvent> drained;
+    drained.reserve (32);
+
+    while (audioProcessor.getEngine().getHitFifo().pop (hit))
+        drained.push_back (hit);
+
+    constexpr int maxDisplayHits = 12;
+    const int displayStart = juce::jmax (0, static_cast<int> (drained.size()) - maxDisplayHits);
+
     juce::String text;
     bool sawUnmapped = false;
-
     int count = 0;
-    while (audioProcessor.getEngine().getHitFifo().pop (hit) && count < 8)
-    {
-        const auto inVel = juce::String (static_cast<int> (std::lround (hit.inputVelocity * 127.0f)));
-        const auto outVel = juce::String (static_cast<int> (std::lround (hit.outputVelocity * 127.0f)));
-        const auto protocol = hit.isMidi2 ? "M2" : "M1";
-        text += "N" + juce::String (hit.note) + " " + protocol + " " + inVel + "->" + outVel + "   ";
 
-        curveEditor.addHitMarker (hit.note, hit.channel, hit.inputVelocity, hit.outputVelocity, hit.isMidi2);
-        padGrid.flashPadHit (hit.note, hit.channel, hit.outputVelocity);
+    for (int i = displayStart; i < static_cast<int> (drained.size()); ++i)
+    {
+        const auto& displayed = drained[static_cast<size_t> (i)];
+        const auto inVel = juce::String (static_cast<int> (std::lround (displayed.inputVelocity * 127.0f)));
+        const auto outVel = juce::String (static_cast<int> (std::lround (displayed.outputVelocity * 127.0f)));
+        const auto protocol = displayed.isMidi2 ? "M2" : "M1";
+        text += "N" + juce::String (displayed.note) + " " + protocol + " " + inVel + "->" + outVel + "   ";
+
+        curveEditor.addHitMarker (displayed.note, displayed.channel,
+                                  displayed.inputVelocity, displayed.outputVelocity, displayed.isMidi2);
+        padGrid.flashPadHit (displayed.note, displayed.channel, displayed.outputVelocity);
 
         if (calibrationSection.isExpanded() && selectedPadIndex >= 0)
         {
             const auto& profile = audioProcessor.getProfileStore().getActiveProfile();
             const auto& pad = profile.getPads()[static_cast<size_t> (selectedPadIndex)];
-            if (hit.note == pad.midiNote && hit.channel == pad.midiChannel)
-                calibrationWizard.captureHit (hit.inputVelocity);
+            if (displayed.note == pad.midiNote && displayed.channel == pad.midiChannel)
+                calibrationWizard.captureHit (displayed.inputVelocity);
         }
-        midiMeters.pushInputLevel (hit.inputVelocity);
-        midiMeters.pushOutputLevel (hit.outputVelocity);
 
-        if (! isPadMapped (hit.note, hit.channel))
+        midiMeters.pushInputLevel (displayed.inputVelocity);
+        midiMeters.pushOutputLevel (displayed.outputVelocity);
+
+        if (! isPadMapped (displayed.note, displayed.channel))
             sawUnmapped = true;
 
         ++count;

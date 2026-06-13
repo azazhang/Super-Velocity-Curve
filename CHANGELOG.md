@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## v0.2.25 (2026-06-13)
+
+### Fixed
+- **Live MIDI display:** UI timer no longer stops while the window is open, so pad hits and meters keep updating without moving the mouse
+- **Live MIDI display:** Drains the hit queue each tick and shows only the latest hits, preventing stale-note flash storms after idle gaps
+- **Curve editing:** Velocity curve changes apply to MIDI output while dragging, not only after mouse-up
+
 ## v0.2.24 (2026-06-13)
 
 ### Fixed
